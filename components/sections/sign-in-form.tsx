@@ -16,9 +16,16 @@ function isAllowedEmail(email: string) {
   return Boolean(domain && allowedDomains.includes(domain));
 }
 
-export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: string; enableDevBypass: boolean }) {
+type SignInFormProps = {
+  callbackUrl: string;
+  enableDevBypass: boolean;
+  requireBypassCode: boolean;
+};
+
+export function SignInForm({ callbackUrl, enableDevBypass, requireBypassCode }: SignInFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [submittedTo, setSubmittedTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,11 +65,17 @@ export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: stri
       return;
     }
 
+    if (requireBypassCode && !accessCode.trim()) {
+      setError("Enter the team access code to use the testing bypass.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    const response = await signIn("dev-bypass", {
+    const response = await signIn("auth-bypass", {
       email: normalizedEmail,
+      accessCode,
       callbackUrl,
       redirect: false
     });
@@ -70,7 +83,11 @@ export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: stri
     setLoading(false);
 
     if (response?.error || !response?.ok) {
-      setError("Development bypass failed. Check the env flag and try again.");
+      setError(
+        requireBypassCode
+          ? "Testing bypass failed. Double-check the team code and try again."
+          : "Development bypass failed. Check the env flag and try again."
+      );
       return;
     }
 
@@ -106,6 +123,15 @@ export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: stri
                 aria-label="UVA email address"
                 required
               />
+              {enableDevBypass && requireBypassCode ? (
+                <Input
+                  type="password"
+                  value={accessCode}
+                  onChange={(event) => setAccessCode(event.target.value)}
+                  placeholder="Team access code"
+                  aria-label="Team access code"
+                />
+              ) : null}
               {error ? (
                 <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
                   {error}
@@ -116,7 +142,7 @@ export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: stri
               </Button>
               {enableDevBypass ? (
                 <Button className="w-full" size="lg" type="button" variant="secondary" onClick={handleDevBypass} disabled={loading}>
-                  {loading ? "Signing in..." : "Dev bypass sign-in"}
+                  {loading ? "Signing in..." : requireBypassCode ? "Team test sign-in" : "Dev bypass sign-in"}
                 </Button>
               ) : null}
             </form>
@@ -128,7 +154,9 @@ export function SignInForm({ callbackUrl, enableDevBypass }: { callbackUrl: stri
           </p>
           {enableDevBypass ? (
             <p className="text-center text-xs text-uva-orange">
-              Dev bypass is enabled locally. This skips email delivery but still requires a UVA email format.
+              {requireBypassCode
+                ? "Testing bypass is enabled for your team. It skips email delivery but still requires a UVA email and the private team code."
+                : "Dev bypass is enabled locally. This skips email delivery but still requires a UVA email format."}
             </p>
           ) : null}
           <p className="text-center text-xs text-muted-foreground">

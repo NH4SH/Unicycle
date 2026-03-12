@@ -41,6 +41,10 @@ function getEmailServerConfig() {
 
 const devAuthBypassEnabled =
   process.env.NODE_ENV !== "production" && process.env.DEV_AUTH_BYPASS === "true";
+const teamAuthBypassCode = process.env.TEST_AUTH_BYPASS_CODE?.trim();
+const teamAuthBypassEnabled =
+  process.env.TEST_AUTH_BYPASS === "true" && Boolean(teamAuthBypassCode);
+const authBypassEnabled = devAuthBypassEnabled || teamAuthBypassEnabled;
 
 async function findOrCreateUserByEmail(email: string) {
   const normalizedEmail = normalizeUvaEmail(email);
@@ -68,20 +72,28 @@ export const authOptions: NextAuthOptions = {
     signIn: "/sign-in"
   },
   providers: [
-    ...(devAuthBypassEnabled
+    ...(authBypassEnabled
       ? [
           CredentialsProvider({
-            id: "dev-bypass",
-            name: "Development bypass",
+            id: "auth-bypass",
+            name: "Testing bypass",
             credentials: {
               email: {
                 label: "UVA email",
                 type: "email"
+              },
+              accessCode: {
+                label: "Access code",
+                type: "password"
               }
             },
             async authorize(credentials) {
               const email = normalizeUvaEmail(credentials?.email || "");
               if (!isUvaEmail(email)) {
+                return null;
+              }
+
+              if (teamAuthBypassEnabled && credentials?.accessCode !== teamAuthBypassCode) {
                 return null;
               }
 
@@ -165,5 +177,9 @@ export function getAuthSession() {
 }
 
 export function isDevAuthBypassEnabled() {
-  return devAuthBypassEnabled;
+  return authBypassEnabled;
+}
+
+export function authBypassRequiresCode() {
+  return teamAuthBypassEnabled;
 }

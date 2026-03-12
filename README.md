@@ -40,6 +40,8 @@ Required vars:
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `DEV_AUTH_BYPASS` (`true` enables local-only auth bypass outside production)
+- `TEST_AUTH_BYPASS` (`true` enables the team testing bypass on hosted environments)
+- `TEST_AUTH_BYPASS_CODE` (required when `TEST_AUTH_BYPASS` is enabled)
 - `EMAIL_SERVER` or the split SMTP vars below
 - `EMAIL_SERVER_HOST`
 - `EMAIL_SERVER_PORT`
@@ -62,6 +64,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 The sign-in flow now sends a magic link to UVA inboxes only. You need working SMTP credentials for the email provider you choose.
 For local development without SMTP, set `DEV_AUTH_BYPASS="true"` and use the dev bypass button on `/sign-in`.
+For hosted team testing without SMTP, set `TEST_AUTH_BYPASS="true"` and `TEST_AUTH_BYPASS_CODE` to a private shared code. The hosted sign-in form will require both a UVA email and that code.
 For database hosting, use Neon and place the pooled URL in `DATABASE_URL` and the direct URL in `DIRECT_URL`.
 
 ## Demo Data
@@ -105,11 +108,12 @@ Set these Netlify environment variables in the Netlify UI with scopes that inclu
 - `EMAIL_SERVER` or the split `EMAIL_SERVER_*` vars
 - `EMAIL_FROM`
 - `UPLOADTHING_TOKEN`
+- `TEST_AUTH_BYPASS` and `TEST_AUTH_BYPASS_CODE` if you want a shared testing login instead of live email delivery
 
 This repo includes [netlify.toml](/Users/noelsierra/Unicycle/netlify.toml) with the build command:
 
 ```bash
-npx prisma migrate deploy && next build
+npx prisma generate && npx prisma migrate deploy && next build
 ```
 
 Deployment steps:
