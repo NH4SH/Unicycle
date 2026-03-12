@@ -1,0 +1,69 @@
+@import "@uploadthing/react/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 33% 97%;
+  --foreground: 224 24% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 24% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 24% 13%;
+  --primary: 30 100% 45%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 220 20% 95%;
+  --secondary-foreground: 224 24% 13%;
+  --muted: 220 20% 95%;
+  --muted-foreground: 220 10% 43%;
+  --accent: 214 100% 56%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 22% 88%;
+  --input: 220 22% 88%;
+  --ring: 214 100% 56%;
+}
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(29, 126, 251, 0.14), transparent 44%),
+    radial-gradient(circle at 0% 12%, rgba(229, 114, 0, 0.12), transparent 38%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: theme("backgroundImage.grain");
+  opacity: 0.45;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+
+a {
+  @apply text-inherit no-underline;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+.drop-shimmer {
+  background: linear-gradient(120deg, rgba(229, 114, 0, 0.12), rgba(29, 126, 251, 0.2), rgba(229, 114, 0, 0.12));
+  background-size: 180% 100%;
+  animation: shimmer 2.6s linear infinite;
+}
