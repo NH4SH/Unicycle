@@ -35,7 +35,8 @@ cp .env.example .env
 
 Required vars:
 
-- `DATABASE_URL` (default local SQLite: `file:./dev.db`)
+- `DATABASE_URL` (pooled Postgres runtime URL)
+- `DIRECT_URL` (direct Postgres URL for Prisma CLI/migrations)
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 - `DEV_AUTH_BYPASS` (`true` enables local-only auth bypass outside production)
@@ -52,8 +53,7 @@ Required vars:
 
 ```bash
 npm install
-# one-time local SQLite bootstrap (avoids first-run SQLite file creation issue in some environments)
-touch prisma/dev.db
+npx prisma generate
 npx prisma migrate dev
 npx prisma db seed
 npm run dev
@@ -62,6 +62,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000).
 The sign-in flow now sends a magic link to UVA inboxes only. You need working SMTP credentials for the email provider you choose.
 For local development without SMTP, set `DEV_AUTH_BYPASS="true"` and use the dev bypass button on `/sign-in`.
+For database hosting, use Neon and place the pooled URL in `DATABASE_URL` and the direct URL in `DIRECT_URL`.
 
 ## Demo Data
 
@@ -85,14 +86,35 @@ Seed includes:
 - Prisma schema + seed: `prisma/schema.prisma`, `prisma/seed.ts`
 - UploadThing router: `app/api/uploadthing/core.ts`
 
-## Postgres Notes
+## Netlify Deploy
 
-Schema and queries are compatible with Postgres. For Postgres deployment:
+Recommended database: Neon.
 
-1. Change datasource provider in `prisma/schema.prisma` from `sqlite` to `postgresql`.
-2. Set `DATABASE_URL` to your Postgres connection string.
-3. Run migrations again:
+Why Neon:
+
+- Serverless Postgres fits Netlify's function-based runtime well.
+- Prisma documents Neon specifically for Postgres deployments and notes its generous free tier.
+- Neon gives you both pooled and direct connection strings, which matches Prisma's runtime + migration split cleanly.
+
+Set these Netlify environment variables in the Netlify UI with scopes that include both Builds and Functions:
+
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- `EMAIL_SERVER` or the split `EMAIL_SERVER_*` vars
+- `EMAIL_FROM`
+- `UPLOADTHING_TOKEN`
+
+This repo includes [netlify.toml](/Users/noelsierra/Unicycle/netlify.toml) with the build command:
 
 ```bash
-npx prisma migrate dev
+npx prisma migrate deploy && next build
 ```
+
+Deployment steps:
+
+1. Create a Neon project and copy both the pooled and direct connection strings.
+2. Add the env vars in Netlify.
+3. Deploy the site.
+4. If you want seeded demo data in that database, run `npx prisma db seed` against the Neon database once.

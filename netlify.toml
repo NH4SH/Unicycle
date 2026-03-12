@@ -1,0 +1,3 @@
+[build]
+  command = "npx prisma migrate deploy && next build"
+  publish = ".next"
