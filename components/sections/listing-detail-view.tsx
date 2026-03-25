@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MapPin, MessageCircle, ShieldCheck, Sparkles, Star, Trash2, WalletCards } from "lucide-react";
+import { MapPin, MessageCircle, Pencil, ShieldCheck, Sparkles, Star, Trash2, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -275,6 +275,14 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                 ) : null}
                 {isOwner ? (
                   <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => router.push(`/listing/${listing.id}/edit`)}
+                      disabled={updating}
+                    >
+                      <Pencil className="mr-1.5 h-4 w-4" />
+                      Edit
+                    </Button>
                     <Button variant="secondary" onClick={markSold} disabled={updating}>
                       Mark Sold
                     </Button>

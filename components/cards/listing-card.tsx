@@ -2,11 +2,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { MapPin, Star } from "lucide-react";
+import { MapPin, Pencil, Star } from "lucide-react";
 
 import { HeartButton } from "@/components/cards/heart-button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CONDITION_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
 import { formatCurrency, timeAgo } from "@/lib/utils";
@@ -14,9 +15,10 @@ import { formatCurrency, timeAgo } from "@/lib/utils";
 type ListingCardProps = {
   listing: ListingCardData;
   sticker?: string;
+  editHref?: string;
 };
 
-export function ListingCard({ listing, sticker }: ListingCardProps) {
+export function ListingCard({ listing, sticker, editHref }: ListingCardProps) {
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
       <Card className="group overflow-hidden border-white/70 bg-white/95 transition-shadow duration-300 hover:shadow-card">
@@ -45,11 +47,20 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
               </Link>
               <p className="font-display text-xl font-bold text-uva-blue">{formatCurrency(listing.priceCents / 100)}</p>
             </div>
-            <HeartButton
-              listingId={listing.id}
-              initialFavorited={listing.isFavorited}
-              initialCount={listing.favoriteCount}
-            />
+            <div className="flex items-center gap-1">
+              <HeartButton
+                listingId={listing.id}
+                initialFavorited={listing.isFavorited}
+                initialCount={listing.favoriteCount}
+              />
+              {editHref ? (
+                <Button asChild size="icon" variant="ghost" aria-label="Edit listing">
+                  <Link href={editHref} onClick={(e) => e.stopPropagation()}>
+                    <Pencil className="h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
