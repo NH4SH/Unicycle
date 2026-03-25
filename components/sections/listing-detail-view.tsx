@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MapPin, MessageCircle, ShieldCheck, Star, Trash2 } from "lucide-react";
+import { MapPin, MessageCircle, ShieldCheck, Star, Trash2, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -23,12 +23,14 @@ type ListingDetailViewProps = {
   listing: ListingCardData;
   isOwner: boolean;
   similar: ListingCardData[];
+  canCheckout: boolean;
 };
 
-export function ListingDetailView({ listing, isOwner, similar }: ListingDetailViewProps) {
+export function ListingDetailView({ listing, isOwner, similar, canCheckout }: ListingDetailViewProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const router = useRouter();
   const { status } = useSession();
 
@@ -106,6 +108,36 @@ export function ListingDetailView({ listing, isOwner, similar }: ListingDetailVi
     }
 
     toast.success("Report submitted. Thanks for keeping UniCycle safe.");
+  }
+
+  async function startCheckout() {
+    if (status !== "authenticated") {
+      router.push("/sign-in");
+      return;
+    }
+
+    setCheckingOut(true);
+    const response = await fetch("/api/checkout/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: listing.id })
+    });
+
+    setCheckingOut(false);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not start Stripe checkout.");
+      return;
+    }
+
+    const data = (await response.json()) as { url?: string };
+    if (!data.url) {
+      toast.error("Stripe checkout link was missing.");
+      return;
+    }
+
+    window.location.href = data.url;
   }
 
   return (
@@ -206,6 +238,12 @@ export function ListingDetailView({ listing, isOwner, similar }: ListingDetailVi
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
+                  {canCheckout ? (
+                    <Button variant="secondary" onClick={startCheckout} disabled={checkingOut}>
+                      <WalletCards className="mr-1.5 h-4 w-4" />
+                      {checkingOut ? "Redirecting..." : "Checkout with Stripe"}
+                    </Button>
+                  ) : null}
                   <Button onClick={startConversation}>
                     <MessageCircle className="mr-1.5 h-4 w-4" />
                     Message seller
@@ -228,6 +266,11 @@ export function ListingDetailView({ listing, isOwner, similar }: ListingDetailVi
             <ShieldCheck className="h-3.5 w-3.5 text-electric" />
             Meet in public spots on Grounds for safer exchanges.
           </div>
+          {canCheckout ? (
+            <p className="text-xs text-muted-foreground">
+              Checkout is powered by Stripe. Payments go through UniCycle’s platform account while meetup coordination stays in-app.
+            </p>
+          ) : null}
         </div>
       </section>
 

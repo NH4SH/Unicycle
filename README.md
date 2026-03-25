@@ -50,6 +50,8 @@ Required vars:
 - `EMAIL_SERVER_PASSWORD`
 - `EMAIL_FROM`
 - `UPLOADTHING_TOKEN`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 
 ## Local Setup
 
@@ -66,6 +68,7 @@ The sign-in flow now sends a magic link to UVA inboxes only. You need working SM
 For local development without SMTP, set `DEV_AUTH_BYPASS="true"` and use the dev bypass button on `/sign-in`.
 For hosted team testing without SMTP, set `TEST_AUTH_BYPASS="true"` and `TEST_AUTH_BYPASS_CODE` to a private shared code. The hosted sign-in form will require both a UVA email and that code.
 For database hosting, use Neon and place the pooled URL in `DATABASE_URL` and the direct URL in `DIRECT_URL`.
+For Stripe checkout, create a Stripe account, add `STRIPE_SECRET_KEY`, and point a webhook endpoint at `/api/stripe/webhook` using `STRIPE_WEBHOOK_SECRET`.
 
 ## Demo Data
 
@@ -108,6 +111,8 @@ Set these Netlify environment variables in the Netlify UI with scopes that inclu
 - `EMAIL_SERVER` or the split `EMAIL_SERVER_*` vars
 - `EMAIL_FROM`
 - `UPLOADTHING_TOKEN`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 - `TEST_AUTH_BYPASS` and `TEST_AUTH_BYPASS_CODE` if you want a shared testing login instead of live email delivery
 
 This repo includes [netlify.toml](/Users/noelsierra/Unicycle/netlify.toml) with the build command:
@@ -122,3 +127,19 @@ Deployment steps:
 2. Add the env vars in Netlify.
 3. Deploy the site.
 4. If you want seeded demo data in that database, run `npx prisma db seed` against the Neon database once.
+
+## Stripe Checkout
+
+This repo includes a hosted Stripe Checkout flow for listing purchases:
+
+- `POST /api/checkout/session` creates a Checkout Session for an active listing
+- `POST /api/stripe/webhook` fulfills the order on `checkout.session.completed`
+- `/checkout/success` and `/checkout/cancel` handle buyer redirects
+
+Local webhook testing:
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+Use the webhook signing secret Stripe prints in the CLI or Dashboard for `STRIPE_WEBHOOK_SECRET`.

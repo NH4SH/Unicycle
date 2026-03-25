@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ListingDetailView } from "@/components/sections/listing-detail-view";
 import { getAuthSession } from "@/lib/auth";
 import { getListingDetail } from "@/lib/data";
+import { isStripeCheckoutEnabled } from "@/lib/stripe";
 
 type ListingDetailPageProps = {
   params: {
@@ -20,7 +21,12 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
 
   return (
     <div className="container py-8">
-      <ListingDetailView listing={detail.listing} isOwner={detail.isOwner} similar={detail.similarItems} />
+      <ListingDetailView
+        listing={detail.listing}
+        isOwner={detail.isOwner}
+        similar={detail.similarItems}
+        canCheckout={isStripeCheckoutEnabled()}
+      />
     </div>
   );
 }

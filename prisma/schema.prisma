@@ -31,6 +31,13 @@ enum ListingStatus {
   SOLD
 }
 
+enum OrderStatus {
+  CHECKOUT_CREATED
+  PAID
+  EXPIRED
+  FAILED
+}
+
 model User {
   id               String         @id @default(cuid())
   name             String?
@@ -57,6 +64,8 @@ model User {
   messages         Message[]
   reports          Report[]       @relation("ReporterReports")
   waitlistEntries  WaitlistEntry[]
+  buyerOrders      Order[]        @relation("BuyerOrders")
+  sellerOrders     Order[]        @relation("SellerOrders")
 }
 
 model Listing {
@@ -79,6 +88,7 @@ model Listing {
   favorites        Favorite[]
   conversations    Conversation[]
   reports          Report[]
+  orders           Order[]
 
   @@index([createdAt])
   @@index([category])
@@ -141,6 +151,28 @@ model Report {
   reporter         User           @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
+}
+
+model Order {
+  id                     String      @id @default(cuid())
+  listingId              String
+  buyerId                String
+  sellerId               String
+  amountCents            Int
+  status                 OrderStatus @default(CHECKOUT_CREATED)
+  stripeCheckoutSessionId String?    @unique
+  stripePaymentIntentId   String?    @unique
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  listing                Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer                  User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller                 User        @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
 }
 
 model WaitlistEntry {

@@ -35,3 +35,7 @@ export const messageSchema = z.object({
   conversationId: z.string(),
   body: z.string().min(1).max(1000)
 });
+
+export const checkoutSessionSchema = z.object({
+  listingId: z.string().min(1)
+});
