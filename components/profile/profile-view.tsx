@@ -166,7 +166,11 @@ export function ProfileView({
           {activeListings.length ? (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {activeListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  editHref={isOwner ? `/listing/${listing.id}/edit` : undefined}
+                />
               ))}
             </div>
           ) : (

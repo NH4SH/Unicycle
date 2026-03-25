@@ -31,9 +31,9 @@ type Draft = {
   meetupNotes: string;
 };
 
-const STORAGE_KEY = "unicycle-sell-draft";
+const BASE_STORAGE_KEY = "unicycle-sell-draft";
 
-const initialDraft: Draft = {
+const defaultDraft: Draft = {
   images: [],
   title: "",
   description: "",
@@ -44,28 +44,40 @@ const initialDraft: Draft = {
   meetupNotes: ""
 };
 
-export function SellWizard() {
+type SellWizardProps = {
+  mode?: "create" | "edit";
+  listingId?: string;
+  initialDraft?: Partial<Draft>;
+};
+
+export function SellWizard({ mode = "create", listingId, initialDraft }: SellWizardProps) {
   const router = useRouter();
+  const isEdit = mode === "edit";
+  const storageKey = isEdit && listingId ? `${BASE_STORAGE_KEY}-${listingId}` : BASE_STORAGE_KEY;
   const [step, setStep] = useState(1);
-  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const [draft, setDraft] = useState<Draft>(() => ({
+    ...defaultDraft,
+    ...initialDraft,
+    meetupNotes: initialDraft?.meetupNotes ?? defaultDraft.meetupNotes
+  }));
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Draft;
         setDraft(parsed);
       } catch {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       }
     }
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [draft]);
+    localStorage.setItem(storageKey, JSON.stringify(draft));
+  }, [draft, storageKey]);
 
   const progress = useMemo(() => (step / 4) * 100, [step]);
 
@@ -110,6 +122,10 @@ export function SellWizard() {
   }
 
   async function publish() {
+    if (isEdit && !listingId) {
+      setError("Missing listing id for editing.");
+      return;
+    }
     const parsed = listingSchema.safeParse({
       title: draft.title,
       description: draft.description,
@@ -128,8 +144,11 @@ export function SellWizard() {
 
     setPublishing(true);
 
-    const response = await fetch("/api/listings", {
-      method: "POST",
+    const url = isEdit ? `/api/listings/${listingId}` : "/api/listings";
+    const method = isEdit ? "PATCH" : "POST";
+
+    const response = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(parsed.data)
     });
@@ -142,9 +161,9 @@ export function SellWizard() {
     }
 
     const data = await response.json();
-    localStorage.removeItem(STORAGE_KEY);
-    toast.success("Drop published.");
-    router.push(`/listing/${data.id}`);
+    localStorage.removeItem(storageKey);
+    toast.success(isEdit ? "Drop updated." : "Drop published.");
+    router.push(`/listing/${data.id as string}`);
     router.refresh();
   }
 
@@ -307,8 +326,12 @@ export function SellWizard() {
         {step === 4 ? (
           <div className="space-y-4">
             <div>
-              <h2 className="font-display text-2xl font-bold">Step 4: Review & Publish</h2>
-              <p className="text-sm text-muted-foreground">Make sure this drop is ready for the feed.</p>
+              <h2 className="font-display text-2xl font-bold">
+                Step 4: Review & {isEdit ? "Save" : "Publish"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {isEdit ? "Make sure this drop is ready for the feed." : "Make sure this drop is ready for the feed."}
+              </p>
             </div>
 
             <div className="rounded-3xl border border-border bg-secondary/50 p-4">
@@ -352,7 +375,7 @@ export function SellWizard() {
           ) : (
             <Button type="button" onClick={publish} disabled={publishing}>
               {publishing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              {publishing ? "Publishing" : "Publish Drop"}
+              {publishing ? (isEdit ? "Saving" : "Publishing") : isEdit ? "Save changes" : "Publish Drop"}
             </Button>
           )}
         </div>
