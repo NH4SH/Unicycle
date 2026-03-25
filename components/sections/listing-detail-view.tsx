@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MapPin, MessageCircle, ShieldCheck, Star, Trash2, WalletCards } from "lucide-react";
+import { MapPin, MessageCircle, ShieldCheck, Sparkles, Star, Trash2, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -237,26 +237,62 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-3">
                   {canCheckout ? (
-                    <Button variant="secondary" onClick={startCheckout} disabled={checkingOut}>
-                      <WalletCards className="mr-1.5 h-4 w-4" />
-                      {checkingOut ? "Redirecting..." : "Checkout with Stripe"}
-                    </Button>
+                    <motion.div
+                      whileHover={{ y: -2 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                      className="relative overflow-hidden rounded-[1.75rem] border border-electric/20 bg-gradient-to-br from-white via-electric/5 to-uva-orange/10 p-4"
+                    >
+                      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-electric/15 blur-3xl" />
+                      <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-uva-orange/15 blur-3xl" />
+                      <div className="relative space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <Badge variant="blue">Secure checkout beta</Badge>
+                          <div className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                            <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
+                            Stripe
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Buy now</p>
+                          <div className="flex items-end justify-between gap-3">
+                            <div>
+                              <p className="font-display text-3xl font-black text-uva-blue">
+                                {formatCurrency(listing.priceCents / 100)}
+                              </p>
+                              <p className="max-w-xs text-sm text-muted-foreground">
+                                Pay on UniCycle, then keep meetup coordination in chat with the seller.
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-2 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                              <span className="rounded-full bg-white/90 px-3 py-1 shadow-soft">Card checkout</span>
+                              <span className="rounded-full bg-white/90 px-3 py-1 shadow-soft">Pickup stays local</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button className="h-12 w-full" onClick={startCheckout} disabled={checkingOut}>
+                          <WalletCards className="mr-1.5 h-4 w-4" />
+                          {checkingOut ? "Redirecting to Stripe..." : "Checkout with Stripe"}
+                        </Button>
+                      </div>
+                    </motion.div>
                   ) : null}
-                  <Button onClick={startConversation}>
-                    <MessageCircle className="mr-1.5 h-4 w-4" />
-                    Message seller
-                  </Button>
-                  <HeartButton
-                    className="h-11"
-                    listingId={listing.id}
-                    initialFavorited={listing.isFavorited}
-                    initialCount={listing.favoriteCount}
-                  />
-                  <Button variant="ghost" onClick={reportListing}>
-                    Report
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={startConversation}>
+                      <MessageCircle className="mr-1.5 h-4 w-4" />
+                      Message seller
+                    </Button>
+                    <HeartButton
+                      className="h-11"
+                      listingId={listing.id}
+                      initialFavorited={listing.isFavorited}
+                      initialCount={listing.favoriteCount}
+                    />
+                    <Button variant="ghost" onClick={reportListing}>
+                      Report
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
