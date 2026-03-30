@@ -61,8 +61,8 @@ function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
 
   if (query.q) {
     where.OR = [
-      { title: { contains: query.q } },
-      { description: { contains: query.q } }
+      { title: { contains: query.q, mode: "insensitive" } },
+      { description: { contains: query.q, mode: "insensitive" } }
     ];
   }
 
@@ -81,7 +81,28 @@ function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
     };
   }
 
+  if (query.location) {
+    where.pickupLocations = {
+      array_contains: [query.location]
+    };
+  }
+
   return where;
+}
+
+function normalizeMarketQuery(query: MarketQuery) {
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.min(Math.max(query.limit ?? 16, 1), 32);
+  const min = typeof query.min === "number" ? Math.max(100, query.min) : 100;
+  const max = typeof query.max === "number" ? Math.max(min, query.max) : 250000;
+
+  return {
+    ...query,
+    page,
+    limit,
+    min,
+    max
+  };
 }
 
 function mapListing(
@@ -118,43 +139,101 @@ function mapListing(
 }
 
 export async function getMarketListings(query: MarketQuery) {
-  const page = query.page ?? 1;
-  const limit = query.limit ?? 16;
-  const where = listingWhere(query);
-
-  const listings = await prisma.listing.findMany({
-    where,
-    include: {
-      seller: true,
-      favorites: true
-    }
-  });
-
-  const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
-
-  const locationFiltered = query.location
-    ? listings.filter((listing) => fromJsonArray(listing.pickupLocations).includes(query.location as string))
-    : listings;
-
-  const sorted = locationFiltered.sort((a, b) => {
-    if (query.sort === "price_asc") return a.priceCents - b.priceCents;
-    if (query.sort === "price_desc") return b.priceCents - a.priceCents;
-    if (query.sort === "trending") {
-      const aCount = a.favorites.filter((favorite) => favorite.createdAt >= seventyTwoHoursAgo).length;
-      const bCount = b.favorites.filter((favorite) => favorite.createdAt >= seventyTwoHoursAgo).length;
-      if (bCount === aCount) return b.createdAt.getTime() - a.createdAt.getTime();
-      return bCount - aCount;
-    }
-
-    return b.createdAt.getTime() - a.createdAt.getTime();
-  });
-
+  const normalized = normalizeMarketQuery(query);
+  const page = normalized.page;
+  const limit = normalized.limit;
   const start = (page - 1) * limit;
-  const items = sorted.slice(start, start + limit).map((listing) => mapListing(listing, query.userId));
+  const where = listingWhere(normalized);
+
+  if (normalized.sort === "trending") {
+    const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
+
+    const [filteredListings, favoriteGroups] = await Promise.all([
+      prisma.listing.findMany({
+        where,
+        select: {
+          id: true,
+          createdAt: true
+        }
+      }),
+      prisma.favorite.groupBy({
+        by: ["listingId"],
+        where: {
+          createdAt: { gte: seventyTwoHoursAgo },
+          listing: where
+        },
+        _count: {
+          listingId: true
+        }
+      })
+    ]);
+
+    const favoriteCountMap = new Map(favoriteGroups.map((group) => [group.listingId, group._count.listingId]));
+    const sortedIds = filteredListings
+      .sort((a, b) => {
+        const aCount = favoriteCountMap.get(a.id) ?? 0;
+        const bCount = favoriteCountMap.get(b.id) ?? 0;
+        if (bCount === aCount) {
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        }
+        return bCount - aCount;
+      })
+      .slice(start, start + limit)
+      .map((listing) => listing.id);
+
+    if (!sortedIds.length) {
+      return {
+        items: [],
+        hasMore: false,
+        page
+      };
+    }
+
+    const listings = await prisma.listing.findMany({
+      where: {
+        id: { in: sortedIds }
+      },
+      include: {
+        seller: true,
+        favorites: true
+      }
+    });
+
+    const orderedListings = sortedIds
+      .map((id) => listings.find((listing) => listing.id === id))
+      .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing));
+
+    return {
+      items: orderedListings.map((listing) => mapListing(listing, normalized.userId)),
+      hasMore: start + limit < filteredListings.length,
+      page
+    };
+  }
+
+  const orderBy =
+    normalized.sort === "price_asc"
+      ? ({ priceCents: "asc" } as const)
+      : normalized.sort === "price_desc"
+        ? ({ priceCents: "desc" } as const)
+        : ({ createdAt: "desc" } as const);
+
+  const [total, listings] = await Promise.all([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where,
+      orderBy,
+      skip: start,
+      take: limit,
+      include: {
+        seller: true,
+        favorites: true
+      }
+    })
+  ]);
 
   return {
-    items,
-    hasMore: start + limit < sorted.length,
+    items: listings.map((listing) => mapListing(listing, normalized.userId)),
+    hasMore: start + limit < total,
     page
   };
 }

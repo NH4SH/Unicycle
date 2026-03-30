@@ -39,3 +39,20 @@ export const messageSchema = z.object({
 export const checkoutSessionSchema = z.object({
   listingId: z.string().min(1)
 });
+
+export const connectProductSchema = z.object({
+  name: z.string().min(3).max(120),
+  description: z.string().max(600).optional(),
+  imageUrl: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid image URL"),
+  priceInCents: z.number().int().min(100).max(500000),
+  currency: z.string().trim().toLowerCase().default("usd")
+});
+
+export const connectCheckoutSchema = z.object({
+  productId: z.string().min(1)
+});

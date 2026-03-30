@@ -5,61 +5,72 @@ import { Card, CardContent } from "@/components/ui/card";
 const rules = [
   {
     title: "UVA-only verification",
-    body: "Only @virginia.edu and @mail.virginia.edu accounts can access listings and messages.",
+    body: "Only @virginia.edu and @mail.virginia.edu accounts can browse listings, save finds, and message inside HoosFinds.",
     icon: Shield
   },
   {
-    title: "Meet in public on Grounds",
-    body: "Use high-traffic spots like Newcomb, The Corner, Rice Hall, JPJ, or Scott Stadium.",
+    title: "Meet in visible spots",
+    body: "Use public, high-traffic places like Newcomb, The Corner, Rice Hall, JPJ, or Scott Stadium whenever possible.",
     icon: MapPin
   },
   {
     title: "Trust your instincts",
-    body: "If a meetup feels off, cancel and report the account. Your safety comes first.",
+    body: "If a meetup feels off, cancel it. Report the account and prioritize your own safety over making the sale.",
     icon: AlertTriangle
   }
 ];
 
 const doList = [
-  "Bring a friend for late pickups.",
-  "Verify item condition before payment.",
-  "Keep chats and offers inside UniCycle messages.",
-  "Report scams, harassment, or unsafe behavior."
+  "Bring a friend for later meetups or unfamiliar handoffs.",
+  "Check the item in person before you hand over payment.",
+  "Keep negotiation and pickup details inside HoosFinds messages.",
+  "Report scams, harassment, or unsafe behavior right away."
 ];
 
 export default function SafetyPage() {
   return (
-    <div className="container space-y-8 py-8">
-      <div>
-        <h1 className="font-display text-4xl font-black tracking-tight">Safety & Rules</h1>
-        <p className="text-sm text-muted-foreground">Built for trust, speed, and real student meetups on Grounds.</p>
+    <div className="container space-y-8 py-8 md:space-y-10 md:py-10">
+      <div className="grid gap-4 border-b border-border/80 pb-6 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="space-y-2">
+          <p className="editorial-eyebrow">Safety on HoosFinds</p>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Campus resale should feel local and safe.</h1>
+          <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+            HoosFinds is designed for real student meetups on Grounds. These guidelines keep that experience trustworthy without making it feel corporate or overbuilt.
+          </p>
+        </div>
+        <div className="rounded-full border border-border bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+          Meet in public
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {rules.map((rule) => (
-          <Card key={rule.title} className="border-white bg-white">
-            <CardContent className="space-y-3 p-5">
-              <rule.icon className="h-5 w-5 text-electric" />
-              <h2 className="font-display text-xl font-bold">{rule.title}</h2>
-              <p className="text-sm text-muted-foreground">{rule.body}</p>
+          <Card key={rule.title} className="border-border/80 bg-white/84">
+            <CardContent className="space-y-3 p-6">
+              <rule.icon className="h-5 w-5 text-uva-orange" />
+              <h2 className="font-display text-2xl font-bold tracking-tight">{rule.title}</h2>
+              <p className="text-sm leading-7 text-muted-foreground">{rule.body}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="border-white bg-white">
-        <CardContent className="space-y-3 p-6">
-          <h2 className="font-display text-2xl font-bold">Meetup best practices</h2>
+      <Card className="border-border/80 bg-white/84">
+        <CardContent className="space-y-4 p-6">
           <div className="space-y-2">
+            <p className="editorial-eyebrow">Meetup checklist</p>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight">Before you head to the handoff</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
             {doList.map((item) => (
-              <p key={item} className="inline-flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-uva-orange" />
+              <p key={item} className="inline-flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-uva-orange" />
                 {item}
               </p>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">
-            For urgent safety concerns, contact University Police immediately and then submit a report in app.
+          <p className="text-sm leading-7 text-muted-foreground">
+            For urgent safety concerns, contact University Police immediately and then submit a report inside HoosFinds when you can.
           </p>
         </CardContent>
       </Card>

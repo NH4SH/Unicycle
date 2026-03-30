@@ -21,8 +21,8 @@ export function PickupChipSelector({ options, value, onChange }: PickupChipSelec
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-white p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Pickup spots on Grounds</p>
+    <div className="surface-panel-strong p-4">
+      <p className="editorial-eyebrow mb-3">Pickup on Grounds</p>
       <div className="flex flex-wrap gap-2">
         {options.map((location) => {
           const selected = value.includes(location);
@@ -32,14 +32,14 @@ export function PickupChipSelector({ options, value, onChange }: PickupChipSelec
               type="button"
               onClick={() => toggle(location)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition",
+                "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
                 selected
-                  ? "border-electric bg-electric/10 text-electric"
-                  : "border-border bg-background text-muted-foreground hover:border-uva-orange hover:text-uva-orange"
+                  ? "border-uva-blue/25 bg-uva-blue/8 text-uva-blue"
+                  : "border-border bg-background text-muted-foreground hover:border-uva-orange/35 hover:text-uva-orange"
               )}
               aria-pressed={selected}
             >
-              <MapPin className="h-3.5 w-3.5" />
+              <MapPin className="h-4 w-4" />
               {location}
             </button>
           );

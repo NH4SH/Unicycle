@@ -113,7 +113,7 @@ export const authOptions: NextAuthOptions = {
       : []),
     EmailProvider({
       server: getEmailServerConfig(),
-      from: process.env.EMAIL_FROM || "UniCycle <no-reply@unicycle.app>",
+      from: process.env.EMAIL_FROM || "HoosFinds <no-reply@hoosfinds.com>",
       normalizeIdentifier(identifier) {
         return normalizeUvaEmail(identifier);
       }

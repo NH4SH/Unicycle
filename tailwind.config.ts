@@ -12,7 +12,7 @@ const config: Config = {
       center: true,
       padding: "1rem",
       screens: {
-        "2xl": "1360px"
+        "2xl": "1380px"
       }
     },
     extend: {
@@ -40,24 +40,26 @@ const config: Config = {
           orange: "#E57200",
           blue: "#232D4B"
         },
-        electric: "#1D7EFB"
+        electric: "#4E6B95"
       },
       fontFamily: {
-        sans: ["var(--font-plus-jakarta)", "system-ui", "sans-serif"],
-        display: ["var(--font-space-grotesk)", "system-ui", "sans-serif"]
+        sans: ["var(--font-manrope)", "system-ui", "sans-serif"],
+        display: ["var(--font-manrope)", "system-ui", "sans-serif"],
+        editorial: ["var(--font-cormorant)", "Georgia", "serif"]
       },
       borderRadius: {
         xl: "1rem",
-        "2xl": "1.25rem",
-        "3xl": "1.75rem"
+        "2xl": "1.35rem",
+        "3xl": "1.85rem",
+        "4xl": "2.4rem"
       },
       boxShadow: {
-        soft: "0 10px 40px -20px rgba(15,23,42,0.35)",
-        card: "0 20px 50px -28px rgba(35,45,75,0.35)"
+        soft: "0 12px 38px -28px rgba(27,33,45,0.22)",
+        card: "0 24px 64px -42px rgba(35,45,75,0.28)"
       },
       backgroundImage: {
         grain:
-          "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E\")"
+          "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E\")"
       },
       keyframes: {
         shimmer: {
@@ -69,7 +71,7 @@ const config: Config = {
           "50%": { transform: "translateY(-4px)" }
         },
         pulseRing: {
-          "0%": { transform: "scale(1)", opacity: "0.45" },
+          "0%": { transform: "scale(1)", opacity: "0.4" },
           "100%": { transform: "scale(1.35)", opacity: "0" }
         }
       },

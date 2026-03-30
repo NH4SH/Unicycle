@@ -10,18 +10,18 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-uva-orange text-white shadow-soft hover:-translate-y-0.5 hover:shadow-card active:translate-y-0",
+          "bg-uva-orange text-white shadow-soft hover:-translate-y-0.5 hover:bg-[#d86b00] active:translate-y-0",
         secondary:
-          "bg-white text-foreground border border-border hover:border-electric hover:text-electric",
-        ghost: "hover:bg-secondary hover:text-foreground",
-        outline: "border border-border bg-background hover:bg-secondary",
-        blue: "bg-electric text-white shadow-soft hover:-translate-y-0.5"
+          "border border-border bg-white/80 text-foreground hover:border-uva-orange/45 hover:bg-white",
+        ghost: "text-muted-foreground hover:bg-white/70 hover:text-foreground",
+        outline: "border border-border bg-transparent text-foreground hover:bg-white/60",
+        blue: "bg-uva-blue text-white shadow-soft hover:-translate-y-0.5 hover:bg-[#1c2540]"
       },
       size: {
         default: "h-11 px-6",
-        sm: "h-9 px-4 text-xs",
+        sm: "min-h-11 px-4 text-xs md:min-h-9",
         lg: "h-12 px-8",
-        icon: "h-10 w-10"
+        icon: "touch-icon"
       }
     },
     defaultVariants: {

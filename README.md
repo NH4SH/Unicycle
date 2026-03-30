@@ -1,6 +1,6 @@
-# UniCycle
+# HoosFinds
 
-UVA-only resale marketplace built with Next.js 14, TypeScript, Tailwind, shadcn/ui, Framer Motion, Prisma, NextAuth, and UploadThing.
+UVA's fashion-first resale marketplace built with Next.js 14, TypeScript, Tailwind, shadcn/ui, Framer Motion, Prisma, NextAuth, and UploadThing.
 
 ## Stack
 
@@ -11,12 +11,13 @@ UVA-only resale marketplace built with Next.js 14, TypeScript, Tailwind, shadcn/
 - NextAuth email magic links + UVA domain gating
 - UploadThing uploads
 - Unified listing search + filters + trending logic
+- Sample Stripe Connect seller onboarding + storefront flow
 
 ## Features
 
 - UVA-only auth gate (`@virginia.edu` and `@mail.virginia.edu`)
 - Friendly blocked-domain screen with waitlist form
-- Landing page with Today’s Drops + Hot on Grounds (last 72h favorites)
+- Landing page with fresh finds + Hot on Grounds (last 72h favorites)
 - Marketplace with sticky unified search, filters, sorting, and infinite loading
 - Listing detail with carousel, seller card, favorites, reporting, and similar items
 - Protected multi-step Sell flow (upload, details, meetup, review)
@@ -52,6 +53,7 @@ Required vars:
 - `UPLOADTHING_TOKEN`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_CONNECT_WEBHOOK_SECRET`
 
 ## Local Setup
 
@@ -69,6 +71,7 @@ For local development without SMTP, set `DEV_AUTH_BYPASS="true"` and use the dev
 For hosted team testing without SMTP, set `TEST_AUTH_BYPASS="true"` and `TEST_AUTH_BYPASS_CODE` to a private shared code. The hosted sign-in form will require both a UVA email and that code.
 For database hosting, use Neon and place the pooled URL in `DATABASE_URL` and the direct URL in `DIRECT_URL`.
 For Stripe checkout, create a Stripe account, add `STRIPE_SECRET_KEY`, and point a webhook endpoint at `/api/stripe/webhook` using `STRIPE_WEBHOOK_SECRET`.
+For the Stripe Connect sample, add `STRIPE_CONNECT_WEBHOOK_SECRET` and use the demo at `/connect-demo`.
 
 ## Demo Data
 
@@ -91,6 +94,8 @@ Seed includes:
 - Auth config + UVA gate: `lib/auth.ts`, `app/auth/uva-only/page.tsx`
 - Prisma schema + seed: `prisma/schema.prisma`, `prisma/seed.ts`
 - UploadThing router: `app/api/uploadthing/core.ts`
+- Stripe Connect demo: `app/connect-demo/page.tsx`, `components/connect/connect-demo-client.tsx`
+- Stripe Connect API: `app/api/connect/*`, `lib/connect.ts`
 
 ## Netlify Deploy
 
@@ -113,6 +118,7 @@ Set these Netlify environment variables in the Netlify UI with scopes that inclu
 - `UPLOADTHING_TOKEN`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_CONNECT_WEBHOOK_SECRET`
 - `TEST_AUTH_BYPASS` and `TEST_AUTH_BYPASS_CODE` if you want a shared testing login instead of live email delivery
 
 This repo includes [netlify.toml](/Users/noelsierra/Unicycle/netlify.toml) with the build command:
@@ -143,3 +149,47 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
 Use the webhook signing secret Stripe prints in the CLI or Dashboard for `STRIPE_WEBHOOK_SECRET`.
+
+## Stripe Connect Sample
+
+This repo also includes a sample Stripe Connect integration that demonstrates:
+
+- creating recipient-style connected accounts with the V2 Accounts API
+- generating Stripe-hosted onboarding links
+- creating platform-level products that map back to connected accounts
+- a demo storefront that charges customers through hosted Checkout
+- destination charges with an application fee
+- thin connected-account webhooks for onboarding requirement changes
+
+Main routes:
+
+- `/connect-demo` seller tools + customer storefront
+- `POST /api/connect/account` creates the connected account mapping
+- `POST /api/connect/account/onboarding` creates the onboarding Account Link
+- `POST /api/connect/products` creates a platform-level Stripe product
+- `POST /api/connect/checkout` starts hosted Checkout for the storefront
+- `POST /api/connect/webhook` handles thin connected-account events
+
+Thin-event local listener:
+
+```bash
+stripe listen --thin-events 'v2.core.account[requirements].updated,v2.core.account[configuration.recipient].capability_status_updated' --forward-thin-to localhost:3000/api/connect/webhook
+```
+
+Use the webhook signing secret printed by the Stripe CLI or Dashboard for `STRIPE_CONNECT_WEBHOOK_SECRET`.
+
+In the Stripe Dashboard, configure the connected-account event destination with:
+
+1. Event source: `Connected accounts`
+2. Payload style: `Thin`
+3. Events:
+   - `v2.account[requirements].updated`
+   - `v2.account[configuration.recipient].capability_status_updated`
+
+The Dashboard labels may omit `core`, but the current Stripe Node SDK surfaces
+these notifications inside the app as:
+
+- `v2.core.account[requirements].updated`
+- `v2.core.account[configuration.recipient].capability_status_updated`
+
+The sample intentionally does not persist onboarding status in Prisma. `/connect-demo` asks Stripe for the latest connected-account status every time it renders so sellers always see live readiness data.

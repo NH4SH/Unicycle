@@ -31,7 +31,7 @@ export default function CheckoutCancelPage({ searchParams }: CheckoutCancelPageP
               <div className="space-y-3">
                 <h1 className="font-display text-4xl font-black tracking-tight">No charge was made.</h1>
                 <p className="max-w-xl text-muted-foreground">
-                  Your Stripe checkout was canceled before payment completed. You can head back to the listing and try again anytime.
+                  Your Stripe checkout was canceled before payment completed. Head back to the listing and try again whenever you&apos;re ready.
                 </p>
               </div>
             </div>

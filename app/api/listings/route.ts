@@ -14,9 +14,9 @@ export async function GET(request: Request) {
   const condition = searchParams.get("condition") ?? undefined;
   const location = searchParams.get("location") ?? undefined;
   const sort = searchParams.get("sort") ?? "newest";
-  const page = Number(searchParams.get("page") ?? "1");
-  const min = Number(searchParams.get("min") ?? "100");
-  const max = Number(searchParams.get("max") ?? "250000");
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const min = Math.max(100, Number(searchParams.get("min") ?? "100") || 100);
+  const max = Math.max(min, Number(searchParams.get("max") ?? "250000") || 250000);
 
   const result = await getMarketListings({
     q,

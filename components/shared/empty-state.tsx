@@ -12,14 +12,15 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, ctaHref, ctaLabel }: EmptyStateProps) {
   return (
-    <div className="rounded-3xl border border-dashed border-border bg-white/75 p-10 text-center">
-      <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-electric/10 text-electric">
+    <div className="surface-panel-dashed p-10 text-center">
+      <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-uva-orange/10 text-uva-orange">
         <Sparkles className="h-5 w-5" />
       </div>
-      <h3 className="font-display text-2xl font-bold">{title}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
+      <p className="editorial-eyebrow">HoosFinds</p>
+      <h3 className="mt-2 font-display text-3xl font-extrabold tracking-tight">{title}</h3>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">{description}</p>
       {ctaHref && ctaLabel ? (
-        <Button className="mt-5" asChild>
+        <Button className="mt-6" asChild>
           <Link href={ctaHref}>{ctaLabel}</Link>
         </Button>
       ) : null}

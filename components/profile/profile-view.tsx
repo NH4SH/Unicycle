@@ -75,50 +75,59 @@ export function ProfileView({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-white bg-white">
-        <CardContent className="space-y-6 p-6">
-          <div className="flex flex-wrap items-start gap-4">
-            <Avatar className="h-16 w-16">
+    <div className="space-y-8">
+      <Card className="border-border/80 bg-white/84">
+        <CardContent className="space-y-6 p-6 md:p-8">
+          <div className="grid gap-6 md:grid-cols-[auto_1fr_auto] md:items-start">
+            <Avatar className="h-20 w-20 border border-border">
               <AvatarImage src={user.image ?? undefined} alt={user.username} />
               <AvatarFallback>{user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className="space-y-1">
-              <h1 className="font-display text-3xl font-black tracking-tight">{user.name || user.username}</h1>
-              <p className="text-sm text-muted-foreground">@{user.username}</p>
-              {user.bio ? <p className="max-w-2xl text-sm text-muted-foreground">{user.bio}</p> : null}
-              <div className="flex flex-wrap gap-2 pt-1">
-                {user.gradYear ? <Badge variant="orange">Class of {user.gradYear}</Badge> : null}
-                {user.favoritePickup ? <Badge variant="blue">Fav spot: {user.favoritePickup}</Badge> : null}
-                {user.instagram ? <Badge>IG {user.instagram}</Badge> : null}
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="editorial-eyebrow">Profile</p>
+                <h1 className="font-display text-4xl font-extrabold tracking-tight">{user.name || user.username}</h1>
+                <p className="text-sm text-muted-foreground">@{user.username}</p>
+              </div>
+              {user.bio ? <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{user.bio}</p> : null}
+              <div className="flex flex-wrap gap-2">
+                {user.gradYear ? <Badge variant="outline">Class of {user.gradYear}</Badge> : null}
+                {user.favoritePickup ? <Badge variant="blue">Usually meets at {user.favoritePickup}</Badge> : null}
+                {user.instagram ? <Badge variant="orange">IG {user.instagram}</Badge> : null}
               </div>
             </div>
-            <div className="ml-auto flex gap-2">
-              <div className="rounded-2xl bg-secondary px-3 py-2 text-center">
-                <p className="font-display text-lg font-black">{stats.active}</p>
-                <p className="text-[11px] uppercase text-muted-foreground">Active</p>
+
+            <div className="grid grid-cols-3 gap-2 md:w-[260px]">
+              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+                <p className="font-display text-2xl font-extrabold">{stats.active}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Active</p>
               </div>
-              <div className="rounded-2xl bg-secondary px-3 py-2 text-center">
-                <p className="font-display text-lg font-black">{stats.sold}</p>
-                <p className="text-[11px] uppercase text-muted-foreground">Sold</p>
+              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+                <p className="font-display text-2xl font-extrabold">{stats.sold}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Sold</p>
               </div>
-              <div className="rounded-2xl bg-secondary px-3 py-2 text-center">
-                <p className="font-display text-lg font-black">{stats.favoritesReceived}</p>
-                <p className="text-[11px] uppercase text-muted-foreground">Saves</p>
+              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+                <p className="font-display text-2xl font-extrabold">{stats.favoritesReceived}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Saved</p>
               </div>
             </div>
           </div>
 
           {isOwner ? (
-            <div className="space-y-3 rounded-2xl border border-border bg-secondary/40 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Edit profile</p>
+            <div className="rounded-[1.7rem] border border-border bg-background/70 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-display text-xl font-bold">Edit your profile</p>
+                  <p className="text-sm text-muted-foreground">Keep your closet and meetup preferences current.</p>
+                </div>
                 <Button variant="secondary" size="sm" onClick={() => setEditing((prev) => !prev)}>
                   {editing ? "Close" : "Edit"}
                 </Button>
               </div>
+
               {editing ? (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
                     <Label>Bio</Label>
                     <Textarea value={form.bio} onChange={(event) => setForm((prev) => ({ ...prev, bio: event.target.value }))} />
@@ -157,42 +166,42 @@ export function ProfileView({
       </Card>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="active">Active ({activeListings.length})</TabsTrigger>
+        <TabsList className="bg-white/80">
+          <TabsTrigger value="active">Closet ({activeListings.length})</TabsTrigger>
           <TabsTrigger value="sold">Sold ({soldListings.length})</TabsTrigger>
-          <TabsTrigger value="favorites">Favorites ({favorites.length})</TabsTrigger>
+          <TabsTrigger value="favorites">Saved ({favorites.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
           {activeListings.length ? (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
               {activeListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
           ) : (
-            <EmptyState title="No active listings" description="This user has no active items right now." />
+            <EmptyState title="No active listings" description="This closet is quiet right now. New finds will show up here as soon as they go live." />
           )}
         </TabsContent>
         <TabsContent value="sold">
           {soldListings.length ? (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
               {soldListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
             </div>
           ) : (
-            <EmptyState title="Nothing sold yet" description="Sold listings will appear here." />
+            <EmptyState title="Nothing sold yet" description="Sold pieces will show up here once this closet starts moving listings." />
           )}
         </TabsContent>
         <TabsContent value="favorites">
           {favorites.length ? (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
               {favorites.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
+                <ListingCard key={listing.id} listing={listing} sticker="Saved" />
               ))}
             </div>
           ) : (
-            <EmptyState title="No favorites yet" description="Saved drops will show up here." />
+            <EmptyState title="No saved finds yet" description="Saved pieces will show up here so this user can come back to them quickly." />
           )}
         </TabsContent>
       </Tabs>

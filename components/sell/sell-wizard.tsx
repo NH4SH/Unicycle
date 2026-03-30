@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORY_OPTIONS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { listingSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
@@ -27,19 +27,25 @@ type Draft = {
   price: string;
   category: string;
   condition: string;
+  brand: string;
+  size: string;
+  color: string;
   pickupLocations: string[];
   meetupNotes: string;
 };
 
-const STORAGE_KEY = "unicycle-sell-draft";
+const STORAGE_KEY = "hoosfinds-sell-draft";
 
 const initialDraft: Draft = {
   images: [],
   title: "",
   description: "",
   price: "",
-  category: "DORM",
+  category: "STREETWEAR",
   condition: "GOOD",
+  brand: "",
+  size: "",
+  color: "",
   pickupLocations: [],
   meetupNotes: ""
 };
@@ -70,14 +76,14 @@ export function SellWizard() {
   const progress = useMemo(() => (step / 4) * 100, [step]);
 
   function validateCurrentStep() {
-    if (step === 1 && draft.images.length < 1) return "Add at least one image.";
+    if (step === 1 && draft.images.length < 1) return "Add at least one photo.";
     if (step === 2) {
       if (draft.title.trim().length < 4) return "Title should be at least 4 characters.";
       if (!draft.price || Number(draft.price) < 1) return "Set a valid price.";
       if (draft.description.trim().length < 12) return "Description should be at least 12 characters.";
     }
     if (step === 3 && draft.pickupLocations.length < 1) {
-      return "Select at least one meetup location on Grounds.";
+      return "Pick at least one meetup spot on Grounds.";
     }
 
     return null;
@@ -109,10 +115,22 @@ export function SellWizard() {
     setDraft((prev) => ({ ...prev, images: nextImages }));
   }
 
+  function buildDescription() {
+    const styleLine = [
+      draft.brand.trim() ? `Brand: ${draft.brand.trim()}` : null,
+      draft.size.trim() ? `Size: ${draft.size.trim()}` : null,
+      draft.color.trim() ? `Color: ${draft.color.trim()}` : null
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
+    return styleLine ? `${styleLine}\n\n${draft.description.trim()}` : draft.description.trim();
+  }
+
   async function publish() {
     const parsed = listingSchema.safeParse({
       title: draft.title,
-      description: draft.description,
+      description: buildDescription(),
       priceCents: Number(draft.price) * 100,
       category: draft.category,
       condition: draft.condition,
@@ -141,17 +159,17 @@ export function SellWizard() {
       return;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { id: string };
     localStorage.removeItem(STORAGE_KEY);
-    toast.success("Drop published.");
+    toast.success("Find published.");
     router.push(`/listing/${data.id}`);
     router.refresh();
   }
 
   return (
-    <Card className="border-white bg-white/95">
-      <CardContent className="space-y-6 p-5 md:p-8">
-        <div className="space-y-3">
+    <Card className="border-border/80 bg-white/84">
+      <CardContent className="space-y-7 p-5 md:p-8">
+        <div className="space-y-4">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             <span>Step {step} of 4</span>
             <span>{Math.round(progress)}%</span>
@@ -159,14 +177,28 @@ export function SellWizard() {
           <Progress value={progress} />
         </div>
 
-        {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div> : null}
+        {error ? <div className="rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
 
         {step === 1 ? (
-          <div className="space-y-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Step 1: Photos</h2>
-              <p className="text-sm text-muted-foreground">Upload up to 6 photos and reorder them.</p>
+          <div className="space-y-5">
+            <div className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+              <div className="space-y-2">
+                <p className="editorial-eyebrow">Step 1</p>
+                <h2 className="font-display text-3xl font-extrabold tracking-tight">Lead with the photos.</h2>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  Style sells faster when the first image feels clear and intentional. Use natural light, show the fit, and keep the background clean.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4">
+                <p className="editorial-eyebrow">Photo tips</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">Front-facing hero image</div>
+                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">Close-up on texture or wear</div>
+                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">One angle that shows the full piece</div>
+                </div>
+              </div>
             </div>
+
             <UploadDropzone<OurFileRouter, "listingImage">
               endpoint="listingImage"
               onClientUploadComplete={(result: { url: string }[]) => {
@@ -178,15 +210,16 @@ export function SellWizard() {
                 toast.error(uploadError.message);
               }}
               appearance={{
-                container: "rounded-3xl border-dashed border-border bg-secondary/40",
-                button: "bg-uva-orange text-white",
+                container: "rounded-[1.85rem] border-dashed border-border bg-background/60",
+                button: "bg-[#E57200] text-white",
                 allowedContent: "text-xs text-muted-foreground"
               }}
             />
+
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {draft.images.map((url, idx) => (
-                <div key={`${url}-${idx}`} className="space-y-2 rounded-2xl border border-border p-2">
-                  <div className="relative aspect-square overflow-hidden rounded-xl">
+                <div key={`${url}-${idx}`} className="space-y-2 rounded-[1.4rem] border border-border bg-white/90 p-2 shadow-soft">
+                  <div className="relative aspect-square overflow-hidden rounded-[1.05rem]">
                     <Image src={url} alt={`Upload ${idx + 1}`} fill className="object-cover" sizes="200px" />
                   </div>
                   <div className="grid grid-cols-3 gap-1">
@@ -212,47 +245,43 @@ export function SellWizard() {
         ) : null}
 
         {step === 2 ? (
-          <div className="space-y-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Step 2: Details</h2>
-              <p className="text-sm text-muted-foreground">Tell buyers what makes your item worth grabbing.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={draft.title}
-                onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-                placeholder="Patagonia fleece, iClicker, mini fridge..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="price">Price (USD)</Label>
-              <Input
-                id="price"
-                type="number"
-                min={1}
-                value={draft.price}
-                onChange={(event) => setDraft((prev) => ({ ...prev, price: event.target.value }))}
-                placeholder="45"
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-5">
+            <div className="grid gap-4 lg:grid-cols-[0.86fr_1.14fr]">
               <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={draft.category} onValueChange={(value) => setDraft((prev) => ({ ...prev, category: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <p className="editorial-eyebrow">Step 2</p>
+                <h2 className="font-display text-3xl font-extrabold tracking-tight">Add the details buyers care about.</h2>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  Clear titles, fair pricing, and size or brand context make the listing feel more trustworthy right away.
+                </p>
               </div>
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+                Good examples: “Vintage UVA crewneck”, “Patagonia fleece jacket”, “Going-out top”, “Nike sneakers”.
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={draft.title}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Vintage UVA crewneck, Barbour jacket, Veja sneakers..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (USD)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min={1}
+                  value={draft.price}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, price: event.target.value }))}
+                  placeholder="45"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Condition</Label>
                 <Select value={draft.condition} onValueChange={(value) => setDraft((prev) => ({ ...prev, condition: value }))}>
@@ -268,58 +297,126 @@ export function SellWizard() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={draft.description}
-                onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
-                placeholder="Condition details, included accessories, fit notes, etc."
-              />
+
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={draft.category} onValueChange={(value) => setDraft((prev) => ({ ...prev, category: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand (optional)</Label>
+                <Input
+                  id="brand"
+                  value={draft.brand}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, brand: event.target.value }))}
+                  placeholder="Patagonia, Nike, Zara..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="size">Size (optional)</Label>
+                <Input
+                  id="size"
+                  value={draft.size}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, size: event.target.value }))}
+                  placeholder="S, M, 28, 8.5..."
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="color">Color (optional)</Label>
+                <Input
+                  id="color"
+                  value={draft.color}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, color: event.target.value }))}
+                  placeholder="Cream, navy, faded black..."
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={draft.description}
+                  onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
+                  placeholder="Describe the fit, wear, flaws, material, or anything another student would want to know before meeting up."
+                />
+              </div>
             </div>
           </div>
         ) : null}
 
         {step === 3 ? (
-          <div className="space-y-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Step 3: Meetup</h2>
-              <p className="text-sm text-muted-foreground">Set where you can meet around Grounds.</p>
+          <div className="space-y-5">
+            <div className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr]">
+              <div className="space-y-2">
+                <p className="editorial-eyebrow">Step 3</p>
+                <h2 className="font-display text-3xl font-extrabold tracking-tight">Set the pickup plan.</h2>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  Keep it easy for fellow Hoos. The best listings make it obvious where and when a handoff could happen.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+                Great meetup notes mention timing and context, like “Can meet after 4pm near The Corner” or “Usually around Newcomb between classes.”
+              </div>
             </div>
+
             <PickupChipSelector
               options={PICKUP_LOCATIONS}
               value={draft.pickupLocations}
               onChange={(pickupLocations) => setDraft((prev) => ({ ...prev, pickupLocations }))}
             />
+
             <div className="space-y-2">
               <Label htmlFor="meetupNotes">Meetup notes (optional)</Label>
               <Textarea
                 id="meetupNotes"
                 value={draft.meetupNotes}
                 onChange={(event) => setDraft((prev) => ({ ...prev, meetupNotes: event.target.value }))}
-                placeholder="I can meet after 4pm near The Corner."
+                placeholder="I can usually meet after 5 near Rice Hall, or earlier on game days by The Corner."
               />
             </div>
           </div>
         ) : null}
 
         {step === 4 ? (
-          <div className="space-y-4">
-            <div>
-              <h2 className="font-display text-2xl font-bold">Step 4: Review & Publish</h2>
-              <p className="text-sm text-muted-foreground">Make sure this drop is ready for the feed.</p>
+          <div className="space-y-5">
+            <div className="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">
+              <div className="space-y-2">
+                <p className="editorial-eyebrow">Step 4</p>
+                <h2 className="font-display text-3xl font-extrabold tracking-tight">Review before it hits the feed.</h2>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  This is the final listing preview buyers will see once you publish it on HoosFinds.
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+                Best-performing listings feel concise, photo-led, and easy to trust at a glance.
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-border bg-secondary/50 p-4">
-              <div className="mb-3 flex flex-wrap gap-2">
-                <Badge variant="orange">{draft.condition.replaceAll("_", " ")}</Badge>
-                <Badge variant="blue">{draft.category}</Badge>
-                <Badge>{draft.price ? `$${draft.price}` : "$0"}</Badge>
+            <div className="rounded-[2rem] border border-border bg-background/70 p-5">
+              <div className="mb-4 flex flex-wrap gap-2">
+                <Badge variant="outline">{CATEGORY_LABELS[draft.category as keyof typeof CATEGORY_LABELS] || draft.category}</Badge>
+                <Badge variant="orange">{CONDITION_LABELS[draft.condition as keyof typeof CONDITION_LABELS] || draft.condition}</Badge>
+                <Badge variant="blue">{draft.price ? `$${draft.price}` : "$0"}</Badge>
+                {draft.brand ? <Badge variant="outline">{draft.brand}</Badge> : null}
+                {draft.size ? <Badge variant="outline">Size {draft.size}</Badge> : null}
+                {draft.color ? <Badge variant="outline">{draft.color}</Badge> : null}
               </div>
-              <h3 className="font-display text-2xl font-bold">{draft.title || "Untitled Drop"}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{draft.description || "No description yet."}</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Meetup spots</p>
+              <h3 className="font-display text-3xl font-extrabold tracking-tight">{draft.title || "Untitled find"}</h3>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">{buildDescription() || "No description yet."}</p>
+              <p className="mt-5 editorial-eyebrow">Meetup spots</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {draft.pickupLocations.map((loc) => (
                   <Badge key={loc} variant="blue">
@@ -327,12 +424,12 @@ export function SellWizard() {
                   </Badge>
                 ))}
               </div>
-              {draft.meetupNotes ? <p className="mt-3 text-sm text-muted-foreground">{draft.meetupNotes}</p> : null}
+              {draft.meetupNotes ? <p className="mt-4 text-sm leading-7 text-muted-foreground">{draft.meetupNotes}</p> : null}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
+            <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
               {draft.images.map((url) => (
-                <div key={url} className="relative aspect-square overflow-hidden rounded-2xl border border-border">
+                <div key={url} className="relative aspect-square overflow-hidden rounded-[1.3rem] border border-border bg-white shadow-soft">
                   <Image src={url} alt="Preview" fill className="object-cover" sizes="100px" />
                 </div>
               ))}
@@ -340,7 +437,7 @@ export function SellWizard() {
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
+        <div className="flex items-center justify-between border-t border-border/80 pt-5">
           <Button type="button" variant="secondary" onClick={goBack} disabled={step === 1 || publishing}>
             Back
           </Button>
@@ -352,7 +449,7 @@ export function SellWizard() {
           ) : (
             <Button type="button" onClick={publish} disabled={publishing}>
               {publishing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              {publishing ? "Publishing" : "Publish Drop"}
+              {publishing ? "Publishing..." : "Publish find"}
             </Button>
           )}
         </div>

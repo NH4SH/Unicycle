@@ -23,7 +23,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
             <Badge variant="blue" className="mx-auto w-fit">Stripe checkout</Badge>
             <h1 className="font-display text-4xl font-black tracking-tight">No checkout session found.</h1>
             <Button asChild>
-              <Link href="/market">Back to market</Link>
+              <Link href="/market">Back to browse</Link>
             </Button>
           </CardContent>
         </Card>
@@ -74,7 +74,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 </h1>
                 <p className="max-w-xl text-muted-foreground">
                   {paymentComplete
-                    ? "Stripe accepted your payment. UniCycle has recorded the order and marked the item as sold."
+                    ? "Stripe accepted your payment. HoosFinds recorded the order and marked the listing as sold."
                     : "Stripe is still finalizing the payment state. Refresh in a moment if this page stays in processing."}
                 </p>
               </div>
@@ -86,7 +86,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Order</p>
                 <p className="font-display text-2xl font-black">{order.listing.title}</p>
-                <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside UniCycle.</p>
+                <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside HoosFinds.</p>
               </div>
               <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-soft">
                 <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">

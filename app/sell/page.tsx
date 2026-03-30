@@ -1,11 +1,33 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { SellWizard } from "@/components/sell/sell-wizard";
 
 export default function SellPage() {
   return (
-    <div className="container space-y-6 py-8">
-      <div>
-        <h1 className="font-display text-4xl font-black tracking-tight">List an Item</h1>
-        <p className="text-sm text-muted-foreground">Turn your extra campus stuff into someone else&apos;s next drop.</p>
+    <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
+      <div className="grid gap-4 border-b border-border/80 pb-6 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="space-y-2">
+          <p className="editorial-eyebrow">Sell on HoosFinds</p>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Turn the piece you&apos;re done with into someone else&apos;s next fit.</h1>
+          <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+            HoosFinds is built for clothing first, but dorm cleanout gems, tech, textbooks, and other local finds still belong here too.
+          </p>
+        </div>
+        <div className="rounded-full border border-border bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+          Pickup on Grounds
+        </div>
+      </div>
+      <div className="surface-subtle flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-foreground">Testing seller payouts with Stripe Connect?</p>
+          <p className="text-sm text-muted-foreground">
+            Open the sample onboarding and storefront flow we added for connected-account testing.
+          </p>
+        </div>
+        <Button asChild variant="secondary">
+          <Link href="/connect-demo">Open Connect demo</Link>
+        </Button>
       </div>
       <SellWizard />
     </div>

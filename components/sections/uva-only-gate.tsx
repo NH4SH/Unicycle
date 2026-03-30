@@ -6,11 +6,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
   const [email, setEmail] = useState(prefilledEmail ?? "");
-  const [reason, setReason] = useState("I want to buy/sell with my campus community.");
+  const [reason, setReason] = useState("I want to buy and sell style finds with people on my campus.");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -22,7 +23,7 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
       const response = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, reason })
+        body: JSON.stringify({ email: email.trim(), reason: reason.trim() })
       });
 
       if (!response.ok) {
@@ -40,43 +41,61 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
 
   return (
     <div className="container flex min-h-[72vh] items-center justify-center py-8">
-      <Card className="w-full max-w-xl overflow-hidden border-white bg-white">
-        <div className="h-2 w-full bg-gradient-to-r from-uva-orange to-electric" />
-        <CardContent className="space-y-6 p-8">
-          <div className="space-y-2">
-            <h1 className="font-display text-4xl font-black tracking-tight">UVA only for now</h1>
-            <p className="text-muted-foreground">
-              UniCycle is currently exclusive to UVA students with <b>@virginia.edu</b> or <b>@mail.virginia.edu</b>.
+      <Card className="w-full max-w-2xl overflow-hidden border-border/80 bg-white/86">
+        <CardContent className="space-y-7 p-8">
+          <div className="space-y-3">
+            <p className="editorial-eyebrow">HoosFinds</p>
+            <h1 className="font-display text-4xl font-extrabold tracking-tight">UVA only for now.</h1>
+            <p className="max-w-xl text-sm leading-7 text-muted-foreground">
+              HoosFinds is currently exclusive to UVA students with <b>@virginia.edu</b> or <b>@mail.virginia.edu</b> so the marketplace stays local, trustworthy, and campus-native.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-secondary p-4 text-sm text-muted-foreground">
-            We are rolling out to more schools soon. Drop your email and we will notify you when your campus opens.
+          <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-7 text-muted-foreground">
+            We&apos;re starting with UVA first and expanding carefully. Drop your email below if you want to hear when your campus opens next.
           </div>
 
           {submitted ? (
-            <div className="rounded-2xl border border-electric/20 bg-electric/10 p-4 text-sm font-medium text-electric">
-              You are in. We&apos;ll send launch updates and early access invites.
+            <div className="rounded-[1.5rem] border border-uva-blue/15 bg-uva-blue/6 p-5 text-sm leading-7 text-uva-blue">
+              You&apos;re in. We&apos;ll send launch updates and early access invites when your campus is ready.
             </div>
           ) : (
             <form className="space-y-4" onSubmit={onSubmit}>
-              <Input
-                required
-                type="email"
-                placeholder="you@school.edu"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                aria-label="Email"
-              />
-              <Textarea
-                required
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                aria-label="Reason"
-                placeholder="What would you use UniCycle for?"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="waitlist-email" className="text-sm font-semibold text-foreground">
+                  School email
+                </Label>
+                <Input
+                  id="waitlist-email"
+                  required
+                  type="email"
+                  placeholder="you@school.edu"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  aria-describedby="waitlist-email-help"
+                />
+                <p id="waitlist-email-help" className="text-xs leading-6 text-muted-foreground">
+                  We&apos;ll only use this for launch updates and early access invites.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="waitlist-reason" className="text-sm font-semibold text-foreground">
+                  What would you want HoosFinds for?
+                </Label>
+                <Textarea
+                  id="waitlist-reason"
+                  required
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  aria-describedby="waitlist-reason-help"
+                  placeholder="Vintage jackets, better game day fits, dorm cleanout finds, local student resale..."
+                />
+                <p id="waitlist-reason-help" className="text-xs leading-6 text-muted-foreground">
+                  A short note helps us prioritize the next campuses and categories to open.
+                </p>
+              </div>
               <Button disabled={loading} className="w-full" type="submit">
-                {loading ? "Submitting..." : "Join Waitlist"}
+                {loading ? "Submitting..." : "Join the waitlist"}
               </Button>
             </form>
           )}

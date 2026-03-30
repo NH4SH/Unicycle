@@ -66,6 +66,8 @@ model User {
   waitlistEntries  WaitlistEntry[]
   buyerOrders      Order[]        @relation("BuyerOrders")
   sellerOrders     Order[]        @relation("SellerOrders")
+  connectedAccount ConnectedAccount?
+  connectProducts  ConnectProduct[] @relation("ConnectProductOwner")
 }
 
 model Listing {
@@ -173,6 +175,42 @@ model Order {
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
+}
+
+model ConnectedAccount {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  stripeAccountId String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products        ConnectProduct[]
+
+  @@index([createdAt])
+}
+
+model ConnectProduct {
+  id                 String           @id @default(cuid())
+  ownerUserId        String
+  connectedAccountId String
+  stripeProductId    String           @unique
+  stripePriceId      String           @unique
+  name               String
+  description        String?
+  imageUrl           String?
+  priceCents         Int
+  currency           String           @default("usd")
+  active             Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  owner              User             @relation("ConnectProductOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId, createdAt])
+  @@index([connectedAccountId, createdAt])
+  @@index([active, createdAt])
 }
 
 model WaitlistEntry {

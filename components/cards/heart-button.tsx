@@ -45,7 +45,7 @@ export function HeartButton({ listingId, initialFavorited, initialCount, classNa
     } catch {
       setFavorited((prev) => !prev);
       setCount((prev) => prev + (next ? -1 : 1));
-      toast.error("Could not save this drop right now.");
+      toast.error("Could not save this find right now.");
     } finally {
       setLoading(false);
     }
@@ -57,17 +57,14 @@ export function HeartButton({ listingId, initialFavorited, initialCount, classNa
       onClick={toggleFavorite}
       aria-label={favorited ? "Remove favorite" : "Save listing"}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+        "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
         favorited
-          ? "border-uva-orange/40 bg-uva-orange/10 text-uva-orange"
-          : "border-border bg-white text-muted-foreground hover:border-electric hover:text-electric",
+          ? "border-uva-orange/35 bg-uva-orange/10 text-uva-orange"
+          : "border-border bg-white/88 text-muted-foreground hover:border-uva-blue/30 hover:text-uva-blue",
         className
       )}
     >
-      <motion.span
-        animate={{ scale: favorited ? [1, 1.28, 1] : 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-      >
+      <motion.span animate={{ scale: favorited ? [1, 1.22, 1] : 1 }} transition={{ duration: 0.3, ease: "easeOut" }}>
         <Heart className={cn("h-4 w-4", favorited && "fill-current")} />
       </motion.span>
       {count}

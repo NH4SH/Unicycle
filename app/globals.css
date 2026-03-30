@@ -5,25 +5,25 @@
 @tailwind utilities;
 
 :root {
-  --background: 42 33% 97%;
-  --foreground: 224 24% 13%;
-  --card: 0 0% 100%;
-  --card-foreground: 224 24% 13%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 224 24% 13%;
+  --background: 38 34% 96%;
+  --foreground: 224 18% 11%;
+  --card: 36 27% 98%;
+  --card-foreground: 224 18% 11%;
+  --popover: 36 27% 98%;
+  --popover-foreground: 224 18% 11%;
   --primary: 30 100% 45%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 220 20% 95%;
-  --secondary-foreground: 224 24% 13%;
-  --muted: 220 20% 95%;
-  --muted-foreground: 220 10% 43%;
-  --accent: 214 100% 56%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 34 25% 91%;
+  --secondary-foreground: 224 18% 14%;
+  --muted: 34 18% 92%;
+  --muted-foreground: 220 10% 36%;
+  --accent: 219 26% 35%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 98%;
-  --border: 220 22% 88%;
-  --input: 220 22% 88%;
-  --ring: 214 100% 56%;
+  --border: 34 16% 82%;
+  --input: 34 16% 82%;
+  --ring: 219 26% 35%;
 }
 
 * {
@@ -35,11 +35,16 @@ body {
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-background text-foreground antialiased;
+  @apply bg-background font-sans text-foreground antialiased;
   background-image:
-    radial-gradient(circle at 100% 0%, rgba(29, 126, 251, 0.14), transparent 44%),
-    radial-gradient(circle at 0% 12%, rgba(229, 114, 0, 0.12), transparent 38%);
+    radial-gradient(circle at 14% 10%, rgba(229, 114, 0, 0.07), transparent 30%),
+    radial-gradient(circle at 87% 8%, rgba(78, 107, 149, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
 }
 
 body::before {
@@ -48,9 +53,18 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image: theme("backgroundImage.grain");
-  opacity: 0.45;
+  opacity: 0.34;
   mix-blend-mode: multiply;
   z-index: 0;
+}
+
+::selection {
+  background: rgba(229, 114, 0, 0.18);
+  color: hsl(var(--foreground));
+}
+
+img {
+  user-select: none;
 }
 
 a {
@@ -63,7 +77,66 @@ main {
 }
 
 .drop-shimmer {
-  background: linear-gradient(120deg, rgba(229, 114, 0, 0.12), rgba(29, 126, 251, 0.2), rgba(229, 114, 0, 0.12));
+  background: linear-gradient(120deg, rgba(229, 114, 0, 0.1), rgba(78, 107, 149, 0.12), rgba(229, 114, 0, 0.08));
   background-size: 180% 100%;
-  animation: shimmer 2.6s linear infinite;
+  animation: shimmer 2.8s linear infinite;
+}
+
+.editorial-eyebrow {
+  @apply text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground;
+}
+
+.surface-panel {
+  @apply rounded-[1.85rem] border border-border/80 bg-card shadow-soft;
+}
+
+.surface-panel-strong {
+  @apply rounded-[1.85rem] border border-border/80 shadow-soft;
+  background-color: rgb(255 255 255 / 0.84);
+}
+
+.surface-panel-dashed {
+  @apply rounded-[2rem] border border-dashed border-border shadow-soft;
+  background-color: rgb(255 255 255 / 0.72);
+}
+
+.surface-subtle {
+  @apply rounded-[1.15rem] border border-border;
+  background-color: rgb(255 255 255 / 0.8);
+}
+
+.surface-pill {
+  @apply rounded-full border border-border text-muted-foreground shadow-soft;
+  background-color: rgb(255 255 255 / 0.78);
+}
+
+.surface-chip {
+  @apply rounded-full border border-border text-muted-foreground;
+  background-color: rgb(255 255 255 / 0.78);
+}
+
+.surface-field {
+  @apply border border-border;
+  background-color: rgb(255 255 255 / 0.82);
+}
+
+.surface-floating {
+  @apply rounded-[1.95rem] border border-border/80 backdrop-blur-xl;
+  background-color: hsl(var(--background) / 0.92);
+}
+
+.touch-target {
+  @apply min-h-11;
+}
+
+.touch-chip {
+  @apply min-h-11 px-4 py-2.5;
+}
+
+.touch-icon {
+  @apply h-11 w-11;
+}
+
+.soft-panel {
+  @apply surface-panel backdrop-blur-sm;
 }
