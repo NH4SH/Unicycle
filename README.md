@@ -159,6 +159,7 @@ This repo also includes a sample Stripe Connect integration that demonstrates:
 - creating platform-level products that map back to connected accounts
 - a demo storefront that charges customers through hosted Checkout
 - destination charges with an application fee
+- persisted Connect orders that are fulfilled by Stripe webhooks
 - thin connected-account webhooks for onboarding requirement changes
 
 Main routes:
@@ -169,6 +170,11 @@ Main routes:
 - `POST /api/connect/products` creates a platform-level Stripe product
 - `POST /api/connect/checkout` starts hosted Checkout for the storefront
 - `POST /api/connect/webhook` handles thin connected-account events
+
+Connect storefront payments are fulfilled by the existing standard Stripe
+webhook endpoint:
+
+- `POST /api/stripe/webhook`
 
 Thin-event local listener:
 

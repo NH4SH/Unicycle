@@ -5,8 +5,17 @@ import { ConnectDemoClient } from "@/components/connect/connect-demo-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAuthSession } from "@/lib/auth";
-import { CONNECT_APPLICATION_FEE_BPS, getConnectSellerState, getConnectStorefrontProducts } from "@/lib/connect";
-import { isStripeConnectConfigured } from "@/lib/stripe";
+import {
+  CONNECT_APPLICATION_FEE_BPS,
+  getConnectSellerState,
+  getConnectStorefrontProducts,
+  getConnectUserOrders
+} from "@/lib/connect";
+import {
+  isStripeConnectConfigured,
+  isStripeConnectWebhookConfigured,
+  isStripeWebhookConfigured
+} from "@/lib/stripe";
 
 type ConnectDemoPageProps = {
   searchParams?: {
@@ -17,12 +26,18 @@ type ConnectDemoPageProps = {
 
 export default async function ConnectDemoPage({ searchParams }: ConnectDemoPageProps) {
   const session = await getAuthSession();
-  const [sellerState, products] = await Promise.all([
+  const [sellerState, products, orderActivity] = await Promise.all([
     getConnectSellerState(session?.user.id),
-    getConnectStorefrontProducts(session?.user.id)
+    getConnectStorefrontProducts(session?.user.id),
+    getConnectUserOrders(session?.user.id)
   ]);
 
   const connectConfigured = isStripeConnectConfigured();
+  const paymentSetup = {
+    stripeSecretReady: isStripeConnectConfigured(),
+    checkoutWebhookReady: isStripeWebhookConfigured(),
+    connectStatusWebhookReady: isStripeConnectWebhookConfigured()
+  };
 
   return (
     <div className="container space-y-10 py-8 md:space-y-12 md:py-10">
@@ -91,6 +106,8 @@ export default async function ConnectDemoPage({ searchParams }: ConnectDemoPageP
         connectConfigured={connectConfigured}
         sellerState={sellerState}
         products={products}
+        paymentSetup={paymentSetup}
+        orderActivity={orderActivity}
         viewer={
           session?.user
             ? {

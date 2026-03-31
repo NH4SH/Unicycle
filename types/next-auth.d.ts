@@ -14,6 +14,7 @@ declare module "next-auth" {
     username: string;
     gradYear?: number | null;
     favoritePickup?: string | null;
+    image?: string | null;
   }
 }
 
@@ -23,5 +24,6 @@ declare module "next-auth/jwt" {
     username: string;
     gradYear?: number | null;
     favoritePickup?: string | null;
+    image?: string | null;
   }
 }

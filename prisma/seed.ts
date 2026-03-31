@@ -1,4 +1,4 @@
-import { Category, Condition, ListingStatus, PrismaClient } from "@prisma/client";
+import { Category, Condition, ListingStatus, PrismaClient, TransactionStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -8,60 +8,66 @@ const users = [
     username: "avacarter",
     email: "ava@virginia.edu",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200101",
     bio: "Fourth-year in Comm. Always rotating wardrobe pieces.",
     gradYear: 2026,
-    favoritePickup: "The Corner",
-    instagram: "@ava.on.grounds"
+    favoritePickup: "The Corner"
   },
   {
     name: "Malik Johnson",
     username: "malikj",
     email: "malik@virginia.edu",
     image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200102",
     bio: "CS + design. I sell clean tech and desk setup gear.",
     gradYear: 2027,
-    favoritePickup: "Rice Hall",
-    instagram: "@malikj.dev"
+    favoritePickup: "Rice Hall"
   },
   {
     name: "Leah Kim",
     username: "leahkim",
     email: "leah@mail.virginia.edu",
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200103",
     bio: "Nursing student. Selling dorm and textbook staples.",
     gradYear: 2028,
-    favoritePickup: "Newcomb",
-    instagram: "@leah.ki"
+    favoritePickup: "Newcomb"
   },
   {
     name: "Noah Patel",
     username: "noahp",
     email: "noah@virginia.edu",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200104",
     bio: "Econ + club soccer. Tickets and streetwear drops.",
     gradYear: 2026,
-    favoritePickup: "Scott Stadium",
-    instagram: "@nopatelszn"
+    favoritePickup: "Scott Stadium"
   },
   {
     name: "Sofia Ruiz",
     username: "sofiar",
     email: "sofia@virginia.edu",
     image: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200105",
     bio: "Architecture student with cozy room finds.",
     gradYear: 2027,
-    favoritePickup: "Clemons",
-    instagram: "@sofiaroomedits"
+    favoritePickup: "Clemons"
   },
   {
     name: "Ethan Walker",
     username: "ethanw",
     email: "ethan@virginia.edu",
     image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=400&h=400&q=80",
+    profileImageUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=400&h=400&q=80",
+    uvaStudentId: "701200106",
     bio: "Third-year engineering. Quick response, fair prices.",
     gradYear: 2028,
-    favoritePickup: "JPJ",
-    instagram: "@ethanwkr"
+    favoritePickup: "JPJ"
   }
 ];
 
@@ -392,6 +398,9 @@ const listingSeeds = [
 ];
 
 async function main() {
+  await prisma.sellerReview.deleteMany();
+  await prisma.transaction.deleteMany();
+  await prisma.follow.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.favorite.deleteMany();
@@ -409,7 +418,32 @@ async function main() {
     userMap.set(user.email, created.id);
   }
 
-  const createdListings = [] as { id: string; sellerId: string }[];
+  const createdListings = [] as { id: string; sellerId: string; title: string; priceCents: number }[];
+  const allUsers = await prisma.user.findMany();
+
+  const followPairs = [
+    ["ava@virginia.edu", "noah@virginia.edu"],
+    ["ava@virginia.edu", "sofia@virginia.edu"],
+    ["malik@virginia.edu", "ava@virginia.edu"],
+    ["leah@mail.virginia.edu", "ava@virginia.edu"],
+    ["noah@virginia.edu", "malik@virginia.edu"],
+    ["sofia@virginia.edu", "ava@virginia.edu"],
+    ["ethan@virginia.edu", "sofia@virginia.edu"]
+  ] as const;
+
+  for (const [followerEmail, followingEmail] of followPairs) {
+    const followerId = userMap.get(followerEmail);
+    const followingId = userMap.get(followingEmail);
+
+    if (!followerId || !followingId) continue;
+
+    await prisma.follow.create({
+      data: {
+        followerId,
+        followingId
+      }
+    });
+  }
 
   for (const [index, listing] of listingSeeds.entries()) {
     const sellerId = userMap.get(listing.seller);
@@ -426,15 +460,13 @@ async function main() {
         pickupLocations: listing.pickupLocations,
         meetupNotes: listing.meetupNotes,
         sellerId,
-        status: index % 11 === 0 ? ListingStatus.SOLD : ListingStatus.ACTIVE,
+        status: ListingStatus.ACTIVE,
         createdAt: new Date(Date.now() - index * 1000 * 60 * 60 * 4)
       }
     });
 
-    createdListings.push({ id: created.id, sellerId });
+    createdListings.push({ id: created.id, sellerId, title: created.title, priceCents: created.priceCents });
   }
-
-  const allUsers = await prisma.user.findMany();
   const recentCutoff = Date.now() - 72 * 60 * 60 * 1000;
 
   for (let i = 0; i < createdListings.length; i += 1) {
@@ -494,6 +526,28 @@ async function main() {
         }
       ]
     });
+
+    await prisma.transaction.create({
+      data: {
+        listingId: listing.id,
+        sellerId: seller.id,
+        buyerId: buyer.id,
+        conversationId: convo.id,
+        status: TransactionStatus.PENDING_CONFIRMATION,
+        agreedPriceCents: createdListings.find((entry) => entry.id === listing.id)?.priceCents,
+        sellerMarkedSoldAt: new Date(Date.now() - 1000 * 60 * 18)
+      }
+    });
+
+    await prisma.listing.update({
+      where: {
+        id: listing.id
+      },
+      data: {
+        status: ListingStatus.PENDING_CONFIRMATION,
+        soldToUserId: buyer.id
+      }
+    });
   }
 
   const buyerTwo = allUsers.find((u) => u.email === "noah@virginia.edu");
@@ -525,9 +579,95 @@ async function main() {
         }
       ]
     });
+
+    const completedTransaction = await prisma.transaction.create({
+      data: {
+        listingId: listingTwo.id,
+        sellerId: sellerTwo.id,
+        buyerId: buyerTwo.id,
+        conversationId: convo2.id,
+        status: TransactionStatus.COMPLETED,
+        agreedPriceCents: 13000,
+        sellerMarkedSoldAt: new Date(Date.now() - 1000 * 60 * 72),
+        confirmedAt: new Date(Date.now() - 1000 * 60 * 45),
+        buyerConfirmedReceivedAt: new Date(Date.now() - 1000 * 60 * 45)
+      }
+    });
+
+    await prisma.sellerReview.create({
+      data: {
+        transactionId: completedTransaction.id,
+        reviewerId: buyerTwo.id,
+        revieweeId: sellerTwo.id,
+        stars: 5,
+        comment: "Exactly as described and the pickup at The Corner was easy."
+      }
+    });
+
+    await prisma.listing.update({
+      where: {
+        id: listingTwo.id
+      },
+      data: {
+        status: ListingStatus.COMPLETED,
+        soldToUserId: buyerTwo.id
+      }
+    });
   }
 
-  console.log(`Seeded ${users.length} users and ${createdListings.length} listings.`);
+  const sellerThree = allUsers.find((u) => u.email === "ava@virginia.edu");
+  const buyerThree = allUsers.find((u) => u.email === "leah@mail.virginia.edu");
+  const listingThree = createdListings.find((item) => item.title === "North Face Puffer (L)");
+
+  if (sellerThree && buyerThree && listingThree) {
+    const convo3 = await prisma.conversation.create({
+      data: {
+        buyerId: buyerThree.id,
+        sellerId: sellerThree.id,
+        listingId: listingThree.id
+      }
+    });
+
+    await prisma.message.createMany({
+      data: [
+        {
+          conversationId: convo3.id,
+          senderId: buyerThree.id,
+          body: "Can I grab this after my Newcomb class tomorrow?",
+          createdAt: new Date(Date.now() - 1000 * 60 * 140)
+        },
+        {
+          conversationId: convo3.id,
+          senderId: sellerThree.id,
+          body: "Yes, I can meet on The Corner around 5:15.",
+          createdAt: new Date(Date.now() - 1000 * 60 * 132)
+        }
+      ]
+    });
+
+    await prisma.transaction.create({
+      data: {
+        listingId: listingThree.id,
+        sellerId: sellerThree.id,
+        buyerId: buyerThree.id,
+        conversationId: convo3.id,
+        status: TransactionStatus.CANCELLED,
+        agreedPriceCents: listingThree.priceCents,
+        sellerMarkedSoldAt: new Date(Date.now() - 1000 * 60 * 128)
+      }
+    });
+
+    await prisma.listing.update({
+      where: {
+        id: listingThree.id
+      },
+      data: {
+        status: ListingStatus.CANCELLED
+      }
+    });
+  }
+
+  console.log(`Seeded ${users.length} users, ${createdListings.length} listings, and staged transaction demos.`);
 }
 
 main()

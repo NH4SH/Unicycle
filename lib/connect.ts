@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 
 import { prisma } from "@/lib/prisma";
+import { publicUserSummarySelect, toPublicUserSummary } from "@/lib/public-user";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
 // The sample storefront uses a simple 10% platform fee so the destination
@@ -38,13 +39,26 @@ export type ConnectStorefrontProduct = {
     id: string;
     name: string | null;
     username: string;
-    image: string | null;
+    profileImageUrl: string | null;
   };
   connectedAccount: {
     stripeAccountId: string;
   };
   status: ConnectedAccountSnapshot | null;
   isOwnedByViewer: boolean;
+};
+
+export type ConnectOrderSummary = {
+  id: string;
+  status: string;
+  amountCents: number;
+  applicationFeeCents: number;
+  createdAt: string;
+  productName: string;
+  counterparty: {
+    name: string | null;
+    username: string;
+  };
 };
 
 function summarizeRecipientAccount(account: Stripe.V2.Core.Account): ConnectedAccountSnapshot {
@@ -118,8 +132,10 @@ export async function getConnectStorefrontProducts(viewerUserId?: string): Promi
   const products = await prisma.connectProduct.findMany({
     where: { active: true },
     orderBy: { createdAt: "desc" },
-    include: {
-      owner: true,
+      include: {
+      owner: {
+        select: publicUserSummarySelect
+      },
       connectedAccount: true
     }
   });
@@ -149,10 +165,7 @@ export async function getConnectStorefrontProducts(viewerUserId?: string): Promi
     currency: product.currency,
     createdAt: product.createdAt.toISOString(),
     seller: {
-      id: product.owner.id,
-      name: product.owner.name,
-      username: product.owner.username,
-      image: product.owner.image
+      ...toPublicUserSummary(product.owner)
     },
     connectedAccount: {
       stripeAccountId: product.connectedAccount.stripeAccountId
@@ -160,4 +173,65 @@ export async function getConnectStorefrontProducts(viewerUserId?: string): Promi
     status: statusMap.get(product.connectedAccount.stripeAccountId) ?? null,
     isOwnedByViewer: viewerUserId === product.ownerUserId
   }));
+}
+
+export async function getConnectUserOrders(userId?: string) {
+  if (!userId) {
+    return {
+      sellerOrders: [] as ConnectOrderSummary[],
+      buyerOrders: [] as ConnectOrderSummary[]
+    };
+  }
+
+  const [sellerOrders, buyerOrders] = await Promise.all([
+    prisma.connectOrder.findMany({
+      where: { sellerId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: {
+        buyer: {
+          select: publicUserSummarySelect
+        },
+        connectProduct: true
+      }
+    }),
+    prisma.connectOrder.findMany({
+      where: { buyerId: userId },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: {
+        seller: {
+          select: publicUserSummarySelect
+        },
+        connectProduct: true
+      }
+    })
+  ]);
+
+  return {
+    sellerOrders: sellerOrders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      amountCents: order.amountCents,
+      applicationFeeCents: order.applicationFeeCents,
+      createdAt: order.createdAt.toISOString(),
+      productName: order.connectProduct.name,
+      counterparty: {
+        name: order.buyer.name,
+        username: order.buyer.username
+      }
+    })),
+    buyerOrders: buyerOrders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      amountCents: order.amountCents,
+      applicationFeeCents: order.applicationFeeCents,
+      createdAt: order.createdAt.toISOString(),
+      productName: order.connectProduct.name,
+      counterparty: {
+        name: order.seller.name,
+        username: order.seller.username
+      }
+    }))
+  };
 }

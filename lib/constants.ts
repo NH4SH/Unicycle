@@ -1,4 +1,4 @@
-import { Category, Condition } from "@prisma/client";
+import { Category, Condition, ListingStatus, TransactionStatus } from "@prisma/client";
 
 export const SITE_NAME = "HoosFinds";
 export const SITE_URL = "https://hoosfinds.com";
@@ -29,6 +29,19 @@ export const CONDITION_LABELS: Record<Condition, string> = {
   GOOD: "Good",
   FAIR: "Fair",
   WELL_LOVED: "Well Loved"
+};
+
+export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
+  ACTIVE: "Active",
+  PENDING_CONFIRMATION: "Pending confirmation",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled"
+};
+
+export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
+  PENDING_CONFIRMATION: "Pending confirmation",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled"
 };
 
 export const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({

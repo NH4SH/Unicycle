@@ -61,6 +61,16 @@ export async function POST(request: Request) {
   const applicationFeeAmount = Math.min(product.priceCents - 1, calculateApplicationFeeAmount(product.priceCents));
   const origin = new URL(request.url).origin;
   const stripeClient = getStripeClient();
+  const connectOrder = await prisma.connectOrder.create({
+    data: {
+      connectProductId: product.id,
+      buyerId: session.user.id,
+      sellerId: product.ownerUserId,
+      connectedAccountId: product.connectedAccountId,
+      amountCents: product.priceCents,
+      applicationFeeCents: applicationFeeAmount
+    }
+  });
 
   try {
     // Hosted Checkout keeps the sample simple. The destination charge sends the
@@ -69,11 +79,12 @@ export async function POST(request: Request) {
     const checkoutSession = await stripeClient.checkout.sessions.create({
       mode: "payment",
       customer_email: session.user.email,
-      client_reference_id: product.id,
+      client_reference_id: connectOrder.id,
       success_url: `${origin}/connect-demo/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/connect-demo/cancel?productId=${product.id}`,
       payment_method_types: ["card"],
       metadata: {
+        connectOrderId: connectOrder.id,
         connectProductId: product.id,
         sellerId: product.ownerUserId,
         buyerId: session.user.id,
@@ -93,8 +104,22 @@ export async function POST(request: Request) {
       }
     });
 
+    await prisma.connectOrder.update({
+      where: { id: connectOrder.id },
+      data: {
+        stripeCheckoutSessionId: checkoutSession.id
+      }
+    });
+
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
+    await prisma.connectOrder.update({
+      where: { id: connectOrder.id },
+      data: {
+        status: "FAILED"
+      }
+    });
+
     return NextResponse.json(
       {
         message: error instanceof Error ? error.message : "Stripe could not start the Connect checkout session."

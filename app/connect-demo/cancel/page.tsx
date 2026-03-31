@@ -16,14 +16,14 @@ export default function ConnectCancelPage({ searchParams }: ConnectCancelPagePro
 
   return (
     <div className="container py-10">
-      <Card className="mx-auto max-w-2xl overflow-hidden border-white bg-white">
+      <Card className="mx-auto max-w-2xl overflow-hidden border-border bg-card">
         <CardContent className="space-y-6 p-8">
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-white via-secondary to-uva-blue/10 p-5">
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-card via-secondary to-uva-blue/10 p-5">
             <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-uva-blue/10 blur-3xl" />
             <div className="relative space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Badge variant="blue" className="w-fit">Checkout canceled</Badge>
-                <div className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
                   <WalletCards className="h-3.5 w-3.5 text-uva-blue" />
                   Stripe Connect
                 </div>

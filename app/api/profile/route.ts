@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toPublicUserProfile } from "@/lib/public-user";
 import { profileSchema } from "@/lib/validators";
 
 export async function PATCH(request: Request) {
@@ -21,9 +22,21 @@ export async function PATCH(request: Request) {
       bio: parsed.data.bio,
       gradYear: parsed.data.gradYear,
       favoritePickup: parsed.data.favoritePickup,
-      instagram: parsed.data.instagram
+      profileImageUrl: parsed.data.profileImageUrl === undefined ? undefined : parsed.data.profileImageUrl || null
+    },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      image: true,
+      profileImageUrl: true,
+      bio: true,
+      gradYear: true,
+      favoritePickup: true
     }
   });
 
-  return NextResponse.json({ id: updated.id });
+  return NextResponse.json({
+    user: toPublicUserProfile(updated)
+  });
 }

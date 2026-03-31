@@ -28,7 +28,9 @@ enum Condition {
 
 enum ListingStatus {
   ACTIVE
-  SOLD
+  PENDING_CONFIRMATION
+  COMPLETED
+  CANCELLED
 }
 
 enum OrderStatus {
@@ -38,17 +40,24 @@ enum OrderStatus {
   FAILED
 }
 
+enum TransactionStatus {
+  PENDING_CONFIRMATION
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id               String         @id @default(cuid())
   name             String?
   email            String         @unique
   emailVerified    DateTime?
   image            String?
+  profileImageUrl  String?
+  uvaStudentId     String?
   username         String         @unique @default(cuid())
   bio              String?
   gradYear         Int?
   favoritePickup   String?
-  instagram        String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -57,6 +66,8 @@ model User {
 
   listings         Listing[]
   favorites        Favorite[]
+  followers        Follow[]       @relation("UserFollowers")
+  following        Follow[]       @relation("UserFollowing")
 
   buyerConvos      Conversation[] @relation("BuyerConversations")
   sellerConvos     Conversation[] @relation("SellerConversations")
@@ -66,8 +77,18 @@ model User {
   waitlistEntries  WaitlistEntry[]
   buyerOrders      Order[]        @relation("BuyerOrders")
   sellerOrders     Order[]        @relation("SellerOrders")
+  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  sellerTransactions Transaction[] @relation("SellerTransactions")
+  purchasedListings Listing[]     @relation("ListingSoldTo")
+  writtenSellerReviews SellerReview[]  @relation("WrittenSellerReviews")
+  receivedSellerReviews SellerReview[] @relation("ReceivedSellerReviews")
   connectedAccount ConnectedAccount?
   connectProducts  ConnectProduct[] @relation("ConnectProductOwner")
+  connectBuyerOrders ConnectOrder[] @relation("ConnectBuyerOrders")
+  connectSellerOrders ConnectOrder[] @relation("ConnectSellerOrders")
+
+  @@index([username])
+  @@index([createdAt])
 }
 
 model Listing {
@@ -86,11 +107,14 @@ model Listing {
 
   sellerId         String
   seller           User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  soldToUserId     String?
+  soldToUser       User?          @relation("ListingSoldTo", fields: [soldToUserId], references: [id], onDelete: SetNull)
 
   favorites        Favorite[]
   conversations    Conversation[]
   reports          Report[]
   orders           Order[]
+  transactions     Transaction[]
 
   @@index([createdAt])
   @@index([category])
@@ -110,6 +134,19 @@ model Favorite {
   @@index([createdAt])
 }
 
+model Follow {
+  followerId       String
+  followingId      String
+  createdAt        DateTime       @default(now())
+
+  follower         User           @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following        User           @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt])
+  @@index([followerId, createdAt])
+}
+
 model Conversation {
   id               String         @id @default(cuid())
   buyerId          String
@@ -121,6 +158,7 @@ model Conversation {
   seller           User           @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
   listing          Listing        @relation(fields: [listingId], references: [id], onDelete: Cascade)
   messages         Message[]
+  transactions     Transaction[]
 
   @@unique([buyerId, sellerId, listingId])
   @@index([buyerId])
@@ -170,11 +208,59 @@ model Order {
   listing                Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
   buyer                  User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
   seller                 User        @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  transaction            Transaction?
 
   @@index([listingId])
   @@index([buyerId])
   @@index([sellerId])
   @@index([status])
+}
+
+model Transaction {
+  id                        String            @id @default(cuid())
+  listingId                 String
+  sellerId                  String
+  buyerId                   String
+  conversationId            String?
+  orderId                   String?           @unique
+  status                    TransactionStatus @default(PENDING_CONFIRMATION)
+  agreedPriceCents          Int?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  confirmedAt               DateTime?
+  sellerMarkedSoldAt        DateTime?
+  buyerConfirmedReceivedAt  DateTime?
+
+  listing                   Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  seller                    User              @relation("SellerTransactions", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer                     User              @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
+  conversation              Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  order                     Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  review                    SellerReview?
+
+  @@index([listingId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SellerReview {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  reviewerId    String
+  revieweeId    String
+  stars         Int
+  comment       String?
+  createdAt     DateTime    @default(now())
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  reviewer      User        @relation("WrittenSellerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee      User        @relation("ReceivedSellerReviews", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@index([revieweeId, createdAt])
+  @@index([reviewerId, createdAt])
 }
 
 model ConnectedAccount {
@@ -186,6 +272,7 @@ model ConnectedAccount {
 
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   products        ConnectProduct[]
+  orders          ConnectOrder[]
 
   @@index([createdAt])
 }
@@ -207,10 +294,37 @@ model ConnectProduct {
 
   owner              User             @relation("ConnectProductOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
   connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  orders             ConnectOrder[]
 
   @@index([ownerUserId, createdAt])
   @@index([connectedAccountId, createdAt])
   @@index([active, createdAt])
+}
+
+model ConnectOrder {
+  id                      String           @id @default(cuid())
+  connectProductId        String
+  buyerId                 String
+  sellerId                String
+  connectedAccountId      String
+  amountCents             Int
+  applicationFeeCents     Int
+  status                  OrderStatus      @default(CHECKOUT_CREATED)
+  stripeCheckoutSessionId String?          @unique
+  stripePaymentIntentId   String?          @unique
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  connectProduct          ConnectProduct   @relation(fields: [connectProductId], references: [id], onDelete: Cascade)
+  buyer                   User             @relation("ConnectBuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller                  User             @relation("ConnectSellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  connectedAccount        ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@index([connectProductId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([connectedAccountId])
+  @@index([status])
 }
 
 model WaitlistEntry {

@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowRight,
+  CheckCircle2,
   ExternalLink,
   Loader2,
   ShieldCheck,
@@ -16,14 +17,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { ConnectSellerState, ConnectStorefrontProduct } from "@/lib/connect";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { ConnectOrderSummary, ConnectSellerState, ConnectStorefrontProduct } from "@/lib/connect";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, timeAgo } from "@/lib/utils";
 
 const FALLBACK_PRODUCT_IMAGE =
   "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80";
@@ -39,6 +40,15 @@ type ConnectDemoClientProps = {
   connectConfigured: boolean;
   sellerState: ConnectSellerState;
   products: ConnectStorefrontProduct[];
+  paymentSetup: {
+    stripeSecretReady: boolean;
+    checkoutWebhookReady: boolean;
+    connectStatusWebhookReady: boolean;
+  };
+  orderActivity: {
+    sellerOrders: ConnectOrderSummary[];
+    buyerOrders: ConnectOrderSummary[];
+  };
   viewer: Viewer | null;
   returnedAccountId: string | null;
   refreshRequested: boolean;
@@ -60,10 +70,19 @@ function getStatusBadge(snapshot: ConnectSellerState["stripeStatus"]) {
   return { label: "More onboarding details needed", variant: "outline" as const };
 }
 
+function getOrderStatusBadge(status: string) {
+  if (status === "PAID") return { label: "Paid", variant: "orange" as const };
+  if (status === "CHECKOUT_CREATED") return { label: "Checkout open", variant: "blue" as const };
+  if (status === "EXPIRED") return { label: "Expired", variant: "outline" as const };
+  return { label: status.toLowerCase(), variant: "outline" as const };
+}
+
 export function ConnectDemoClient({
   connectConfigured,
   sellerState,
   products,
+  paymentSetup,
+  orderActivity,
   viewer,
   returnedAccountId,
   refreshRequested
@@ -440,6 +459,145 @@ export function ConnectDemoClient({
         </motion.form>
       </section>
 
+      <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <Card className="surface-panel-strong overflow-hidden">
+          <CardContent className="space-y-5 p-6 md:p-7">
+            <div className="space-y-2">
+              <p className="editorial-eyebrow">Payments checklist</p>
+              <h2 className="font-display text-3xl font-extrabold tracking-tight">What’s currently set up</h2>
+              <p className="max-w-xl text-sm leading-7 text-muted-foreground">
+                This is the idiot-proof view: every critical payment dependency is listed here so you can see what is live,
+                what is missing, and what still blocks a real payout.
+              </p>
+            </div>
+
+            <div className="grid gap-3">
+              {[
+                {
+                  label: "Platform Stripe secret",
+                  detail: "Lets HoosFinds create accounts, products, and hosted Checkout Sessions.",
+                  ready: paymentSetup.stripeSecretReady
+                },
+                {
+                  label: "Checkout webhook",
+                  detail: "Updates listing orders and Connect storefront orders when Checkout completes or expires.",
+                  ready: paymentSetup.checkoutWebhookReady
+                },
+                {
+                  label: "Thin Connect webhook",
+                  detail: "Receives connected-account capability and requirements changes from Stripe.",
+                  ready: paymentSetup.connectStatusWebhookReady
+                },
+                {
+                  label: "Connected account mapping",
+                  detail: "Links the current UVA user to a Stripe connected account ID in Prisma.",
+                  ready: Boolean(sellerState.connectedAccount)
+                },
+                {
+                  label: "Stripe onboarding finished",
+                  detail: "Means Stripe is no longer reporting currently_due or past_due requirements for this seller.",
+                  ready: Boolean(sellerState.stripeStatus?.onboardingComplete)
+                },
+                {
+                  label: "Transfers enabled",
+                  detail: "This is the final gate. Destination charges only feel seamless once this is active.",
+                  ready: Boolean(sellerState.stripeStatus?.readyToReceivePayments)
+                }
+              ].map((item) => (
+                <div key={item.label} className="surface-subtle flex items-start justify-between gap-4 p-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">{item.detail}</p>
+                  </div>
+                  <Badge variant={item.ready ? "orange" : "outline"}>{item.ready ? "Ready" : "Needs work"}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="surface-panel-strong overflow-hidden">
+          <CardContent className="space-y-5 p-6 md:p-7">
+            <div className="space-y-2">
+              <p className="editorial-eyebrow">Order activity</p>
+              <h2 className="font-display text-3xl font-extrabold tracking-tight">Keep payments on-platform</h2>
+              <p className="max-w-xl text-sm leading-7 text-muted-foreground">
+                The Connect flow now stores checkout orders inside HoosFinds, so sellers and buyers can verify payment
+                state without bouncing between tabs or guessing whether the webhook ran.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-uva-orange" />
+                  <p className="text-sm font-semibold text-foreground">Incoming seller orders</p>
+                </div>
+                {orderActivity.sellerOrders.length ? (
+                  orderActivity.sellerOrders.map((order) => {
+                    const statusBadge = getOrderStatusBadge(order.status);
+
+                    return (
+                      <div key={order.id} className="surface-subtle space-y-3 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">{order.productName}</p>
+                          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Buyer: {order.counterparty.name || order.counterparty.username}
+                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>{formatCurrency(order.amountCents / 100)}</span>
+                          <span>Fee {formatCurrency(order.applicationFeeCents / 100)}</span>
+                          <span>{timeAgo(order.createdAt)} ago</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="surface-subtle p-4 text-sm leading-7 text-muted-foreground">
+                    No seller-side Connect orders yet. Once a customer finishes Checkout, the paid order will show up here.
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2">
+                  <WalletCards className="h-4 w-4 text-uva-blue" />
+                  <p className="text-sm font-semibold text-foreground">Your buyer-side orders</p>
+                </div>
+                {orderActivity.buyerOrders.length ? (
+                  orderActivity.buyerOrders.map((order) => {
+                    const statusBadge = getOrderStatusBadge(order.status);
+
+                    return (
+                      <div key={order.id} className="surface-subtle space-y-3 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">{order.productName}</p>
+                          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Seller: {order.counterparty.name || order.counterparty.username}
+                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <span>{formatCurrency(order.amountCents / 100)}</span>
+                          <span>Fee {formatCurrency(order.applicationFeeCents / 100)}</span>
+                          <span>{timeAgo(order.createdAt)} ago</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="surface-subtle p-4 text-sm leading-7 text-muted-foreground">
+                    No buyer-side Connect orders yet. As soon as you finish a storefront purchase, the status will land here.
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
       <section id="storefront" className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-2">
@@ -489,10 +647,12 @@ export function ConnectDemoClient({
 
                   <div className="space-y-4 p-5">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-11 w-11">
-                        <AvatarImage src={product.seller.image ?? undefined} alt={product.seller.name ?? product.seller.username} />
-                        <AvatarFallback>{product.seller.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        name={product.seller.name}
+                        username={product.seller.username}
+                        imageUrl={product.seller.profileImageUrl}
+                        className="h-11 w-11"
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground">{product.seller.name || product.seller.username}</p>
                         <p className="text-xs text-muted-foreground">@{product.seller.username}</p>

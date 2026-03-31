@@ -24,18 +24,20 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         user={{
           id: profile.user.id,
           name: profile.user.name,
-          image: profile.user.image,
+          profileImageUrl: profile.user.profileImageUrl,
           username: profile.user.username,
           bio: profile.user.bio,
           gradYear: profile.user.gradYear,
-          favoritePickup: profile.user.favoritePickup,
-          instagram: profile.user.instagram
+          favoritePickup: profile.user.favoritePickup
         }}
+        social={profile.social}
         stats={profile.stats}
         activeListings={profile.activeListings}
-        soldListings={profile.soldListings}
+        pastListings={profile.pastListings}
         favorites={profile.favorites}
+        recentReviews={profile.recentReviews}
         isOwner={session?.user.id === profile.user.id}
+        viewerSignedIn={Boolean(session?.user.id)}
       />
     </div>
   );

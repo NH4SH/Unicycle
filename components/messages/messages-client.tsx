@@ -1,32 +1,32 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { Loader2, SendHorizontal } from "lucide-react";
+import { CheckCircle2, Loader2, SendHorizontal, Star, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LinkedPlaceText } from "@/components/shared/linked-place-text";
+import { TransactionStatusBadge } from "@/components/shared/sale-status-badge";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { type ListingCardData } from "@/lib/data";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type ConversationPayload = {
   id: string;
-  listing: {
-    id: string;
-    title: string;
-    priceCents: number;
-    images: string[];
-  };
+  role: "buyer" | "seller";
+  listing: ListingCardData;
   otherUser: {
     id: string;
     name: string | null;
-    image: string | null;
+    profileImageUrl: string | null;
     username: string;
   };
   messages: {
@@ -36,9 +36,23 @@ type ConversationPayload = {
     createdAt: string;
     readAt: string | null;
   }[];
+  transaction: {
+    id: string;
+    status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED";
+    agreedPriceCents: number | null;
+    sellerMarkedSoldAt: string | null;
+    buyerConfirmedReceivedAt: string | null;
+    confirmedAt: string | null;
+    review: {
+      stars: number;
+      comment: string | null;
+      createdAt: string;
+    } | null;
+  } | null;
 };
 
 export function MessagesClient({ userId }: { userId: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedFromQuery = searchParams.get("conversation");
 
@@ -47,13 +61,14 @@ export function MessagesClient({ userId }: { userId: string }) {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [actionKey, setActionKey] = useState<string | null>(null);
 
   const loadConversations = useCallback(
     async (markReadId?: string) => {
       const query = markReadId ? `?conversationId=${markReadId}` : "";
       const response = await fetch(`/api/conversations${query}`);
 
-      if (!response.ok) {
+      if (response.ok === false) {
         toast.error("Could not load your messages.");
         setLoading(false);
         return;
@@ -62,7 +77,7 @@ export function MessagesClient({ userId }: { userId: string }) {
       const data = (await response.json()) as ConversationPayload[];
       setConversations(data);
 
-      if (!activeId && data.length) {
+      if (activeId === null && data.length > 0) {
         setActiveId(selectedFromQuery || data[0].id);
       }
 
@@ -81,7 +96,7 @@ export function MessagesClient({ userId }: { userId: string }) {
   );
 
   async function sendMessage() {
-    if (!draft.trim() || !activeConversation || sending) return;
+    if (draft.trim().length === 0 || activeConversation === null || sending) return;
 
     setSending(true);
     const response = await fetch("/api/messages", {
@@ -95,7 +110,7 @@ export function MessagesClient({ userId }: { userId: string }) {
 
     setSending(false);
 
-    if (!response.ok) {
+    if (response.ok === false) {
       toast.error("Message failed to send.");
       return;
     }
@@ -123,6 +138,146 @@ export function MessagesClient({ userId }: { userId: string }) {
     setDraft("");
   }
 
+  async function markSold(conversationId: string) {
+    setActionKey(`mark-${conversationId}`);
+    const response = await fetch("/api/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId })
+    });
+    setActionKey(null);
+
+    if (response.ok === false) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not mark this item as sold.");
+      return;
+    }
+
+    toast.success("Buyer selected. HoosFinds is now waiting on receipt confirmation.");
+    await loadConversations(conversationId);
+    router.refresh();
+  }
+
+  async function cancelPending(transactionId: string, conversationId: string) {
+    setActionKey(`cancel-${transactionId}`);
+    const response = await fetch(`/api/transactions/${transactionId}/cancel`, {
+      method: "POST"
+    });
+    setActionKey(null);
+
+    if (response.ok === false) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not cancel this pending sale.");
+      return;
+    }
+
+    toast.success("Pending sale cancelled.");
+    await loadConversations(conversationId);
+    router.refresh();
+  }
+
+  function renderSalePanel(conversation: ConversationPayload) {
+    const isSeller = conversation.role === "seller";
+    const isBuyer = conversation.role === "buyer";
+
+    if (isSeller && conversation.listing.status === "ACTIVE") {
+      return (
+        <div className="surface-subtle flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <p className="font-medium text-foreground">Ready to close the handoff?</p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Once you’ve met up with {conversation.otherUser.name || conversation.otherUser.username}, mark this listing sold to move it into buyer confirmation.
+            </p>
+          </div>
+          <Button onClick={() => void markSold(conversation.id)} disabled={actionKey === `mark-${conversation.id}`}>
+            {actionKey === `mark-${conversation.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+            Mark sold to this buyer
+          </Button>
+        </div>
+      );
+    }
+
+    if (conversation.transaction?.status === "PENDING_CONFIRMATION") {
+      return (
+        <div className="surface-subtle flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <TransactionStatusBadge status={conversation.transaction.status} />
+              <p className="text-sm font-medium text-foreground">
+                {isBuyer ? "You can confirm receipt once the item is in hand." : "Waiting on the buyer to confirm receipt."}
+              </p>
+            </div>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {isBuyer
+                ? "This keeps HoosFinds honest and only finalizes the sale after the real handoff happens."
+                : "If plans changed, you can cancel the pending sale and relist the item right away."}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {isBuyer ? (
+              <Button asChild>
+                <Link href={`/purchases/${conversation.transaction.id}/confirm`}>Confirm receipt</Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => void cancelPending(conversation.transaction!.id, conversation.id)}
+                disabled={actionKey === `cancel-${conversation.transaction.id}`}
+              >
+                {actionKey === `cancel-${conversation.transaction.id}` ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="mr-1.5 h-4 w-4" />
+                )}
+                Cancel pending sale
+              </Button>
+            )}
+            <Button variant="secondary" asChild>
+              <Link href="/purchases">Open purchases</Link>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    if (conversation.transaction?.status === "COMPLETED") {
+      return (
+        <div className="surface-subtle space-y-3 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <TransactionStatusBadge status={conversation.transaction.status} />
+            <p className="font-medium text-foreground">This transaction is complete.</p>
+          </div>
+          {conversation.transaction.review ? (
+            <div className="rounded-[1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
+              <div className="inline-flex items-center gap-1 font-medium text-foreground">
+                <Star className="h-4 w-4 fill-uva-orange text-uva-orange" />
+                {conversation.transaction.review.stars} star review
+              </div>
+              {conversation.transaction.review.comment ? (
+                <p className="mt-2 leading-6">
+                  “<LinkedPlaceText text={conversation.transaction.review.comment} />”
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Receipt was confirmed without a written review.</p>
+          )}
+        </div>
+      );
+    }
+
+    if (conversation.transaction?.status === "CANCELLED" || conversation.listing.status === "CANCELLED") {
+      return (
+        <div className="surface-subtle flex items-start gap-3 p-4 text-sm leading-6 text-muted-foreground">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 text-muted-foreground" />
+          <p>This sale was cancelled. If the seller relists the item, the thread stays here so you can pick things back up.</p>
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="surface-panel-strong flex min-h-[58dvh] flex-col items-center justify-center gap-3">
@@ -132,7 +287,7 @@ export function MessagesClient({ userId }: { userId: string }) {
     );
   }
 
-  if (!conversations.length) {
+  if (conversations.length === 0) {
     return (
       <EmptyState
         title="No messages yet"
@@ -148,7 +303,7 @@ export function MessagesClient({ userId }: { userId: string }) {
       <Card className="surface-panel-strong overflow-hidden">
         <div className="border-b border-border/80 px-4 py-4">
           <p className="editorial-eyebrow">Conversations</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">Ask questions, settle the details, and keep the handoff simple.</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">Ask questions, settle the details, and confirm the handoff when it is actually done.</p>
         </div>
         <ScrollArea className="min-h-[16rem] max-h-[38dvh] xl:h-[72dvh] xl:max-h-none">
           <div className="space-y-2 p-3">
@@ -183,9 +338,12 @@ export function MessagesClient({ userId }: { userId: string }) {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-display text-base font-bold tracking-tight">
-                      {conversation.otherUser.name || conversation.otherUser.username}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-display text-base font-bold tracking-tight">
+                        {conversation.otherUser.name || conversation.otherUser.username}
+                      </p>
+                      {conversation.transaction ? <TransactionStatusBadge status={conversation.transaction.status} className="px-2.5 py-1 text-[10px]" /> : null}
+                    </div>
                     <p className="truncate text-xs uppercase tracking-[0.16em] text-muted-foreground">
                       {conversation.listing.title}
                     </p>
@@ -205,10 +363,12 @@ export function MessagesClient({ userId }: { userId: string }) {
           <>
             <div className="grid gap-4 border-b border-border/80 px-4 py-4 md:grid-cols-[1fr_auto] md:items-center">
               <div className="flex items-center gap-3">
-                <Avatar className="h-11 w-11">
-                  <AvatarImage src={activeConversation.otherUser.image ?? undefined} alt={activeConversation.otherUser.username} />
-                  <AvatarFallback>{activeConversation.otherUser.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={activeConversation.otherUser.name}
+                  username={activeConversation.otherUser.username}
+                  imageUrl={activeConversation.otherUser.profileImageUrl}
+                  className="h-11 w-11"
+                />
                 <div className="min-w-0">
                   <p className="font-display text-xl font-bold tracking-tight">
                     {activeConversation.otherUser.name || activeConversation.otherUser.username}
@@ -229,12 +389,19 @@ export function MessagesClient({ userId }: { userId: string }) {
                     sizes="56px"
                   />
                 </div>
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{activeConversation.listing.title}</p>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-medium">{activeConversation.listing.title}</p>
+                    {activeConversation.listing.status !== "ACTIVE" ? (
+                      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{activeConversation.listing.status.replaceAll("_", " ")}</span>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-muted-foreground">{formatCurrency(activeConversation.listing.priceCents / 100)}</p>
                 </div>
               </div>
             </div>
+
+            <div className="border-b border-border/70 px-4 py-3">{renderSalePanel(activeConversation)}</div>
 
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
@@ -249,7 +416,9 @@ export function MessagesClient({ userId }: { userId: string }) {
                           own ? "bg-uva-orange text-white" : "border border-border bg-background/80 text-foreground"
                         )}
                       >
-                        <p>{message.body}</p>
+                        <p>
+                          <LinkedPlaceText text={message.body} linkClassName={own ? "decoration-white/45 hover:text-white" : undefined} />
+                        </p>
                         <p className={cn("mt-1 text-[10px]", own ? "text-white/80" : "text-muted-foreground")}>
                           {format(new Date(message.createdAt), "MMM d, h:mm a")}
                           {own && message.readAt ? " · Seen" : ""}
@@ -275,7 +444,7 @@ export function MessagesClient({ userId }: { userId: string }) {
                   placeholder="Ask about fit, condition, or the easiest pickup spot on Grounds"
                   aria-label="Message body"
                 />
-                <Button type="submit" disabled={sending || !draft.trim()}>
+                <Button type="submit" disabled={sending || draft.trim().length === 0}>
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
                 </Button>
               </form>

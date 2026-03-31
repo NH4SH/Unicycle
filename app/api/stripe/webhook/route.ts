@@ -1,4 +1,4 @@
-import { ListingStatus, OrderStatus } from "@prisma/client";
+import { ListingStatus, OrderStatus, TransactionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
@@ -28,7 +28,23 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+    const connectOrderId = session.metadata?.connectOrderId;
     const orderId = session.metadata?.orderId || session.client_reference_id;
+
+    if (connectOrderId && session.payment_status === "paid") {
+      await prisma.connectOrder.updateMany({
+        where: {
+          id: connectOrderId,
+          status: OrderStatus.CHECKOUT_CREATED
+        },
+        data: {
+          status: OrderStatus.PAID,
+          stripeCheckoutSessionId: session.id,
+          stripePaymentIntentId:
+            typeof session.payment_intent === "string" ? session.payment_intent : undefined
+        }
+      });
+    }
 
     if (orderId && session.payment_status === "paid") {
       await prisma.$transaction(async (tx) => {
@@ -36,33 +52,82 @@ export async function POST(request: Request) {
           where: { id: orderId }
         });
 
-        if (!order || order.status === OrderStatus.PAID) {
+        if (!order) {
           return;
         }
 
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            status: OrderStatus.PAID,
-            stripeCheckoutSessionId: session.id,
-            stripePaymentIntentId:
-              typeof session.payment_intent === "string" ? session.payment_intent : order.stripePaymentIntentId
+        const paidOrder =
+          order.status === OrderStatus.PAID
+            ? order
+            : await tx.order.update({
+                where: { id: order.id },
+                data: {
+                  status: OrderStatus.PAID,
+                  stripeCheckoutSessionId: session.id,
+                  stripePaymentIntentId:
+                    typeof session.payment_intent === "string" ? session.payment_intent : order.stripePaymentIntentId
+                }
+              });
+
+        const existingTransaction = await tx.transaction.findUnique({
+          where: {
+            orderId: paidOrder.id
           }
         });
 
-        await tx.listing.update({
-          where: { id: order.listingId },
-          data: {
-            status: ListingStatus.SOLD
+        if (!existingTransaction) {
+          await tx.transaction.create({
+            data: {
+              listingId: paidOrder.listingId,
+              sellerId: paidOrder.sellerId,
+              buyerId: paidOrder.buyerId,
+              orderId: paidOrder.id,
+              status: TransactionStatus.PENDING_CONFIRMATION,
+              agreedPriceCents: paidOrder.amountCents,
+              sellerMarkedSoldAt: new Date()
+            }
+          });
+        }
+
+        const listing = await tx.listing.findUnique({
+          where: {
+            id: order.listingId
+          },
+          select: {
+            status: true
           }
         });
+
+        if (listing?.status === ListingStatus.ACTIVE) {
+          await tx.listing.update({
+            where: { id: paidOrder.listingId },
+            data: {
+              status: ListingStatus.PENDING_CONFIRMATION,
+              soldToUserId: paidOrder.buyerId
+            }
+          });
+        }
       });
     }
   }
 
   if (event.type === "checkout.session.expired") {
     const session = event.data.object as Stripe.Checkout.Session;
+    const connectOrderId = session.metadata?.connectOrderId;
     const orderId = session.metadata?.orderId || session.client_reference_id;
+
+    if (connectOrderId) {
+      await prisma.connectOrder.updateMany({
+        where: {
+          id: connectOrderId,
+          status: OrderStatus.CHECKOUT_CREATED
+        },
+        data: {
+          status: OrderStatus.EXPIRED,
+          stripeCheckoutSessionId: session.id
+        }
+      });
+    }
 
     if (orderId) {
       await prisma.order.updateMany({

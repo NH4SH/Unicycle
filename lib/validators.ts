@@ -1,4 +1,4 @@
-import { Category, Condition } from "@prisma/client";
+import { Category, Condition, ListingStatus } from "@prisma/client";
 import { z } from "zod";
 
 export const waitlistSchema = z.object({
@@ -17,6 +17,17 @@ export const listingSchema = z.object({
   meetupNotes: z.string().max(180).optional()
 });
 
+export const listingUpdateSchema = listingSchema
+  .partial()
+  .extend({
+    status: z
+      .nativeEnum(ListingStatus)
+      .optional()
+      .refine((value) => value === undefined || value === ListingStatus.ACTIVE || value === ListingStatus.CANCELLED, {
+        message: "Only live or paused availability can be edited directly."
+      })
+  });
+
 export const profileSchema = z.object({
   bio: z.string().max(240).optional(),
   gradYear: z
@@ -25,10 +36,12 @@ export const profileSchema = z.object({
     .transform((v) => (v ? Number(v) : undefined))
     .pipe(z.number().int().min(2024).max(2035).optional()),
   favoritePickup: z.string().max(80).optional(),
-  instagram: z
+  profileImageUrl: z
     .string()
+    .trim()
     .optional()
-    .refine((v) => !v || /^@?[a-zA-Z0-9_.]{1,30}$/.test(v), "Use a valid Instagram handle")
+    .transform((value) => value || undefined)
+    .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid image URL")
 });
 
 export const messageSchema = z.object({
@@ -56,3 +69,28 @@ export const connectProductSchema = z.object({
 export const connectCheckoutSchema = z.object({
   productId: z.string().min(1)
 });
+
+export const createTransactionSchema = z.object({
+  conversationId: z.string().min(1),
+  agreedPriceCents: z.number().int().min(100).max(250000).optional()
+});
+
+export const confirmTransactionSchema = z
+  .object({
+    stars: z.number().int().min(1).max(5).optional(),
+    comment: z
+      .string()
+      .trim()
+      .max(280, "Keep feedback under 280 characters.")
+      .optional()
+      .transform((value) => value || undefined)
+  })
+  .superRefine((value, ctx) => {
+    if (value.comment && !value.stars) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add a star rating if you want to leave written feedback.",
+        path: ["stars"]
+      });
+    }
+  });

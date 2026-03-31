@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, GripHorizontal, Loader2, Trash2 } from "lucide-r
 import { toast } from "sonner";
 
 import { PickupChipSelector } from "@/components/shared/pickup-chip-selector";
+import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
+import { packListingDescription } from "@/lib/listing-draft";
 import { listingSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
@@ -32,11 +34,12 @@ type Draft = {
   color: string;
   pickupLocations: string[];
   meetupNotes: string;
+  status: "ACTIVE" | "CANCELLED";
 };
 
 const STORAGE_KEY = "hoosfinds-sell-draft";
 
-const initialDraft: Draft = {
+const defaultDraft: Draft = {
   images: [],
   title: "",
   description: "",
@@ -47,31 +50,45 @@ const initialDraft: Draft = {
   size: "",
   color: "",
   pickupLocations: [],
-  meetupNotes: ""
+  meetupNotes: "",
+  status: "ACTIVE"
 };
 
-export function SellWizard() {
+type SellWizardProps = {
+  mode?: "create" | "edit";
+  listingId?: string;
+  initialDraft?: Draft;
+  locked?: boolean;
+};
+
+export function SellWizard({ mode = "create", listingId, initialDraft, locked = false }: SellWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const [draft, setDraft] = useState<Draft>(initialDraft ?? defaultDraft);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const storageKey = useMemo(
+    () => (mode === "edit" && listingId ? `hoosfinds-edit-draft-${listingId}` : STORAGE_KEY),
+    [listingId, mode]
+  );
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as Draft;
         setDraft(parsed);
       } catch {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       }
+    } else if (initialDraft) {
+      setDraft(initialDraft);
     }
-  }, []);
+  }, [initialDraft, storageKey]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [draft]);
+    localStorage.setItem(storageKey, JSON.stringify(draft));
+  }, [draft, storageKey]);
 
   const progress = useMemo(() => (step / 4) * 100, [step]);
 
@@ -116,15 +133,12 @@ export function SellWizard() {
   }
 
   function buildDescription() {
-    const styleLine = [
-      draft.brand.trim() ? `Brand: ${draft.brand.trim()}` : null,
-      draft.size.trim() ? `Size: ${draft.size.trim()}` : null,
-      draft.color.trim() ? `Color: ${draft.color.trim()}` : null
-    ]
-      .filter(Boolean)
-      .join(" • ");
-
-    return styleLine ? `${styleLine}\n\n${draft.description.trim()}` : draft.description.trim();
+    return packListingDescription({
+      description: draft.description,
+      brand: draft.brand,
+      size: draft.size,
+      color: draft.color
+    });
   }
 
   async function publish() {
@@ -146,22 +160,26 @@ export function SellWizard() {
 
     setPublishing(true);
 
-    const response = await fetch("/api/listings", {
-      method: "POST",
+    const response = await fetch(mode === "edit" && listingId ? `/api/listings/${listingId}` : "/api/listings", {
+      method: mode === "edit" ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed.data)
+      body: JSON.stringify({
+        ...parsed.data,
+        ...(mode === "edit" ? { status: draft.status } : {})
+      })
     });
 
     setPublishing(false);
 
     if (!response.ok) {
-      setError("Could not publish listing. Please try again.");
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      setError(data?.message || `Could not ${mode === "edit" ? "save changes" : "publish listing"}. Please try again.`);
       return;
     }
 
     const data = (await response.json()) as { id: string };
-    localStorage.removeItem(STORAGE_KEY);
-    toast.success("Find published.");
+    localStorage.removeItem(storageKey);
+    toast.success(mode === "edit" ? "Listing updated." : "Find published.");
     router.push(`/listing/${data.id}`);
     router.refresh();
   }
@@ -178,6 +196,11 @@ export function SellWizard() {
         </div>
 
         {error ? <div className="rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
+        {locked ? (
+          <div className="rounded-[1.2rem] border border-border bg-background/80 px-4 py-3 text-sm text-muted-foreground">
+            This listing is in a protected sale state, so the fields below are read-only until the handoff is resolved.
+          </div>
+        ) : null}
 
         {step === 1 ? (
           <div className="space-y-5">
@@ -201,6 +224,7 @@ export function SellWizard() {
 
             <UploadDropzone<OurFileRouter, "listingImage">
               endpoint="listingImage"
+              disabled={locked || publishing}
               onClientUploadComplete={(result: { url: string }[]) => {
                 const urls = result.map((item) => item.url);
                 setDraft((prev) => ({ ...prev, images: [...prev.images, ...urls].slice(0, 6) }));
@@ -223,16 +247,17 @@ export function SellWizard() {
                     <Image src={url} alt={`Upload ${idx + 1}`} fill className="object-cover" sizes="200px" />
                   </div>
                   <div className="grid grid-cols-3 gap-1">
-                    <Button type="button" size="sm" variant="secondary" onClick={() => reorderImage(idx, -1)}>
+                    <Button type="button" size="sm" variant="secondary" onClick={() => reorderImage(idx, -1)} disabled={locked}>
                       <ArrowLeft className="h-3 w-3" />
                     </Button>
-                    <Button type="button" size="sm" variant="secondary" onClick={() => reorderImage(idx, 1)}>
+                    <Button type="button" size="sm" variant="secondary" onClick={() => reorderImage(idx, 1)} disabled={locked}>
                       <ArrowRight className="h-3 w-3" />
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
+                      disabled={locked}
                       onClick={() => setDraft((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -267,6 +292,7 @@ export function SellWizard() {
                   value={draft.title}
                   onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
                   placeholder="Vintage UVA crewneck, Barbour jacket, Veja sneakers..."
+                  disabled={locked}
                 />
               </div>
 
@@ -279,12 +305,13 @@ export function SellWizard() {
                   value={draft.price}
                   onChange={(event) => setDraft((prev) => ({ ...prev, price: event.target.value }))}
                   placeholder="45"
+                  disabled={locked}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Condition</Label>
-                <Select value={draft.condition} onValueChange={(value) => setDraft((prev) => ({ ...prev, condition: value }))}>
+                <Select value={draft.condition} onValueChange={(value) => setDraft((prev) => ({ ...prev, condition: value }))} disabled={locked}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -300,7 +327,7 @@ export function SellWizard() {
 
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={draft.category} onValueChange={(value) => setDraft((prev) => ({ ...prev, category: value }))}>
+                <Select value={draft.category} onValueChange={(value) => setDraft((prev) => ({ ...prev, category: value }))} disabled={locked}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -321,6 +348,7 @@ export function SellWizard() {
                   value={draft.brand}
                   onChange={(event) => setDraft((prev) => ({ ...prev, brand: event.target.value }))}
                   placeholder="Patagonia, Nike, Zara..."
+                  disabled={locked}
                 />
               </div>
 
@@ -331,6 +359,7 @@ export function SellWizard() {
                   value={draft.size}
                   onChange={(event) => setDraft((prev) => ({ ...prev, size: event.target.value }))}
                   placeholder="S, M, 28, 8.5..."
+                  disabled={locked}
                 />
               </div>
 
@@ -341,6 +370,7 @@ export function SellWizard() {
                   value={draft.color}
                   onChange={(event) => setDraft((prev) => ({ ...prev, color: event.target.value }))}
                   placeholder="Cream, navy, faded black..."
+                  disabled={locked}
                 />
               </div>
 
@@ -351,6 +381,7 @@ export function SellWizard() {
                   value={draft.description}
                   onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
                   placeholder="Describe the fit, wear, flaws, material, or anything another student would want to know before meeting up."
+                  disabled={locked}
                 />
               </div>
             </div>
@@ -385,8 +416,27 @@ export function SellWizard() {
                 value={draft.meetupNotes}
                 onChange={(event) => setDraft((prev) => ({ ...prev, meetupNotes: event.target.value }))}
                 placeholder="I can usually meet after 5 near Rice Hall, or earlier on game days by The Corner."
+                disabled={locked}
               />
             </div>
+
+            {mode === "edit" ? (
+              <div className="space-y-2">
+                <Label>Availability</Label>
+                <Select value={draft.status} onValueChange={(value: "ACTIVE" | "CANCELLED") => setDraft((prev) => ({ ...prev, status: value }))} disabled={locked}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Live on HoosFinds</SelectItem>
+                    <SelectItem value="CANCELLED">Pause listing</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Use this to quietly pause a listing without deleting it. Listings in pending or completed sales stay locked.
+                </p>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -410,21 +460,30 @@ export function SellWizard() {
                 <Badge variant="outline">{CATEGORY_LABELS[draft.category as keyof typeof CATEGORY_LABELS] || draft.category}</Badge>
                 <Badge variant="orange">{CONDITION_LABELS[draft.condition as keyof typeof CONDITION_LABELS] || draft.condition}</Badge>
                 <Badge variant="blue">{draft.price ? `$${draft.price}` : "$0"}</Badge>
+                {mode === "edit" ? <Badge variant={draft.status === "ACTIVE" ? "blue" : "outline"}>{draft.status === "ACTIVE" ? "Live" : "Paused"}</Badge> : null}
                 {draft.brand ? <Badge variant="outline">{draft.brand}</Badge> : null}
                 {draft.size ? <Badge variant="outline">Size {draft.size}</Badge> : null}
                 {draft.color ? <Badge variant="outline">{draft.color}</Badge> : null}
               </div>
               <h3 className="font-display text-3xl font-extrabold tracking-tight">{draft.title || "Untitled find"}</h3>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">{buildDescription() || "No description yet."}</p>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                <LinkedPlaceText text={buildDescription() || "No description yet."} />
+              </p>
               <p className="mt-5 editorial-eyebrow">Meetup spots</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {draft.pickupLocations.map((loc) => (
                   <Badge key={loc} variant="blue">
-                    {loc}
+                    <PlaceMapLink place={loc} className="font-medium underline decoration-white/40 underline-offset-4 hover:text-white">
+                      {loc}
+                    </PlaceMapLink>
                   </Badge>
                 ))}
               </div>
-              {draft.meetupNotes ? <p className="mt-4 text-sm leading-7 text-muted-foreground">{draft.meetupNotes}</p> : null}
+              {draft.meetupNotes ? (
+                <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                  <LinkedPlaceText text={draft.meetupNotes} />
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
@@ -447,9 +506,9 @@ export function SellWizard() {
               <GripHorizontal className="ml-1.5 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="button" onClick={publish} disabled={publishing}>
+            <Button type="button" onClick={publish} disabled={publishing || locked}>
               {publishing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-              {publishing ? "Publishing..." : "Publish find"}
+              {locked ? "Listing locked" : publishing ? (mode === "edit" ? "Saving..." : "Publishing...") : mode === "edit" ? "Save changes" : "Publish find"}
             </Button>
           )}
         </div>

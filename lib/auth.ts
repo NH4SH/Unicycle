@@ -102,7 +102,7 @@ export const authOptions: NextAuthOptions = {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                image: user.image,
+                image: user.profileImageUrl ?? user.image,
                 username: user.username,
                 gradYear: user.gradYear,
                 favoritePickup: user.favoritePickup
@@ -149,6 +149,7 @@ export const authOptions: NextAuthOptions = {
       token.username = dbUser.username;
       token.gradYear = dbUser.gradYear;
       token.favoritePickup = dbUser.favoritePickup;
+      token.image = dbUser.profileImageUrl ?? dbUser.image;
 
       return token;
     },
@@ -158,6 +159,7 @@ export const authOptions: NextAuthOptions = {
         session.user.username = token.username;
         session.user.gradYear = token.gradYear;
         session.user.favoritePickup = token.favoritePickup;
+        session.user.image = typeof token.image === "string" ? token.image : null;
       }
 
       return session;

@@ -18,7 +18,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
   if (!sessionId || !isStripeCheckoutEnabled()) {
     return (
       <div className="container py-10">
-        <Card className="mx-auto max-w-2xl overflow-hidden border-white bg-white">
+        <Card className="mx-auto max-w-2xl overflow-hidden border-border bg-card">
           <CardContent className="space-y-4 p-8 text-center">
             <Badge variant="blue" className="mx-auto w-fit">Stripe checkout</Badge>
             <h1 className="font-display text-4xl font-black tracking-tight">No checkout session found.</h1>
@@ -46,9 +46,9 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
 
   return (
     <div className="container py-10">
-      <Card className="mx-auto max-w-2xl overflow-hidden border-white bg-white">
+      <Card className="mx-auto max-w-2xl overflow-hidden border-border bg-card">
         <CardContent className="space-y-6 p-8">
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-white via-electric/5 to-uva-orange/10 p-5">
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-card via-electric/5 to-uva-orange/10 p-5">
             <div className="absolute left-0 top-0 h-24 w-24 rounded-full bg-electric/15 blur-3xl" />
             <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-uva-orange/15 blur-3xl" />
             <div className="relative space-y-4">
@@ -56,13 +56,13 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <Badge variant={paymentComplete ? "orange" : "blue"} className="w-fit">
                   {paymentComplete ? "Payment confirmed" : "Payment processing"}
                 </Badge>
-                <div className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
                   <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
                   Stripe
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="inline-flex rounded-full bg-white/90 p-3 shadow-soft">
+                <div className="inline-flex rounded-full bg-card/90 p-3 shadow-soft">
                   {paymentComplete ? (
                     <CheckCircle2 className="h-8 w-8 text-uva-orange" />
                   ) : (
@@ -74,7 +74,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 </h1>
                 <p className="max-w-xl text-muted-foreground">
                   {paymentComplete
-                    ? "Stripe accepted your payment. HoosFinds recorded the order and marked the listing as sold."
+                    ? "Stripe accepted your payment. HoosFinds recorded the order and moved the listing into buyer confirmation so you can confirm receipt after pickup."
                     : "Stripe is still finalizing the payment state. Refresh in a moment if this page stays in processing."}
                 </p>
               </div>
@@ -88,7 +88,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <p className="font-display text-2xl font-black">{order.listing.title}</p>
                 <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside HoosFinds.</p>
               </div>
-              <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-soft">
+              <div className="rounded-2xl bg-card px-4 py-3 text-right shadow-soft">
                 <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   <WalletCards className="h-3.5 w-3.5 text-electric" />
                   Total
@@ -104,6 +104,9 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <Link href={`/listing/${order.listingId}`}>View listing</Link>
               </Button>
             ) : null}
+            <Button asChild variant="secondary">
+              <Link href="/purchases">View purchases</Link>
+            </Button>
             <Button asChild variant="secondary">
               <Link href="/messages">Open messages</Link>
             </Button>

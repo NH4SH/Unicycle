@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { MapPin, Star } from "lucide-react";
 
 import { HeartButton } from "@/components/cards/heart-button";
+import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
@@ -49,6 +51,11 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
                 </Badge>
               </div>
             ) : null}
+            {listing.status !== "ACTIVE" ? (
+              <div className="absolute left-3 top-14">
+                <ListingStatusBadge status={listing.status} className="border-white/70 bg-white/92 backdrop-blur-sm" />
+              </div>
+            ) : null}
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3">
               <Badge variant="outline" className="border-white/70 bg-white/90 backdrop-blur-sm">
                 {listing.pickupLocations[0] ? `Meet at ${listing.pickupLocations[0]}` : CATEGORY_LABELS[listing.category]}
@@ -77,10 +84,21 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
             <Badge variant="blue">Replies {listing.sellerResponse}</Badge>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="inline-flex items-center gap-1">
-              <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
-              {listing.sellerRating.toFixed(1)}
+          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <div className="inline-flex min-w-0 items-center gap-2">
+              <UserAvatar
+                name={listing.seller.name}
+                username={listing.seller.username}
+                imageUrl={listing.seller.profileImageUrl}
+                className="h-7 w-7 shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="truncate font-medium text-foreground">@{listing.seller.username}</p>
+                <div className="inline-flex items-center gap-1">
+                  <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+                  {listing.sellerRating ? `${listing.sellerRating.toFixed(1)} · ${listing.sellerReviewCount}` : "New seller"}
+                </div>
+              </div>
             </div>
             <div className="inline-flex items-center gap-1">
               <MapPin className="h-3.5 w-3.5" />

@@ -26,6 +26,28 @@
   --ring: 219 26% 35%;
 }
 
+.dark {
+  --background: 224 26% 9%;
+  --foreground: 36 22% 94%;
+  --card: 223 18% 13%;
+  --card-foreground: 36 22% 94%;
+  --popover: 223 18% 13%;
+  --popover-foreground: 36 22% 94%;
+  --primary: 30 100% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 223 16% 18%;
+  --secondary-foreground: 36 20% 92%;
+  --muted: 223 14% 17%;
+  --muted-foreground: 222 12% 72%;
+  --accent: 216 30% 62%;
+  --accent-foreground: 224 26% 10%;
+  --destructive: 0 72% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 14% 24%;
+  --input: 222 14% 24%;
+  --ring: 216 30% 62%;
+}
+
 * {
   @apply border-border;
 }
@@ -47,6 +69,13 @@ body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0));
 }
 
+.dark body {
+  background-image:
+    radial-gradient(circle at 14% 10%, rgba(229, 114, 0, 0.12), transparent 28%),
+    radial-gradient(circle at 87% 8%, rgba(78, 107, 149, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -56,6 +85,11 @@ body::before {
   opacity: 0.34;
   mix-blend-mode: multiply;
   z-index: 0;
+}
+
+.dark body::before {
+  opacity: 0.18;
+  mix-blend-mode: screen;
 }
 
 ::selection {
@@ -92,32 +126,32 @@ main {
 
 .surface-panel-strong {
   @apply rounded-[1.85rem] border border-border/80 shadow-soft;
-  background-color: rgb(255 255 255 / 0.84);
+  background-color: hsl(var(--card) / 0.84);
 }
 
 .surface-panel-dashed {
   @apply rounded-[2rem] border border-dashed border-border shadow-soft;
-  background-color: rgb(255 255 255 / 0.72);
+  background-color: hsl(var(--card) / 0.72);
 }
 
 .surface-subtle {
   @apply rounded-[1.15rem] border border-border;
-  background-color: rgb(255 255 255 / 0.8);
+  background-color: hsl(var(--card) / 0.8);
 }
 
 .surface-pill {
   @apply rounded-full border border-border text-muted-foreground shadow-soft;
-  background-color: rgb(255 255 255 / 0.78);
+  background-color: hsl(var(--card) / 0.78);
 }
 
 .surface-chip {
   @apply rounded-full border border-border text-muted-foreground;
-  background-color: rgb(255 255 255 / 0.78);
+  background-color: hsl(var(--card) / 0.78);
 }
 
 .surface-field {
   @apply border border-border;
-  background-color: rgb(255 255 255 / 0.82);
+  background-color: hsl(var(--card) / 0.82);
 }
 
 .surface-floating {

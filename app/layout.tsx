@@ -5,6 +5,7 @@ import "@/app/globals.css";
 import { NavBar } from "@/components/shared/nav-bar";
 import { AppProviders } from "@/components/providers/app-providers";
 import { PageTransition } from "@/components/providers/page-transition";
+import { ThemeScript } from "@/components/providers/theme-script";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -48,7 +49,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" suppressHydrationWarning className="bg-background">
+      <head>
+        <ThemeScript />
+      </head>
       <body className={`${manrope.variable} ${cormorant.variable}`}>
         <AppProviders>
           <NavBar />

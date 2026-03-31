@@ -23,6 +23,24 @@ export const ourFileRouter = {
         uploaderId: metadata.userId,
         url: file.url
       };
+    }),
+  profileImage: f({
+    image: {
+      maxFileSize: "2MB",
+      maxFileCount: 1
+    }
+  })
+    .middleware(async () => {
+      const session = await getAuthSession();
+      if (!session?.user) throw new UploadThingError("Unauthorized");
+
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return {
+        uploaderId: metadata.userId,
+        url: file.url
+      };
     })
 } satisfies FileRouter;
 

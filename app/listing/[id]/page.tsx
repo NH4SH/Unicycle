@@ -25,7 +25,8 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
         listing={detail.listing}
         isOwner={detail.isOwner}
         similar={detail.similarItems}
-        canCheckout={isStripeCheckoutEnabled()}
+        canCheckout={isStripeCheckoutEnabled() && detail.listing.status === "ACTIVE"}
+        saleContext={detail.saleContext}
       />
     </div>
   );

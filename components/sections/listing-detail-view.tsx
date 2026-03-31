@@ -11,10 +11,13 @@ import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
 import { HeartButton } from "@/components/cards/heart-button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
+import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ListingSaleManager } from "@/components/transactions/listing-sale-manager";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
 import { formatCurrency, timeAgo } from "@/lib/utils";
@@ -24,15 +27,56 @@ type ListingDetailViewProps = {
   isOwner: boolean;
   similar: ListingCardData[];
   canCheckout: boolean;
+  saleContext: {
+    currentTransaction: {
+      id: string;
+      status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED";
+      agreedPriceCents: number | null;
+      sellerMarkedSoldAt: string | null;
+      buyerConfirmedReceivedAt: string | null;
+      confirmedAt: string | null;
+      conversationId: string | null;
+      buyer: {
+        id: string;
+        name: string | null;
+        profileImageUrl: string | null;
+        username: string;
+      };
+      review: {
+        stars: number;
+        comment: string | null;
+        createdAt: string;
+        reviewer: {
+          id: string;
+          name: string | null;
+          profileImageUrl: string | null;
+          username: string;
+        };
+      } | null;
+    } | null;
+    interestedBuyers: {
+      conversationId: string;
+      buyer: {
+        id: string;
+        name: string | null;
+        profileImageUrl: string | null;
+        username: string;
+      };
+      lastMessage: string | null;
+      lastMessageAt: string | null;
+      transactionStatus: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED" | null;
+    }[];
+  };
 };
 
-export function ListingDetailView({ listing, isOwner, similar, canCheckout }: ListingDetailViewProps) {
+export function ListingDetailView({ listing, isOwner, similar, canCheckout, saleContext }: ListingDetailViewProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const router = useRouter();
   const { status } = useSession();
+  const listingIsLive = listing.status === "ACTIVE";
 
   async function startConversation() {
     if (status !== "authenticated") {
@@ -53,24 +97,6 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
 
     const data = (await response.json()) as { id: string };
     router.push(`/messages?conversation=${data.id}`);
-  }
-
-  async function markSold() {
-    setUpdating(true);
-    const response = await fetch(`/api/listings/${listing.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "SOLD" })
-    });
-
-    setUpdating(false);
-    if (!response.ok) {
-      toast.error("Could not update listing status.");
-      return;
-    }
-
-    toast.success("Listing marked as sold.");
-    router.refresh();
   }
 
   async function deleteListing() {
@@ -187,12 +213,11 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{CATEGORY_LABELS[listing.category]}</Badge>
               <Badge variant="orange">{CONDITION_LABELS[listing.condition]}</Badge>
+              {listing.status !== "ACTIVE" ? <ListingStatusBadge status={listing.status} /> : null}
             </div>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">{listing.title}</h1>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border/80 pb-5">
-              <p className="font-display text-4xl font-extrabold text-uva-blue md:text-5xl">
-                {formatCurrency(listing.priceCents / 100)}
-              </p>
+              <p className="font-display text-4xl font-extrabold text-uva-blue md:text-5xl">{formatCurrency(listing.priceCents / 100)}</p>
               <p className="text-sm text-muted-foreground">Posted {timeAgo(listing.createdAt)} ago</p>
             </div>
           </div>
@@ -201,11 +226,14 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
             <CardContent className="space-y-4 p-6">
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Why it stands out</p>
-                <p className="text-sm leading-7 text-muted-foreground">{listing.description}</p>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  <LinkedPlaceText text={listing.description} />
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="blue">{listing.favoriteCount} saves</Badge>
                 <Badge variant="outline">Student-to-student only</Badge>
+                {listing.status === "PENDING_CONFIRMATION" ? <Badge variant="blue">Waiting on buyer receipt</Badge> : null}
               </div>
             </CardContent>
           </Card>
@@ -216,28 +244,36 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                 <div>
                   <p className="editorial-eyebrow">Pickup on Grounds</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Meet where it makes sense between classes, on The Corner, or near game day traffic.
+                    <LinkedPlaceText text="Meet where it makes sense between classes, on The Corner, or near game day traffic." />
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {listing.pickupLocations.map((loc) => (
                     <Badge key={loc} variant="blue">
                       <MapPin className="mr-1 h-3 w-3" />
-                      {loc}
+                      <PlaceMapLink place={loc} className="font-medium underline decoration-white/40 underline-offset-4 hover:text-white">
+                        {loc}
+                      </PlaceMapLink>
                     </Badge>
                   ))}
                 </div>
-                {listing.meetupNotes ? <p className="text-xs leading-6 text-muted-foreground">{listing.meetupNotes}</p> : null}
+                {listing.meetupNotes ? (
+                  <p className="text-xs leading-6 text-muted-foreground">
+                    <LinkedPlaceText text={listing.meetupNotes} />
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
 
             <Card className="border-border/80 bg-white/84">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-start gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={listing.seller.image ?? undefined} alt={listing.seller.name ?? listing.seller.username} />
-                    <AvatarFallback>{listing.seller.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    name={listing.seller.name}
+                    username={listing.seller.username}
+                    imageUrl={listing.seller.profileImageUrl}
+                    className="h-12 w-12"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="editorial-eyebrow">Seller</p>
                     <Link href={`/u/${listing.seller.username}`} className="mt-1 block font-display text-xl font-bold hover:text-uva-blue">
@@ -246,21 +282,40 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                     <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
                   </div>
                   <div className="text-right text-xs">
-                    <p className="inline-flex items-center gap-1">
-                      <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
-                      {listing.sellerRating.toFixed(1)}
-                    </p>
-                    <p className="text-muted-foreground">Replies {listing.sellerResponse}</p>
+                    {listing.sellerRating ? (
+                      <>
+                        <p className="inline-flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+                          {listing.sellerRating.toFixed(1)}
+                        </p>
+                        <p className="text-muted-foreground">{listing.sellerReviewCount} buyer ratings</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-foreground">New seller</p>
+                        <p className="text-muted-foreground">{listing.sellerCompletedSales} confirmed sales</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  Fellow Hoo with a fast response rhythm and local meetup availability.
+                  Fellow Hoo with a fast response rhythm, {listing.sellerCompletedSales} completed sales, and buyer-verified ratings only after real pickups.
                 </p>
               </CardContent>
             </Card>
           </div>
 
-          {canCheckout ? (
+          {!listingIsLive ? (
+            <div className="surface-subtle rounded-[1.75rem] p-4 text-sm leading-7 text-muted-foreground">
+              {listing.status === "PENDING_CONFIRMATION"
+                ? "This piece has already been handed off and is waiting on the selected buyer to confirm receipt."
+                : listing.status === "COMPLETED"
+                  ? "This transaction has been fully completed and recorded on HoosFinds."
+                  : "This listing is currently cancelled and off the feed until the seller relists it."}
+            </div>
+          ) : null}
+
+          {canCheckout && listingIsLive ? (
             <motion.div
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
@@ -282,7 +337,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                     <p className="max-w-xl text-sm leading-7 text-muted-foreground">
                       {isOwner
                         ? "This is how checkout appears to buyers. Owners can’t pay for their own listings."
-                        : "Pay through HoosFinds, then keep pickup coordination in chat with the seller."}
+                        : "Pay through HoosFinds, meet up on Grounds, then confirm receipt once the handoff is actually done."}
                     </p>
                   </div>
                   <div className="space-y-2 text-right">
@@ -299,16 +354,27 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
           ) : null}
 
           {isOwner ? (
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={markSold} disabled={updating}>
-                Mark sold
-              </Button>
-              <Button variant="outline" onClick={deleteListing} disabled={updating}>
-                <Trash2 className="mr-1.5 h-4 w-4" />
-                Delete listing
-              </Button>
+            <div className="space-y-4">
+              <ListingSaleManager
+                listingStatus={listing.status}
+                currentTransaction={saleContext.currentTransaction}
+                interestedBuyers={saleContext.interestedBuyers}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" asChild>
+                  <Link href={`/listing/${listing.id}/edit`}>Edit listing</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={deleteListing}
+                  disabled={updating || listing.status === "PENDING_CONFIRMATION" || listing.status === "COMPLETED"}
+                >
+                  <Trash2 className="mr-1.5 h-4 w-4" />
+                  {listing.status === "PENDING_CONFIRMATION" || listing.status === "COMPLETED" ? "Deletion locked" : "Delete listing"}
+                </Button>
+              </div>
             </div>
-          ) : (
+          ) : listingIsLive ? (
             <div className="flex flex-wrap gap-2">
               <Button onClick={startConversation}>
                 <MessageCircle className="mr-1.5 h-4 w-4" />
@@ -324,13 +390,19 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout }: Li
                 Report
               </Button>
             </div>
-          )}
+          ) : null}
+
+          {!isOwner && listing.status === "PENDING_CONFIRMATION" ? (
+            <p className="text-xs leading-6 text-muted-foreground">
+              If you’re the selected buyer, you’ll see a confirmation CTA in your messages or purchases once it’s your turn to close the loop.
+            </p>
+          ) : null}
 
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/80 px-4 py-2 text-xs text-muted-foreground shadow-soft">
             <ShieldCheck className="h-3.5 w-3.5 text-uva-orange" />
             Meet in public spots on Grounds for safer exchanges.
           </div>
-          {canCheckout ? (
+          {canCheckout && listingIsLive ? (
             <p className="text-xs leading-6 text-muted-foreground">
               Checkout is powered by Stripe. Payments go through HoosFinds while meetup coordination stays between buyer and seller in-app.
             </p>
