@@ -11,6 +11,8 @@ import { getLandingDrops } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { cn, formatCurrency } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?auto=format&fit=crop&w=900&q=80";
 

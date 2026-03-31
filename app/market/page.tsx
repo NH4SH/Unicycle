@@ -1,6 +1,8 @@
 import { MarketClient, type MarketFilters } from "@/components/market/market-client";
-import { getAuthSession } from "@/lib/auth";
-import { getMarketListings } from "@/lib/data";
+import { headers } from "next/headers";
+import type { ListingCardData } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 type MarketPageProps = {
   searchParams: {
@@ -15,7 +17,6 @@ type MarketPageProps = {
 };
 
 export default async function MarketPage({ searchParams }: MarketPageProps) {
-  const session = await getAuthSession();
   const parsedMin = Number(searchParams.min ?? "100");
   const normalizedMin = Number.isFinite(parsedMin) ? Math.max(100, parsedMin) : 100;
   const parsedMax = Number(searchParams.max ?? "250000");
@@ -31,17 +32,32 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
     max: normalizedMax
   };
 
-  const initial = await getMarketListings({
-    q: initialFilters.q,
-    category: initialFilters.category,
-    condition: initialFilters.condition,
-    location: initialFilters.location,
+  const requestHeaders = headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
+  const protocol =
+    requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  const params = new URLSearchParams({
     sort: initialFilters.sort,
-    min: initialFilters.min,
-    max: initialFilters.max,
-    page: 1,
-    userId: session?.user.id
+    min: String(initialFilters.min),
+    max: String(initialFilters.max),
+    page: "1"
   });
+
+  if (initialFilters.q) params.set("q", initialFilters.q);
+  if (initialFilters.category !== "all") params.set("category", initialFilters.category);
+  if (initialFilters.condition !== "all") params.set("condition", initialFilters.condition);
+  if (initialFilters.location !== "all") params.set("location", initialFilters.location);
+
+  const response = await fetch(`${protocol}://${host}/api/listings?${params.toString()}`, {
+    cache: "no-store",
+    headers: {
+      cookie: requestHeaders.get("cookie") ?? ""
+    }
+  });
+
+  const initial = response.ok
+    ? ((await response.json()) as { items: ListingCardData[]; hasMore: boolean })
+    : { items: [], hasMore: false };
 
   return (
     <div className="container space-y-6 py-8 md:space-y-8 md:py-10">

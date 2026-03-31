@@ -1,4 +1,5 @@
 import { Category, Condition, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
+import { unstable_noStore as noStore } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -296,6 +297,8 @@ function mapPurchaseSummary(transaction: TransactionSummaryRecord, viewerId: str
 }
 
 export async function getMarketListings(query: MarketQuery) {
+  noStore();
+
   const normalized = normalizeMarketQuery(query);
   const page = normalized.page;
   const limit = normalized.limit;
@@ -390,6 +393,8 @@ export async function getMarketListings(query: MarketQuery) {
 }
 
 export async function getLandingDrops(userId?: string) {
+  noStore();
+
   const todaysDrops = await prisma.listing.findMany({
     where: { status: ListingStatus.ACTIVE },
     orderBy: { createdAt: "desc" },

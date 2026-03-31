@@ -48,6 +48,8 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const isFirstRender = useRef(true);
   const activeRequestRef = useRef<AbortController | null>(null);
+  const loadedPagesRef = useRef(new Set(initialItems.length ? [1] : []));
+  const recoveryAttemptedRef = useRef(false);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -63,7 +65,13 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
 
   const fetchPage = useCallback(
     async (nextPage: number, reset = false) => {
-      activeRequestRef.current?.abort();
+      if (reset) {
+        activeRequestRef.current?.abort();
+        loadedPagesRef.current = new Set();
+      } else if (activeRequestRef.current || loadedPagesRef.current.has(nextPage)) {
+        return;
+      }
+
       const controller = new AbortController();
       activeRequestRef.current = controller;
       setLoading(true);
@@ -79,9 +87,19 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
         const data = (await response.json()) as { items: ListingCardData[]; hasMore: boolean };
 
         setError(null);
-        setItems((prev) => (reset ? data.items : [...prev, ...data.items]));
+        setItems((prev) => {
+          if (reset) {
+            return data.items;
+          }
+
+          const seen = new Set(prev.map((item) => item.id));
+          const nextItems = data.items.filter((item) => !seen.has(item.id));
+          return [...prev, ...nextItems];
+        });
         setHasMore(data.hasMore);
         setPage(nextPage);
+        loadedPagesRef.current =
+          reset ? new Set(data.items.length ? [nextPage] : []) : new Set([...loadedPagesRef.current, nextPage]);
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
           setError("Could not refresh listings. Give it another shot.");
@@ -97,6 +115,18 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
   );
 
   useEffect(() => {
+    if (initialItems.length || recoveryAttemptedRef.current) {
+      return;
+    }
+
+    recoveryAttemptedRef.current = true;
+    setBooting(true);
+    void fetchPage(1, true).finally(() => {
+      setBooting(false);
+    });
+  }, [initialItems.length, fetchPage]);
+
+  useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
@@ -104,6 +134,7 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
 
     const timeout = setTimeout(async () => {
       setBooting(true);
+      loadedPagesRef.current = new Set();
       await fetchPage(1, true);
       setBooting(false);
     }, 220);
@@ -124,19 +155,21 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
 
   useEffect(() => {
     if (!sentinelRef.current) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
-        if (first.isIntersecting && hasMore && !loading && !booting) {
+        if (!first.isIntersecting || !items.length) return;
+        if (hasMore && !loading && !booting && !error) {
           void fetchPage(page + 1);
         }
       },
-      { threshold: 0.3 }
+      { rootMargin: "240px 0px 320px 0px", threshold: 0.01 }
     );
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [page, hasMore, loading, booting, fetchPage]);
+  }, [page, hasMore, loading, booting, error, items.length, fetchPage]);
 
   function clearFilters() {
     setFilters({
