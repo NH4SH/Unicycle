@@ -131,10 +131,10 @@ export function ProfileView({
                     </PlaceMapLink>
                   </Badge>
                 ) : null}
-                <Link href={`/u/${user.username}/followers`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                <Link href={`/u/${user.username}/connections?tab=followers`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
                   {followState.followerCount} followers
                 </Link>
-                <Link href={`/u/${user.username}/following`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                <Link href={`/u/${user.username}/connections?tab=following`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
                   {followState.followingCount} following
                 </Link>
                 {followState.recentDropAt ? (
