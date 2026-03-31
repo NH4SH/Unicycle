@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
 import { ListingCard } from "@/components/cards/listing-card";
+import { PriceRangeSlider } from "@/components/market/price-range-slider";
 import { EmptyState } from "@/components/shared/empty-state";
 import { GridSkeleton } from "@/components/shared/grid-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import {
   CATEGORY_OPTIONS,
   CONDITION_OPTIONS,
@@ -35,9 +35,10 @@ type MarketClientProps = {
   initialItems: ListingCardData[];
   initialHasMore: boolean;
   initialFilters: MarketFilters;
+  featuredSection?: ReactNode;
 };
 
-export function MarketClient({ initialItems, initialHasMore, initialFilters }: MarketClientProps) {
+export function MarketClient({ initialItems, initialHasMore, initialFilters, featuredSection }: MarketClientProps) {
   const [items, setItems] = useState(initialItems);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [page, setPage] = useState(1);
@@ -184,8 +185,8 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
   }
 
   return (
-    <div className="space-y-7 pb-16">
-      <section className="space-y-3">
+    <div className="space-y-5 pb-16 md:space-y-6">
+      <section className="surface-floating sticky top-16 z-30 space-y-4 px-4 py-4 md:px-5 md:py-5">
         <div className="flex flex-wrap gap-2">
           {MARKET_STYLE_FILTERS.map((filter) => {
             const active = filters.q === filter.q && filters.category === filter.category;
@@ -214,10 +215,8 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
             );
           })}
         </div>
-      </section>
 
-      <section className="surface-floating sticky top-16 z-30 space-y-4 p-4 md:top-[4.25rem] md:p-5">
-        <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="grid gap-3 border-t border-border/70 pt-4 lg:grid-cols-[1.35fr_0.65fr]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -229,7 +228,7 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
             />
           </label>
 
-          <div className="surface-subtle flex items-center justify-between px-4 py-3 text-sm">
+          <div className="surface-subtle flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm">
             <div className="inline-flex items-center gap-2 text-muted-foreground">
               <SlidersHorizontal className="h-4 w-4 text-uva-orange" />
               Refine by style lane, price, and pickup spot.
@@ -241,7 +240,7 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,1.2fr)]">
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Category</p>
             <Select value={filters.category} onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
@@ -309,18 +308,13 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
             </Select>
           </div>
 
-          <div className="surface-subtle p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Price ${Math.round(filters.min / 100)} - ${Math.round(filters.max / 100)}
-            </p>
-            <Slider
-              className="mt-4"
+          <div>
+            <PriceRangeSlider
               min={100}
               max={250000}
               step={100}
               value={[filters.min, filters.max]}
               onValueChange={([min, max]) => setFilters((prev) => ({ ...prev, min, max }))}
-              aria-label="Price range"
             />
           </div>
         </div>
@@ -342,6 +336,8 @@ export function MarketClient({ initialItems, initialHasMore, initialFilters }: M
           </Button>
         </div>
       ) : null}
+
+      {featuredSection}
 
       {booting ? (
         <GridSkeleton count={8} />

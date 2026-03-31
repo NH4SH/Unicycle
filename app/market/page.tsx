@@ -69,8 +69,8 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   ]);
 
   return (
-    <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
-      <div className="grid gap-4 border-b border-border/80 pb-6 md:grid-cols-[1fr_auto] md:items-end">
+    <div className="container space-y-4 pt-4 pb-8 md:space-y-6 md:pt-5 md:pb-10">
+      <div className="grid gap-3 border-b border-border/80 pb-4 md:grid-cols-[1fr_auto] md:items-end">
         <div className="space-y-2">
           <p className="editorial-eyebrow">Browse HoosFinds</p>
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
@@ -86,23 +86,28 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
         </div>
       </div>
 
-      <FollowingFeedSection
-        viewerSignedIn={Boolean(session?.user.id)}
-        feed={followingFeed}
-        suggested={suggestedSellers}
-        maxItems={4}
-        title={session?.user.id ? "From people you follow" : "Sellers to watch"}
-        subtitle={
-          session?.user.id
-            ? "Stay on top of new drops from the closets already shaping your taste."
-            : "Start with active UVA sellers, then browse the wider marketplace."
+      <MarketClient
+        initialItems={initial.items}
+        initialHasMore={initial.hasMore}
+        initialFilters={initialFilters}
+        featuredSection={
+          <FollowingFeedSection
+            viewerSignedIn={Boolean(session?.user.id)}
+            feed={followingFeed}
+            suggested={suggestedSellers}
+            maxItems={4}
+            title={session?.user.id ? "From people you follow" : "Sellers to watch"}
+            subtitle={
+              session?.user.id
+                ? "Stay on top of new drops from the closets already shaping your taste."
+                : "Start with active UVA sellers, then browse the wider marketplace."
+            }
+            emptyTitle="Build your feed with a few strong closets"
+            emptyDescription="Follow the sellers whose style feels right for you and their next drops will show up here."
+            showSuggestedHeading={false}
+          />
         }
-        emptyTitle="Build your feed with a few strong closets"
-        emptyDescription="Follow the sellers whose style feels right for you and their next drops will show up here."
-        showSuggestedHeading={false}
       />
-
-      <MarketClient initialItems={initial.items} initialHasMore={initial.hasMore} initialFilters={initialFilters} />
     </div>
   );
 }
