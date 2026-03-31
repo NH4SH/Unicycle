@@ -1,0 +1,129 @@
+import Link from "next/link";
+import { CheckCircle2, Sparkles, WalletCards } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { prisma } from "@/lib/prisma";
+import { publicUserSummarySelect } from "@/lib/public-user";
+import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
+import { formatCurrency } from "@/lib/utils";
+
+type PaymentsSuccessPageProps = {
+  searchParams?: {
+    session_id?: string;
+  };
+};
+
+export default async function PaymentsSuccessPage({ searchParams }: PaymentsSuccessPageProps) {
+  const sessionId = searchParams?.session_id;
+
+  if (!sessionId || !isStripeConnectConfigured()) {
+    return (
+      <div className="container py-10">
+        <Card className="mx-auto max-w-2xl overflow-hidden border-border bg-card">
+          <CardContent className="space-y-4 p-8 text-center">
+            <Badge variant="blue" className="mx-auto w-fit">Seller payments</Badge>
+            <h1 className="font-display text-4xl font-black tracking-tight">No payment session found.</h1>
+            <Button asChild>
+              <Link href="/payments">Back to seller payments</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const stripeClient = getStripeClient();
+  const checkoutSession = await stripeClient.checkout.sessions.retrieve(sessionId);
+  const connectOrderId = checkoutSession.metadata?.connectOrderId || checkoutSession.client_reference_id || "";
+  const connectOrder = connectOrderId
+    ? await prisma.connectOrder.findFirst({
+        where: {
+          OR: [{ id: connectOrderId }, { stripeCheckoutSessionId: sessionId }]
+        },
+        include: {
+          connectProduct: true,
+          buyer: {
+            select: publicUserSummarySelect
+          },
+          seller: {
+            select: publicUserSummarySelect
+          },
+          connectedAccount: true
+        }
+      })
+    : null;
+  const paymentComplete = checkoutSession.payment_status === "paid" || connectOrder?.status === "PAID";
+
+  return (
+    <div className="container py-10">
+      <Card className="mx-auto max-w-3xl overflow-hidden border-border bg-card">
+        <CardContent className="space-y-6 p-8">
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-gradient-to-br from-card via-uva-blue/5 to-uva-orange/10 p-6">
+            <div className="absolute left-0 top-0 h-24 w-24 rounded-full bg-uva-blue/10 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-uva-orange/10 blur-3xl" />
+            <div className="relative space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Badge variant={paymentComplete ? "orange" : "blue"} className="w-fit">
+                  {paymentComplete ? "Payout routed successfully" : "Payment processing"}
+                </Badge>
+                <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                  <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
+                  Seller payments
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="inline-flex rounded-full bg-card/90 p-3 shadow-soft">
+                  <CheckCircle2 className="h-8 w-8 text-uva-orange" />
+                </div>
+                <h1 className="font-display text-4xl font-black tracking-tight">
+                  {paymentComplete ? "Payment routed successfully." : "We’re still confirming the payment."}
+                </h1>
+                <p className="max-w-2xl text-muted-foreground">
+                  {paymentComplete
+                    ? "The customer paid through Stripe Checkout, HoosFinds kept the platform fee, and the remaining funds were routed to the seller's connected account."
+                    : "Stripe is still finalizing the payment state for this order. Refresh in a moment if it stays in processing."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {connectOrder ? (
+            <div className="grid gap-4 rounded-3xl border border-border bg-secondary/40 p-5 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Purchased product</p>
+                <p className="font-display text-2xl font-black">{connectOrder.connectProduct.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Seller: {connectOrder.seller.name || connectOrder.seller.username} · Connected account{" "}
+                  {connectOrder.connectedAccount.stripeAccountId}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-card px-4 py-3 text-right shadow-soft">
+                <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  <WalletCards className="h-3.5 w-3.5 text-uva-blue" />
+                  Total
+                </div>
+                <p className="font-display text-2xl font-black text-uva-blue">
+                  {formatCurrency(connectOrder.amountCents / 100)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Platform fee {formatCurrency(connectOrder.applicationFeeCents / 100)}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/payments">Back to seller payments</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/messages">Open messages</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

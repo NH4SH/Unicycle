@@ -98,7 +98,7 @@ export function SignInForm({ callbackUrl, enableDevBypass, requireBypassCode }: 
 
   return (
     <div className="container flex min-h-[70vh] items-center justify-center py-10">
-      <Card className="w-full max-w-xl border-border/80 bg-white/86">
+      <Card className="surface-panel-strong w-full max-w-xl">
         <CardContent className="space-y-7 p-8">
           <div className="space-y-3 text-center">
             <p className="editorial-eyebrow">HoosFinds</p>

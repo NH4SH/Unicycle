@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { packListingDescription } from "@/lib/listing-draft";
+import { getUploadedFileUrl } from "@/lib/uploadthing";
 import { listingSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
@@ -185,7 +186,7 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
   }
 
   return (
-    <Card className="border-border/80 bg-white/84">
+    <Card className="surface-panel-strong">
       <CardContent className="space-y-7 p-5 md:p-8">
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -215,9 +216,9 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
               <div className="rounded-[1.5rem] border border-border bg-background/70 p-4">
                 <p className="editorial-eyebrow">Photo tips</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">Front-facing hero image</div>
-                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">Close-up on texture or wear</div>
-                  <div className="rounded-[1.15rem] border border-border bg-white/80 p-3 text-sm text-muted-foreground">One angle that shows the full piece</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">Front-facing hero image</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">Close-up on texture or wear</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">One angle that shows the full piece</div>
                 </div>
               </div>
             </div>
@@ -225,8 +226,10 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
             <UploadDropzone<OurFileRouter, "listingImage">
               endpoint="listingImage"
               disabled={locked || publishing}
-              onClientUploadComplete={(result: { url: string }[]) => {
-                const urls = result.map((item) => item.url);
+              onClientUploadComplete={(result) => {
+                const urls = result
+                  .map((item) => getUploadedFileUrl(item))
+                  .filter((item): item is string => Boolean(item));
                 setDraft((prev) => ({ ...prev, images: [...prev.images, ...urls].slice(0, 6) }));
                 toast.success("Photos uploaded.");
               }}
@@ -242,7 +245,7 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
 
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               {draft.images.map((url, idx) => (
-                <div key={`${url}-${idx}`} className="space-y-2 rounded-[1.4rem] border border-border bg-white/90 p-2 shadow-soft">
+                <div key={`${url}-${idx}`} className="space-y-2 rounded-[1.4rem] border border-border bg-card/90 p-2 shadow-soft">
                   <div className="relative aspect-square overflow-hidden rounded-[1.05rem]">
                     <Image src={url} alt={`Upload ${idx + 1}`} fill className="object-cover" sizes="200px" />
                   </div>

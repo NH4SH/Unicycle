@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          "This seller still needs to finish Stripe onboarding before the sample storefront can route funds to them."
+          "This seller still needs to finish Stripe onboarding before HoosFinds can route funds to them."
       },
       { status: 409 }
     );
@@ -73,15 +73,12 @@ export async function POST(request: Request) {
   });
 
   try {
-    // Hosted Checkout keeps the sample simple. The destination charge sends the
-    // net funds to the connected account while the application fee stays on the
-    // platform account.
     const checkoutSession = await stripeClient.checkout.sessions.create({
       mode: "payment",
       customer_email: session.user.email,
       client_reference_id: connectOrder.id,
-      success_url: `${origin}/connect-demo/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/connect-demo/cancel?productId=${product.id}`,
+      success_url: `${origin}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/payments/cancel?productId=${product.id}`,
       payment_method_types: ["card"],
       metadata: {
         connectOrderId: connectOrder.id,

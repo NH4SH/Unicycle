@@ -56,7 +56,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             tickets, and move-out finds still live here too.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
           Local pickup on Grounds
         </div>
       </div>

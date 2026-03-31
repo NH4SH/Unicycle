@@ -11,7 +11,7 @@ UVA's fashion-first resale marketplace built with Next.js 14, TypeScript, Tailwi
 - NextAuth email magic links + UVA domain gating
 - UploadThing uploads
 - Unified listing search + filters + trending logic
-- Sample Stripe Connect seller onboarding + storefront flow
+- Stripe Connect seller onboarding + storefront flow
 
 ## Features
 
@@ -71,9 +71,9 @@ For local development without SMTP, set `DEV_AUTH_BYPASS="true"` and use the dev
 For hosted team testing without SMTP, set `TEST_AUTH_BYPASS="true"` and `TEST_AUTH_BYPASS_CODE` to a private shared code. The hosted sign-in form will require both a UVA email and that code.
 For database hosting, use Neon and place the pooled URL in `DATABASE_URL` and the direct URL in `DIRECT_URL`.
 For Stripe checkout, create a Stripe account, add `STRIPE_SECRET_KEY`, and point a webhook endpoint at `/api/stripe/webhook` using `STRIPE_WEBHOOK_SECRET`.
-For the Stripe Connect sample, add `STRIPE_CONNECT_WEBHOOK_SECRET` and use the demo at `/connect-demo`.
+For Stripe Connect seller payouts, add `STRIPE_CONNECT_WEBHOOK_SECRET` and use the payments workspace at `/payments`.
 
-## Demo Data
+## Seed Data
 
 Seed includes:
 
@@ -94,7 +94,7 @@ Seed includes:
 - Auth config + UVA gate: `lib/auth.ts`, `app/auth/uva-only/page.tsx`
 - Prisma schema + seed: `prisma/schema.prisma`, `prisma/seed.ts`
 - UploadThing router: `app/api/uploadthing/core.ts`
-- Stripe Connect demo: `app/connect-demo/page.tsx`, `components/connect/connect-demo-client.tsx`
+- Stripe Connect seller payments: `app/payments/page.tsx`, `components/connect/connect-demo-client.tsx`
 - Stripe Connect API: `app/api/connect/*`, `lib/connect.ts`
 
 ## Netlify Deploy
@@ -132,7 +132,7 @@ Deployment steps:
 1. Create a Neon project and copy both the pooled and direct connection strings.
 2. Add the env vars in Netlify.
 3. Deploy the site.
-4. If you want seeded demo data in that database, run `npx prisma db seed` against the Neon database once.
+4. If you want starter data in that database, run `npx prisma db seed` against the Neon database once.
 
 ## Stripe Checkout
 
@@ -150,21 +150,21 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 Use the webhook signing secret Stripe prints in the CLI or Dashboard for `STRIPE_WEBHOOK_SECRET`.
 
-## Stripe Connect Sample
+## Stripe Connect
 
-This repo also includes a sample Stripe Connect integration that demonstrates:
+This repo also includes a Stripe Connect integration that demonstrates:
 
 - creating recipient-style connected accounts with the V2 Accounts API
 - generating Stripe-hosted onboarding links
 - creating platform-level products that map back to connected accounts
-- a demo storefront that charges customers through hosted Checkout
+- a storefront that charges customers through hosted Checkout
 - destination charges with an application fee
 - persisted Connect orders that are fulfilled by Stripe webhooks
 - thin connected-account webhooks for onboarding requirement changes
 
 Main routes:
 
-- `/connect-demo` seller tools + customer storefront
+- `/payments` seller tools + customer storefront
 - `POST /api/connect/account` creates the connected account mapping
 - `POST /api/connect/account/onboarding` creates the onboarding Account Link
 - `POST /api/connect/products` creates a platform-level Stripe product
@@ -198,4 +198,4 @@ these notifications inside the app as:
 - `v2.core.account[requirements].updated`
 - `v2.core.account[configuration.recipient].capability_status_updated`
 
-The sample intentionally does not persist onboarding status in Prisma. `/connect-demo` asks Stripe for the latest connected-account status every time it renders so sellers always see live readiness data.
+The payments workspace intentionally does not persist onboarding status in Prisma. `/payments` asks Stripe for the latest connected-account status every time it renders so sellers always see live readiness data.

@@ -97,7 +97,7 @@ export function ProfileView({
 
   return (
     <div className="space-y-8">
-      <Card className="border-border/80 bg-white/84">
+      <Card className="surface-panel-strong">
         <CardContent className="space-y-6 p-6 md:p-8">
           <div className="grid gap-6 md:grid-cols-[auto_1fr_auto] md:items-start">
             <UserAvatar name={user.name} username={user.username} imageUrl={form.profileImageUrl || null} className="h-20 w-20" fallbackClassName="text-lg" />
@@ -139,22 +139,22 @@ export function ProfileView({
                   />
                 </div>
               ) : null}
-              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+              <div className="surface-inset rounded-[1.3rem] px-3 py-4 text-center">
                 <p className="font-display text-2xl font-extrabold">{stats.active}</p>
                 <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Active</p>
               </div>
-              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+              <div className="surface-inset rounded-[1.3rem] px-3 py-4 text-center">
                 <p className="font-display text-2xl font-extrabold">{stats.completedSales}</p>
                 <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Confirmed sales</p>
               </div>
-              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+              <div className="surface-inset rounded-[1.3rem] px-3 py-4 text-center">
                 <p className="inline-flex items-center gap-1 font-display text-2xl font-extrabold">
                   {stats.averageRating ? <Star className="h-4 w-4 fill-uva-orange text-uva-orange" /> : null}
                   {stats.averageRating ? stats.averageRating.toFixed(1) : "New"}
                 </p>
                 <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{stats.reviewCount} buyer ratings</p>
               </div>
-              <div className="rounded-[1.3rem] border border-border bg-background/70 px-3 py-4 text-center">
+              <div className="surface-inset rounded-[1.3rem] px-3 py-4 text-center">
                 <p className="font-display text-2xl font-extrabold">{stats.favoritesReceived}</p>
                 <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Saved</p>
               </div>
@@ -162,7 +162,7 @@ export function ProfileView({
           </div>
 
           {recentReviews.length ? (
-            <div className="rounded-[1.7rem] border border-border bg-background/70 p-4">
+            <div className="surface-inset rounded-[1.7rem] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-display text-xl font-bold">Buyer-verified ratings</p>
@@ -175,7 +175,7 @@ export function ProfileView({
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 {recentReviews.map((review) => (
-                  <div key={review.id} className="rounded-[1.35rem] border border-border bg-card/72 p-4">
+                  <div key={review.id} className="surface-subtle rounded-[1.35rem] p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <UserAvatar
@@ -210,7 +210,7 @@ export function ProfileView({
           ) : null}
 
           {isOwner ? (
-            <div className="rounded-[1.7rem] border border-border bg-background/70 p-4">
+            <div className="surface-inset rounded-[1.7rem] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-display text-xl font-bold">Edit your profile</p>
@@ -263,7 +263,7 @@ export function ProfileView({
       </Card>
 
       <Tabs defaultValue="active" className="space-y-4">
-        <TabsList className="bg-white/80">
+        <TabsList>
           <TabsTrigger value="active">Closet ({activeListings.length})</TabsTrigger>
           <TabsTrigger value="past">Past sales ({pastListings.length})</TabsTrigger>
           <TabsTrigger value="favorites">Saved ({favorites.length})</TabsTrigger>

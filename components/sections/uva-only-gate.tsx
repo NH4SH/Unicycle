@@ -41,7 +41,7 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
 
   return (
     <div className="container flex min-h-[72vh] items-center justify-center py-8">
-      <Card className="w-full max-w-2xl overflow-hidden border-border/80 bg-white/86">
+      <Card className="surface-panel-strong w-full max-w-2xl overflow-hidden">
         <CardContent className="space-y-7 p-8">
           <div className="space-y-3">
             <p className="editorial-eyebrow">HoosFinds</p>

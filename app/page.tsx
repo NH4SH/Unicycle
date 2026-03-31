@@ -87,7 +87,7 @@ export default async function HomePage() {
 
         <div className="grid gap-4 sm:grid-cols-[1.08fr_0.92fr]">
           {heroLead ? (
-            <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-white shadow-card">
+            <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
               <div className="relative aspect-[4/5] overflow-hidden">
                 <Image
                   src={heroLead.images[0] || FALLBACK_IMAGE}
@@ -98,7 +98,7 @@ export default async function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/24 to-transparent" />
                 <div className="absolute left-4 top-4">
-                  <Badge variant="outline" className="border-white/70 bg-white/86 backdrop-blur">
+                  <Badge variant="outline" className="border-border/70 bg-card/86 backdrop-blur">
                     Featured on Grounds
                   </Badge>
                 </div>
@@ -109,7 +109,7 @@ export default async function HomePage() {
                       {heroLead.title}
                     </p>
                   </div>
-                  <div className="rounded-full bg-white/88 px-4 py-2 text-sm font-semibold text-foreground shadow-soft">
+                  <div className="rounded-full bg-card/88 px-4 py-2 text-sm font-semibold text-foreground shadow-soft">
                     {formatCurrency(heroLead.priceCents / 100)}
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export default async function HomePage() {
                 <Link
                   key={listing.id}
                   href={`/listing/${listing.id}`}
-                  className="group relative block overflow-hidden rounded-[1.9rem] border border-border/80 bg-white shadow-soft"
+                  className="group relative block overflow-hidden rounded-[1.9rem] border border-border/80 bg-card shadow-soft"
                 >
                   <div className="relative aspect-[4/4.5] overflow-hidden">
                     <Image
@@ -147,7 +147,7 @@ export default async function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/16 to-transparent" />
                     <div className="absolute left-4 top-4">
-                      <Badge variant={index === 0 ? "orange" : "blue"} className="bg-white/88 text-foreground backdrop-blur">
+                      <Badge variant={index === 0 ? "orange" : "blue"} className="bg-card/88 text-foreground backdrop-blur">
                         {index === 0 ? "Game day lane" : "Campus favorite"}
                       </Badge>
                     </div>
@@ -218,7 +218,7 @@ export default async function HomePage() {
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)]">
           <Link
             href={vintageLane.href}
-            className="group relative overflow-hidden rounded-[2.15rem] border border-border/80 bg-[radial-gradient(circle_at_top_left,rgba(229,114,0,0.17),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,242,235,0.92))] p-6 shadow-card transition hover:-translate-y-1 md:p-7 xl:min-h-[25rem]"
+            className="lane-surface-warm group relative overflow-hidden rounded-[2.15rem] border border-border/80 p-6 shadow-card transition hover:-translate-y-1 md:p-7 xl:min-h-[25rem]"
           >
             <div className="flex h-full flex-col justify-between gap-8">
               <div className="space-y-4">
@@ -252,8 +252,8 @@ export default async function HomePage() {
                 className={cn(
                   "group rounded-[1.75rem] border border-border/80 p-5 transition hover:-translate-y-0.5",
                   item.label.includes("Game")
-                    ? "bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(229,114,0,0.09))]"
-                    : "bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(78,107,149,0.07))]"
+                    ? "lane-surface-orange"
+                    : "lane-surface-blue"
                 )}
               >
                 <p className={cn("editorial-eyebrow", item.label.includes("Game") ? "text-uva-orange" : "text-uva-blue")}>
@@ -270,7 +270,7 @@ export default async function HomePage() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="group rounded-[1.6rem] border border-border/80 bg-white/84 p-5 transition hover:-translate-y-0.5 hover:border-uva-orange/40"
+                className="group rounded-[1.6rem] border border-border/80 bg-card/84 p-5 transition hover:-translate-y-0.5 hover:border-uva-orange/40"
               >
                 <p className="editorial-eyebrow">{item.eyebrow}</p>
                 <h3 className="mt-3 font-display text-xl font-extrabold tracking-tight">{item.label}</h3>
@@ -283,7 +283,7 @@ export default async function HomePage() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="group flex items-start justify-between gap-4 rounded-[1.55rem] border border-border/80 bg-white/80 px-5 py-4 transition hover:-translate-y-0.5 hover:border-uva-blue/35"
+                  className="group flex items-start justify-between gap-4 rounded-[1.55rem] border border-border/80 bg-card/80 px-5 py-4 transition hover:-translate-y-0.5 hover:border-uva-blue/35"
                 >
                   <div className="space-y-2">
                     <p className="editorial-eyebrow">{item.eyebrow}</p>
@@ -378,7 +378,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-[2.4rem] border border-border/80 bg-white/80 p-6 shadow-card md:grid-cols-[1.15fr_0.85fr_0.85fr] md:p-8">
+      <section className="grid gap-4 rounded-[2.4rem] border border-border/80 bg-card/80 p-6 shadow-card md:grid-cols-[1.15fr_0.85fr_0.85fr] md:p-8">
         <div className="md:pr-6">
           <p className="editorial-eyebrow">Building with students</p>
           <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight">A real campus product, not a placeholder brand.</h3>

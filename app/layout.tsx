@@ -20,6 +20,11 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://hoosfinds.com"),
+  icons: {
+    icon: "/brand/hoosfinds-logo.png",
+    apple: "/brand/hoosfinds-logo.png",
+    shortcut: "/brand/hoosfinds-logo.png"
+  },
   title: {
     default: "HoosFinds | UVA's fashion-first resale marketplace",
     template: "%s | HoosFinds"

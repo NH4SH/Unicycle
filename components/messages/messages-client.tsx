@@ -322,7 +322,7 @@ export function MessagesClient({ userId }: { userId: string }) {
                     "grid min-h-[88px] w-full grid-cols-[64px_1fr] gap-3 rounded-[1.35rem] border px-3 py-3 text-left transition",
                     active
                       ? "border-uva-blue/20 bg-uva-blue/6"
-                      : "border-transparent bg-white/50 hover:border-border hover:bg-white/75"
+                      : "border-transparent bg-card/55 hover:border-border hover:bg-card/78"
                   )}
                 >
                   <div className="relative h-16 w-16 overflow-hidden rounded-[1rem] border border-border">

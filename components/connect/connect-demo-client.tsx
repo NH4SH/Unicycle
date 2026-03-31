@@ -103,7 +103,7 @@ export function ConnectDemoClient({
 
   async function createConnectedAccount() {
     if (!viewer) {
-      router.push("/sign-in?callbackUrl=%2Fconnect-demo");
+      router.push("/sign-in?callbackUrl=%2Fpayments");
       return;
     }
 
@@ -115,8 +115,6 @@ export function ConnectDemoClient({
     setCreatingAccount(true);
 
     try {
-      // This calls the sample API route, which creates a V2 recipient account
-      // and stores only the user-to-account mapping in Prisma.
       const response = await fetch("/api/connect/account", {
         method: "POST"
       });
@@ -137,15 +135,13 @@ export function ConnectDemoClient({
 
   async function startOnboarding() {
     if (!viewer) {
-      router.push("/sign-in?callbackUrl=%2Fconnect-demo");
+      router.push("/sign-in?callbackUrl=%2Fpayments");
       return;
     }
 
     setStartingOnboarding(true);
 
     try {
-      // The onboarding route creates a fresh Stripe Account Link so sellers can
-      // always continue or re-enter hosted onboarding with a single click.
       const response = await fetch("/api/connect/account/onboarding", {
         method: "POST"
       });
@@ -166,7 +162,7 @@ export function ConnectDemoClient({
     event.preventDefault();
 
     if (!viewer) {
-      router.push("/sign-in?callbackUrl=%2Fconnect-demo");
+      router.push("/sign-in?callbackUrl=%2Fpayments");
       return;
     }
 
@@ -215,15 +211,13 @@ export function ConnectDemoClient({
 
   async function startCheckout(productId: string) {
     if (!viewer) {
-      router.push("/sign-in?callbackUrl=%2Fconnect-demo");
+      router.push("/sign-in?callbackUrl=%2Fpayments");
       return;
     }
 
     setCheckoutProductId(productId);
 
     try {
-      // Hosted Checkout keeps the customer purchase flow simple. The API route
-      // builds the destination charge and sends back the Checkout URL.
       const response = await fetch("/api/connect/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -252,7 +246,7 @@ export function ConnectDemoClient({
               <Badge variant="orange">Config needed</Badge>
               <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                 <AlertCircle className="h-4 w-4 text-uva-orange" />
-                Add your Stripe keys before testing the Connect sample end to end.
+                Add your Stripe keys before using seller payouts end to end.
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
@@ -266,7 +260,7 @@ export function ConnectDemoClient({
               <div className="surface-subtle p-4">
                 <p className="editorial-eyebrow">Thin webhook route</p>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  The sample listens on <code>/api/connect/webhook</code> for recipient requirement and capability
+                  HoosFinds listens on <code>/api/connect/webhook</code> for recipient requirement and capability
                   updates.
                 </p>
               </div>
@@ -335,7 +329,7 @@ export function ConnectDemoClient({
                 </p>
               </div>
               <div className="surface-subtle p-4">
-                <p className="editorial-eyebrow">What this demo proves</p>
+                <p className="editorial-eyebrow">What this unlocks</p>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
                   HoosFinds can onboard sellers, create platform-owned products, and charge customers while routing payouts
                   to connected accounts with an application fee.
@@ -371,10 +365,10 @@ export function ConnectDemoClient({
               <div className="surface-subtle flex flex-wrap items-center justify-between gap-3 p-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Sign in to test the seller flow</p>
-                  <p className="text-sm text-muted-foreground">Use a UVA email so the demo can create the Stripe account mapping.</p>
+                  <p className="text-sm text-muted-foreground">Use a UVA email so HoosFinds can create the Stripe account mapping.</p>
                 </div>
                 <Button asChild>
-                  <Link href="/sign-in?callbackUrl=%2Fconnect-demo">Sign in</Link>
+                  <Link href="/sign-in?callbackUrl=%2Fpayments">Sign in</Link>
                 </Button>
               </div>
             )}
@@ -444,7 +438,7 @@ export function ConnectDemoClient({
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-foreground">Before you publish</p>
                 <p className="max-w-xl text-sm leading-6 text-muted-foreground">
-                  You can create sample products as soon as the connected account exists. The buy button stays blocked until
+                  You can create storefront products as soon as the connected account exists. The buy button stays blocked until
                   Stripe says the recipient account can receive transfers.
                 </p>
               </div>
@@ -453,7 +447,7 @@ export function ConnectDemoClient({
 
             <Button type="submit" disabled={!viewer || !sellerState.connectedAccount || creatingProduct} className="w-full sm:w-auto">
               {creatingProduct ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Store className="mr-1.5 h-4 w-4" />}
-              {creatingProduct ? "Creating product..." : "Create sample product"}
+              {creatingProduct ? "Creating product..." : "Create storefront product"}
             </Button>
           </div>
         </motion.form>
@@ -608,7 +602,7 @@ export function ConnectDemoClient({
               platform fee is collected automatically on the destination charge.
             </p>
           </div>
-          <div className="surface-pill px-4 py-2 text-sm">{products.length} live demo product{products.length === 1 ? "" : "s"}</div>
+          <div className="surface-pill px-4 py-2 text-sm">{products.length} live storefront product{products.length === 1 ? "" : "s"}</div>
         </div>
 
         {products.length ? (
@@ -634,9 +628,9 @@ export function ConnectDemoClient({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <Badge variant="outline" className="border-white/80 bg-white/88 backdrop-blur">Platform product</Badge>
-                      <Badge variant={productReady ? "orange" : "blue"} className="bg-white/88 text-foreground backdrop-blur">
-                        {productReady ? "Seller ready" : "Needs onboarding"}
+                      <Badge variant="outline" className="border-border/80 bg-card/88 backdrop-blur">Platform product</Badge>
+                      <Badge variant={productReady ? "orange" : "blue"} className="bg-card/88 text-foreground backdrop-blur">
+                      {productReady ? "Ready for checkout" : "Needs onboarding"}
                       </Badge>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-4 text-white">
@@ -660,7 +654,7 @@ export function ConnectDemoClient({
                     </div>
 
                     <p className="text-sm leading-7 text-muted-foreground">
-                      {product.description || "A sample Connect storefront product for testing hosted checkout and seller payouts."}
+                      {product.description || "A storefront product on HoosFinds with payout routing through Stripe Connect."}
                     </p>
 
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -716,8 +710,8 @@ export function ConnectDemoClient({
               <div className="space-y-2">
                 <h3 className="font-display text-2xl font-extrabold tracking-tight">No Connect products yet</h3>
                 <p className="mx-auto max-w-xl text-sm leading-7 text-muted-foreground">
-                  Create a connected account, finish Stripe onboarding, and publish a sample product to see the hosted
-                  storefront and destination-charge checkout in action.
+                  Create a connected account, finish Stripe onboarding, and publish a storefront product to see hosted
+                  checkout and destination-charge payouts in action.
                 </p>
               </div>
             </CardContent>

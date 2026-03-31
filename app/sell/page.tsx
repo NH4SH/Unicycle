@@ -14,19 +14,19 @@ export default function SellPage() {
             HoosFinds is built for clothing first, but dorm cleanout gems, tech, textbooks, and other local finds still belong here too.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
           Pickup on Grounds
         </div>
       </div>
       <div className="surface-subtle flex flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-foreground">Testing seller payouts with Stripe Connect?</p>
+          <p className="text-sm font-semibold text-foreground">Need to set up seller payouts?</p>
           <p className="text-sm text-muted-foreground">
-            Open the sample onboarding and storefront flow we added for connected-account testing.
+            Open the seller payments workspace to onboard with Stripe and publish payout-ready storefront products.
           </p>
         </div>
         <Button asChild variant="secondary">
-          <Link href="/connect-demo">Open Connect demo</Link>
+          <Link href="/payments">Open seller payments</Link>
         </Button>
       </div>
       <SellWizard />

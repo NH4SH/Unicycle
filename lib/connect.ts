@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { publicUserSummarySelect, toPublicUserSummary } from "@/lib/public-user";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
-// The sample storefront uses a simple 10% platform fee so the destination
+// HoosFinds uses a simple 10% platform fee here so the destination
 // charge demonstrates how the platform can monetize each order.
 export const CONNECT_APPLICATION_FEE_BPS = 1000;
 

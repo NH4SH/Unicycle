@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     case "v2.core.account[requirements].updated": {
       const latestStatus = await getConnectedAccountStatusFromStripe(event.related_object.id);
 
-      // For this demo we intentionally do not persist onboarding status. The UI
+      // We intentionally do not persist onboarding status. The UI
       // always asks Stripe for the latest status directly. This handler exists
       // so requirement changes are acknowledged and ready for future alerts.
       return NextResponse.json({

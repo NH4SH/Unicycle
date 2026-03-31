@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +25,21 @@ function getInitials(name?: string | null, username?: string | null) {
 }
 
 export function UserAvatar({ name, username, imageUrl, className, fallbackClassName }: UserAvatarProps) {
+  const normalizedUrl = imageUrl?.trim() || null;
+  const [didFail, setDidFail] = useState(false);
+
+  useEffect(() => {
+    setDidFail(false);
+  }, [normalizedUrl]);
+
   return (
     <Avatar className={cn("border border-border", className)}>
-      <AvatarImage src={imageUrl ?? undefined} alt={name || username || "Profile"} />
+      <AvatarImage
+        src={!didFail ? normalizedUrl ?? undefined : undefined}
+        alt={name || username || "Profile"}
+        onError={() => setDidFail(true)}
+        className="object-cover"
+      />
       <AvatarFallback className={cn("bg-card text-xs font-semibold text-foreground", fallbackClassName)}>
         {getInitials(name, username)}
       </AvatarFallback>

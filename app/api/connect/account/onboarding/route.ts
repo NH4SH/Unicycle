@@ -35,16 +35,14 @@ export async function POST(request: Request) {
   const stripeClient = getStripeClient();
 
   try {
-    // Stripe Account Links take the seller into Stripe-hosted onboarding while
-    // keeping us in control of the return and refresh URLs.
     const accountLink = await stripeClient.v2.core.accountLinks.create({
       account: connectedAccount.stripeAccountId,
       use_case: {
         type: "account_onboarding",
         account_onboarding: {
           configurations: ["recipient"],
-          refresh_url: `${origin}/connect-demo?refresh=1`,
-          return_url: `${origin}/connect-demo?accountId=${connectedAccount.stripeAccountId}`
+          refresh_url: `${origin}/payments?refresh=1`,
+          return_url: `${origin}/payments?accountId=${connectedAccount.stripeAccountId}`
         }
       }
     });

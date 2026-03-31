@@ -60,7 +60,7 @@ export function HeartButton({ listingId, initialFavorited, initialCount, classNa
         "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
         favorited
           ? "border-uva-orange/35 bg-uva-orange/10 text-uva-orange"
-          : "border-border bg-white/88 text-muted-foreground hover:border-uva-blue/30 hover:text-uva-blue",
+          : "border-border bg-card/88 text-muted-foreground hover:border-uva-blue/30 hover:text-uva-blue",
         className
       )}
     >

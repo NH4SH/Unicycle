@@ -54,7 +54,7 @@ export function getStripeWebhookSecret() {
 export function getStripeConnectWebhookSecret() {
   return readRequiredEnv(
     "STRIPE_CONNECT_WEBHOOK_SECRET",
-    'Add the thin-event webhook signing secret for the Connect sample to continue receiving connected-account requirement updates.'
+    'Add the thin-event webhook signing secret for seller payouts to continue receiving connected-account requirement updates.'
   );
 }
 

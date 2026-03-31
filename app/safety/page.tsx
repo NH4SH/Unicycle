@@ -38,14 +38,14 @@ export default function SafetyPage() {
             HoosFinds is designed for real student meetups on Grounds. These guidelines keep that experience trustworthy without making it feel corporate or overbuilt.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
           Meet in public
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {rules.map((rule) => (
-          <Card key={rule.title} className="border-border/80 bg-white/84">
+          <Card key={rule.title} className="surface-panel-strong">
             <CardContent className="space-y-3 p-6">
               <rule.icon className="h-5 w-5 text-uva-orange" />
               <h2 className="font-display text-2xl font-bold tracking-tight">{rule.title}</h2>
@@ -55,7 +55,7 @@ export default function SafetyPage() {
         ))}
       </div>
 
-      <Card className="border-border/80 bg-white/84">
+      <Card className="surface-panel-strong">
         <CardContent className="space-y-4 p-6">
           <div className="space-y-2">
             <p className="editorial-eyebrow">Meetup checklist</p>

@@ -173,7 +173,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
           <motion.button
             whileTap={{ scale: 0.99 }}
             onClick={() => setZoomed((prev) => !prev)}
-            className="relative aspect-[4/5] w-full overflow-hidden rounded-[2.2rem] border border-border/80 bg-white shadow-card"
+            className="relative aspect-[4/5] w-full overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card"
             aria-label="Toggle image zoom"
           >
             <Image
@@ -222,7 +222,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
             </div>
           </div>
 
-          <Card className="border-border/80 bg-white/84">
+          <Card className="surface-panel-strong">
             <CardContent className="space-y-4 p-6">
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Why it stands out</p>
@@ -239,7 +239,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-border/80 bg-white/84">
+            <Card className="surface-panel-strong">
               <CardContent className="space-y-4 p-6">
                 <div>
                   <p className="editorial-eyebrow">Pickup on Grounds</p>
@@ -265,7 +265,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 bg-white/84">
+            <Card className="surface-panel-strong">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-start gap-3">
                   <UserAvatar
@@ -326,7 +326,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
               <div className="relative space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <Badge variant="blue">{isOwner ? "Seller preview" : "Secure checkout beta"}</Badge>
-                  <div className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                  <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
                     <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
                     Stripe
                   </div>
@@ -398,7 +398,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
             </p>
           ) : null}
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-white/80 px-4 py-2 text-xs text-muted-foreground shadow-soft">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-2 text-xs text-muted-foreground shadow-soft">
             <ShieldCheck className="h-3.5 w-3.5 text-uva-orange" />
             Meet in public spots on Grounds for safer exchanges.
           </div>

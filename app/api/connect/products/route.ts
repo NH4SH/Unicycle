@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   if (!connectedAccount) {
     return NextResponse.json(
-      { message: "Create your connected account before adding products to the sample storefront." },
+      { message: "Create your connected account before adding products to the storefront." },
       { status: 404 }
     );
   }
@@ -41,8 +41,6 @@ export async function POST(request: Request) {
   const stripeClient = getStripeClient();
 
   try {
-    // Products live on the platform account in this sample. We store the mapping
-    // back to the connected account in both Stripe metadata and our database.
     const product = await stripeClient.products.create({
       name: parsed.data.name,
       description: parsed.data.description || undefined,

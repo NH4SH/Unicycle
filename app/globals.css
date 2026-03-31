@@ -159,6 +159,49 @@ main {
   background-color: hsl(var(--background) / 0.92);
 }
 
+.surface-overlay {
+  @apply border border-border/70 backdrop-blur-sm;
+  background-color: hsl(var(--card) / 0.86);
+}
+
+.surface-overlay-strong {
+  @apply border border-border/80 backdrop-blur-md shadow-soft;
+  background-color: hsl(var(--card) / 0.92);
+}
+
+.surface-inset {
+  @apply border border-border;
+  background-color: hsl(var(--background) / 0.72);
+}
+
+.lane-surface-warm {
+  background-image:
+    radial-gradient(circle at top left, rgba(229, 114, 0, 0.17), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 242, 235, 0.92));
+}
+
+.dark .lane-surface-warm {
+  background-image:
+    radial-gradient(circle at top left, rgba(229, 114, 0, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(31, 35, 46, 0.98), rgba(22, 26, 35, 0.94));
+}
+
+.lane-surface-orange {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(229, 114, 0, 0.09));
+}
+
+.dark .lane-surface-orange {
+  background-image: linear-gradient(180deg, rgba(31, 35, 46, 0.98), rgba(229, 114, 0, 0.16));
+}
+
+.lane-surface-blue {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(78, 107, 149, 0.07));
+}
+
+.dark .lane-surface-blue {
+  background-image: linear-gradient(180deg, rgba(31, 35, 46, 0.98), rgba(78, 107, 149, 0.15));
+}
+
 .touch-target {
   @apply min-h-11;
 }

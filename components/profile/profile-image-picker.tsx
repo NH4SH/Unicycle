@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
+import { getUploadedFileUrl } from "@/lib/uploadthing";
 
 type ProfileImagePickerProps = {
   value: string;
@@ -32,10 +33,13 @@ export function ProfileImagePicker({ value, username, name, disabled, onChange }
       <div className="flex flex-wrap gap-2">
         <UploadButton<OurFileRouter, "profileImage">
           endpoint="profileImage"
-          onClientUploadComplete={(result: { url: string }[]) => {
-            const nextUrl = result[0]?.url;
+          onClientUploadComplete={(result) => {
+            const nextUrl = getUploadedFileUrl(result[0] ?? {});
             if (nextUrl) {
               onChange(nextUrl);
+              toast.success("Profile photo uploaded.");
+            } else {
+              toast.error("Upload finished, but we couldn't read the image URL.");
             }
           }}
           onUploadError={(error: Error) => {

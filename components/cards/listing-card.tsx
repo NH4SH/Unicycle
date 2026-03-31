@@ -24,7 +24,7 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
       <div className="relative space-y-3">
         <div className="absolute right-3 top-3 z-10">
           <HeartButton
-            className="border-transparent bg-white/90 shadow-soft backdrop-blur-sm"
+            className="border-transparent bg-card/90 shadow-soft backdrop-blur-sm"
             listingId={listing.id}
             initialFavorited={listing.isFavorited}
             initialCount={listing.favoriteCount}
@@ -32,7 +32,7 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
         </div>
 
         <Link href={`/listing/${listing.id}`} className="block">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.95rem] border border-border/75 bg-white shadow-soft">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.95rem] border border-border/75 bg-card shadow-soft">
             <Image
               src={
                 listing.images[0] ||
@@ -46,21 +46,21 @@ export function ListingCard({ listing, sticker }: ListingCardProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-black/0 to-transparent" />
             {sticker ? (
               <div className="absolute left-3 top-3">
-                <Badge variant="outline" className="border-white/70 bg-white/90 backdrop-blur-sm">
+                <Badge variant="outline" className="border-border/70 bg-card/90 backdrop-blur-sm">
                   {sticker}
                 </Badge>
               </div>
             ) : null}
             {listing.status !== "ACTIVE" ? (
               <div className="absolute left-3 top-14">
-                <ListingStatusBadge status={listing.status} className="border-white/70 bg-white/92 backdrop-blur-sm" />
+                <ListingStatusBadge status={listing.status} className="border-border/70 bg-card/92 backdrop-blur-sm" />
               </div>
             ) : null}
             <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3">
-              <Badge variant="outline" className="border-white/70 bg-white/90 backdrop-blur-sm">
+              <Badge variant="outline" className="border-border/70 bg-card/90 backdrop-blur-sm">
                 {listing.pickupLocations[0] ? `Meet at ${listing.pickupLocations[0]}` : CATEGORY_LABELS[listing.category]}
               </Badge>
-              <div className="rounded-full bg-white/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft">
+              <div className="rounded-full bg-card/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft">
                 {formatCurrency(listing.priceCents / 100)}
               </div>
             </div>

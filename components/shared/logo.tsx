@@ -1,12 +1,19 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Logo() {
   return (
     <Link href="/" className="group inline-flex items-center gap-3" aria-label="HoosFinds home">
-      <span className="surface-panel relative inline-flex touch-icon items-center justify-center overflow-hidden rounded-2xl border-border/70 bg-card text-[0.95rem] font-bold text-uva-blue">
-        <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(229,114,0,0.18),transparent_60%)]" />
-        <span className="absolute inset-0 rounded-2xl border border-white/30 group-hover:animate-pulseRing dark:border-white/10" />
-        <span className="relative">HF</span>
+      <span className="surface-panel surface-overlay-strong relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border-border/70 bg-card/95">
+        <Image
+          src="/brand/hoosfinds-logo.png"
+          alt="HoosFinds logo"
+          fill
+          className="object-cover transition duration-300 group-hover:scale-[1.03]"
+          sizes="44px"
+          priority
+        />
+        <span className="absolute inset-0 rounded-2xl border border-white/20 group-hover:animate-pulseRing dark:border-white/10" />
       </span>
       <div className="leading-tight">
         <p className="font-display text-[1.02rem] font-extrabold tracking-tight">HoosFinds</p>
