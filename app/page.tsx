@@ -3,12 +3,14 @@ import Link from "next/link";
 import { ArrowRight, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 
 import { ListingCard } from "@/components/cards/listing-card";
+import { FollowingFeedSection } from "@/components/social/following-feed-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAuthSession } from "@/lib/auth";
 import { HOME_PRIMARY_LANES, HOME_SECONDARY_LANES, HOW_IT_WORKS_STEPS, TRUST_MARKERS } from "@/lib/constants";
-import { getLandingDrops } from "@/lib/data";
+import { getFollowingFeedListings, getLandingDrops } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import { getSuggestedSellers } from "@/lib/user-social";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -18,13 +20,15 @@ const FALLBACK_IMAGE =
 
 export default async function HomePage() {
   const session = await getAuthSession();
-  const { todaysDrops, hotOnGrounds } = await getLandingDrops(session?.user.id);
-
-  const [waitlistCount, interviewsCount, partnersCount] = await Promise.all([
+  const [landing, waitlistCount, interviewsCount, partnersCount, followingFeed, suggestedSellers] = await Promise.all([
+    getLandingDrops(session?.user.id),
     prisma.waitlistEntry.count(),
     prisma.conversation.count(),
-    prisma.user.count()
+    prisma.user.count(),
+    session?.user.id ? getFollowingFeedListings(session.user.id, 1, 4) : Promise.resolve(null),
+    getSuggestedSellers(session?.user.id, 6)
   ]);
+  const { todaysDrops, hotOnGrounds } = landing;
 
   const heroLead = todaysDrops[0] ?? hotOnGrounds[0] ?? null;
   const heroSide = [...todaysDrops.slice(1, 3), ...hotOnGrounds.slice(0, 2)].slice(0, 2);
@@ -192,6 +196,20 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <FollowingFeedSection
+        viewerSignedIn={Boolean(session?.user.id)}
+        feed={followingFeed}
+        suggested={suggestedSellers}
+        title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
+        subtitle={
+          session?.user.id
+            ? "Follow closets you trust and HoosFinds turns that into a cleaner feed of future listings."
+            : "The fastest way to understand HoosFinds is to start with the closets already putting up sharp campus finds."
+        }
+        emptyTitle="Follow a few closets and your feed starts here"
+        emptyDescription="When you follow sellers whose style you like, their newest listings land in one place instead of getting lost in the full marketplace."
+      />
 
       <section className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
         <div className="space-y-5">

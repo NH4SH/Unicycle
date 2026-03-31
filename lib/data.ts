@@ -8,6 +8,7 @@ import {
   toPublicUserProfile,
   toPublicUserSummary
 } from "@/lib/public-user";
+import { deriveStyleTagsFromListings } from "@/lib/style-network";
 
 type MarketQuery = {
   q?: string;
@@ -177,6 +178,13 @@ export type PurchaseSummaryData = {
   } | null;
 };
 
+export type FollowingFeedData = {
+  items: ListingCardData[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+};
+
 function fromJsonArray(value: Prisma.JsonValue) {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");
@@ -242,6 +250,17 @@ function normalizeMarketQuery(query: MarketQuery) {
     limit,
     min,
     max
+  };
+}
+
+function normalizePage(page = 1, limit = 12, maxLimit = 24) {
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(Math.max(limit, 1), maxLimit);
+
+  return {
+    page: safePage,
+    limit: safeLimit,
+    skip: (safePage - 1) * safeLimit
   };
 }
 
@@ -455,6 +474,42 @@ export async function getLandingDrops(userId?: string) {
   };
 }
 
+export async function getFollowingFeedListings(userId: string, page = 1, limit = 8): Promise<FollowingFeedData> {
+  noStore();
+
+  const pagination = normalizePage(page, limit, 20);
+  const where = {
+    status: ListingStatus.ACTIVE,
+    seller: {
+      followers: {
+        some: {
+          followerId: userId
+        }
+      }
+    }
+  } satisfies Prisma.ListingWhereInput;
+
+  const [total, listings] = await Promise.all([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where,
+      orderBy: {
+        createdAt: "desc"
+      },
+      skip: pagination.skip,
+      take: pagination.limit,
+      include: listingCardInclude
+    })
+  ]);
+
+  return {
+    items: listings.map((listing) => mapListing(listing, userId)),
+    total,
+    page: pagination.page,
+    hasMore: pagination.skip + pagination.limit < total
+  };
+}
+
 export async function getListingDetail(listingId: string, userId?: string) {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
@@ -586,7 +641,7 @@ export async function getListingDetail(listingId: string, userId?: string) {
 }
 
 export async function getUserProfile(username: string, viewerId?: string) {
-  const [user, reviewAggregate, completedSales, recentReviews] = await Promise.all([
+  const [user, reviewAggregate, completedSales, recentReviews, viewerFollowingIds] = await Promise.all([
     prisma.user.findUnique({
       where: { username },
       select: {
@@ -608,26 +663,7 @@ export async function getUserProfile(username: string, viewerId?: string) {
             followers: true,
             following: true
           }
-        },
-        followers: viewerId
-          ? {
-              where: {
-                followerId: viewerId
-              },
-              select: {
-                followerId: true
-              },
-              take: 1
-            }
-          : {
-              where: {
-                followerId: "__viewer_missing__"
-              },
-              select: {
-                followerId: true
-              },
-              take: 1
-            }
+        }
       }
     }),
     prisma.sellerReview.aggregate({
@@ -665,7 +701,17 @@ export async function getUserProfile(username: string, viewerId?: string) {
           }
         }
       }
-    })
+    }),
+    viewerId
+      ? prisma.follow.findMany({
+          where: {
+            followerId: viewerId
+          },
+          select: {
+            followingId: true
+          }
+        })
+      : Promise.resolve([])
   ]);
 
   if (!user) return null;
@@ -675,13 +721,32 @@ export async function getUserProfile(username: string, viewerId?: string) {
   const pending = user.listings.filter((listing) => listing.status === ListingStatus.PENDING_CONFIRMATION).length;
   const completed = user.listings.filter((listing) => listing.status === ListingStatus.COMPLETED).length;
   const cancelled = user.listings.filter((listing) => listing.status === ListingStatus.CANCELLED).length;
+  const viewerFollowingSet = new Set(viewerFollowingIds.map((entry) => entry.followingId));
+  const mutualCount =
+    viewerId && viewerId !== user.id && viewerFollowingSet.size
+      ? await prisma.follow.count({
+          where: {
+            followingId: user.id,
+            followerId: {
+              in: [...viewerFollowingSet]
+            }
+          }
+        })
+      : 0;
+  const styleTags = deriveStyleTagsFromListings(active);
+  const recentDropAt = active[0]?.createdAt.toISOString() ?? null;
 
   return {
     user: toPublicUserProfile(user),
     social: {
       followerCount: user._count.followers,
       followingCount: user._count.following,
-      isFollowing: viewerId ? user.followers.length > 0 : false
+      isFollowing: viewerId ? viewerFollowingSet.has(user.id) : false,
+      isSelf: viewerId === user.id,
+      mutualCount,
+      styleTags,
+      activeListingCount: active.length,
+      recentDropAt
     },
     stats: {
       active: active.length,

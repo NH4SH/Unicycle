@@ -94,3 +94,21 @@ export const confirmTransactionSchema = z
       });
     }
   });
+
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(100).default(1),
+  limit: z.coerce.number().int().min(1).max(24).default(12)
+});
+
+export const followListQuerySchema = paginationQuerySchema.extend({
+  limit: z.coerce.number().int().min(1).max(24).default(12)
+});
+
+export const followSuggestionsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(12).default(6)
+});
+
+export const followingFeedQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(100).default(1),
+  limit: z.coerce.number().int().min(1).max(16).default(8)
+});

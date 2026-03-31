@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { Clock3, Sparkles, Star } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -35,6 +36,11 @@ type ProfileViewProps = {
     followerCount: number;
     followingCount: number;
     isFollowing: boolean;
+    isSelf: boolean;
+    mutualCount: number;
+    styleTags: string[];
+    activeListingCount: number;
+    recentDropAt: string | null;
   };
   stats: {
     active: number;
@@ -109,6 +115,12 @@ export function ProfileView({
                 <p className="text-sm text-muted-foreground">@{user.username}</p>
               </div>
               {user.bio ? <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{user.bio}</p> : null}
+              {!isOwner && followState.mutualCount > 0 ? (
+                <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {followState.mutualCount} people you follow also follow this closet
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 {user.gradYear ? <Badge variant="outline">Class of {user.gradYear}</Badge> : null}
                 {user.favoritePickup ? (
@@ -119,10 +131,25 @@ export function ProfileView({
                     </PlaceMapLink>
                   </Badge>
                 ) : null}
-                <Badge variant="outline">{followState.followerCount} followers</Badge>
-                <Badge variant="outline">{followState.followingCount} following</Badge>
+                <Link href={`/u/${user.username}/followers`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                  {followState.followerCount} followers
+                </Link>
+                <Link href={`/u/${user.username}/following`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                  {followState.followingCount} following
+                </Link>
+                {followState.recentDropAt ? (
+                  <Badge variant="outline" className="inline-flex items-center gap-1.5">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    Last drop {timeAgo(followState.recentDropAt)}
+                  </Badge>
+                ) : null}
                 {stats.pending > 0 ? <Badge variant="blue">{stats.pending} awaiting confirmation</Badge> : null}
                 {stats.cancelled > 0 ? <Badge variant="outline">{stats.cancelled} cancelled handoffs</Badge> : null}
+                {followState.styleTags.slice(0, 3).map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             </div>
 
@@ -136,6 +163,8 @@ export function ProfileView({
                     initialIsFollowing={social.isFollowing}
                     initialFollowerCount={social.followerCount}
                     onFollowStateChange={(next) => setFollowState((prev) => ({ ...prev, ...next }))}
+                    followLabel="Follow for drops"
+                    callbackUrl={`/u/${user.username}`}
                   />
                 </div>
               ) : null}

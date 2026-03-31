@@ -1,3 +1,7 @@
+import { FollowingFeedSection } from "@/components/social/following-feed-section";
+import { getAuthSession } from "@/lib/auth";
+import { getFollowingFeedListings } from "@/lib/data";
+import { getSuggestedSellers } from "@/lib/user-social";
 import { MarketClient, type MarketFilters } from "@/components/market/market-client";
 import { headers } from "next/headers";
 import type { ListingCardData } from "@/lib/data";
@@ -17,6 +21,7 @@ type MarketPageProps = {
 };
 
 export default async function MarketPage({ searchParams }: MarketPageProps) {
+  const session = await getAuthSession();
   const parsedMin = Number(searchParams.min ?? "100");
   const normalizedMin = Number.isFinite(parsedMin) ? Math.max(100, parsedMin) : 100;
   const parsedMax = Number(searchParams.max ?? "250000");
@@ -58,6 +63,10 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const initial = response.ok
     ? ((await response.json()) as { items: ListingCardData[]; hasMore: boolean })
     : { items: [], hasMore: false };
+  const [followingFeed, suggestedSellers] = await Promise.all([
+    session?.user.id ? getFollowingFeedListings(session.user.id, 1, 4) : Promise.resolve(null),
+    getSuggestedSellers(session?.user.id, 4)
+  ]);
 
   return (
     <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
@@ -76,6 +85,22 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
           Local pickup on Grounds
         </div>
       </div>
+
+      <FollowingFeedSection
+        viewerSignedIn={Boolean(session?.user.id)}
+        feed={followingFeed}
+        suggested={suggestedSellers}
+        maxItems={4}
+        title={session?.user.id ? "From people you follow" : "Sellers to watch"}
+        subtitle={
+          session?.user.id
+            ? "Stay on top of new drops from the closets already shaping your taste."
+            : "Start with active UVA sellers, then browse the wider marketplace."
+        }
+        emptyTitle="Build your feed with a few strong closets"
+        emptyDescription="Follow the sellers whose style feels right for you and their next drops will show up here."
+        showSuggestedHeading={false}
+      />
 
       <MarketClient initialItems={initial.items} initialHasMore={initial.hasMore} initialFilters={initialFilters} />
     </div>
