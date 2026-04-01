@@ -540,12 +540,18 @@ export function SellWizard({
             </Button>
           ) : needsPayoutSetupToSubmit ? (
             payoutState ? (
-              <PayoutSetupButton
-                viewerSignedIn={viewerSignedIn}
-                payoutsConfigured={payoutsConfigured}
-                payoutState={payoutState}
-                callbackPath={payoutSetupHref}
-              />
+              payoutState.ctaTarget === "stripe" ? (
+                <PayoutSetupButton
+                  viewerSignedIn={viewerSignedIn}
+                  payoutsConfigured={payoutsConfigured}
+                  payoutState={payoutState}
+                  callbackPath={payoutSetupHref}
+                />
+              ) : (
+                <Button type="button" onClick={() => router.push(payoutSetupHref)}>
+                  {payoutState.ctaLabel}
+                </Button>
+              )
             ) : (
               <Button type="button" onClick={() => router.push(payoutSetupHref)}>
                 {payoutSetupLabel}

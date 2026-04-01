@@ -25,7 +25,7 @@ export function PayoutActions({ viewerSignedIn, payoutsConfigured, payoutState }
     );
   }
 
-  if (payoutState.readyToReceivePayments) {
+  if (payoutState.ctaTarget === "sell") {
     return (
       <div className="flex flex-wrap gap-3">
         <Button asChild>
@@ -36,6 +36,16 @@ export function PayoutActions({ viewerSignedIn, payoutsConfigured, payoutState }
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.refresh()}>
           Refresh status
+        </Button>
+      </div>
+    );
+  }
+
+  if (payoutState.ctaTarget === "refresh" || payoutState.ctaTarget === "none") {
+    return (
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" onClick={() => router.refresh()}>
+          {payoutState.ctaLabel}
         </Button>
       </div>
     );

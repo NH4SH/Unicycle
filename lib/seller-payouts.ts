@@ -20,8 +20,11 @@ export type SellerPayoutStatus =
   | "not_connected"
   | "unavailable"
   | "verification_incomplete"
+  | "payouts_paused"
   | "under_review"
   | "ready";
+
+export type SellerPayoutCtaTarget = "stripe" | "refresh" | "sell" | "none";
 
 export type ConnectedAccountSnapshot = {
   stripeAccountId: string;
@@ -41,12 +44,16 @@ export type ConnectedAccountSnapshot = {
   pastDue: string[];
   pendingVerification: string[];
   eventuallyDue: string[];
+  futureEventuallyDue: string[];
+  futureCurrentDue: string[];
   requirementErrorMessages: string[];
   requirementHighlights: string[];
   readyToReceivePayments: boolean;
   onboardingComplete: boolean;
   needsVerification: boolean;
+  needsAttentionSoon: boolean;
   underReview: boolean;
+  payoutsPaused: boolean;
 };
 
 export type SellerPayoutState = {
@@ -64,6 +71,7 @@ export type SellerPayoutState = {
   headline: string;
   detail: string;
   ctaLabel: string;
+  ctaTarget: SellerPayoutCtaTarget;
   requirementHighlights: string[];
 };
 
@@ -191,9 +199,10 @@ function buildRequirementHighlights(params: {
   currentDue: string[];
   pastDue: string[];
   pendingVerification: string[];
+  eventuallyDue: string[];
   detailsSubmitted: boolean;
 }) {
-  const actionable = [...params.currentDue, ...params.pastDue].map(toFriendlyRequirementLabel);
+  const actionable = [...params.currentDue, ...params.pastDue, ...params.eventuallyDue].map(toFriendlyRequirementLabel);
   const review = params.pendingVerification.map(toFriendlyRequirementLabel);
 
   const highlights = toUniqueStrings([...actionable, ...review]);
@@ -228,6 +237,8 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
   const pastDue = toUniqueStrings(accountV1.requirements?.past_due);
   const pendingVerification = toUniqueStrings(accountV1.requirements?.pending_verification);
   const eventuallyDue = toUniqueStrings(accountV1.requirements?.eventually_due);
+  const futureCurrentDue = toUniqueStrings(accountV1.future_requirements?.currently_due);
+  const futureEventuallyDue = toUniqueStrings(accountV1.future_requirements?.eventually_due);
   const requirementErrorMessages = toUniqueStrings(
     accountV1.requirements?.errors?.map((error) => error.reason || error.code || null)
   );
@@ -235,6 +246,7 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
     currentDue,
     pastDue,
     pendingVerification,
+    eventuallyDue: [...eventuallyDue, ...futureCurrentDue],
     detailsSubmitted: accountV1.details_submitted
   });
 
@@ -243,6 +255,7 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
   const disabledReason = accountV1.requirements?.disabled_reason ?? accountV1.future_requirements?.disabled_reason ?? null;
 
   const verificationBlockedByRequirements = currentDue.length > 0 || pastDue.length > 0;
+  const needsAttentionSoon = eventuallyDue.length > 0 || futureCurrentDue.length > 0 || futureEventuallyDue.length > 0;
   const capabilityNeedsInfo =
     hasCapabilityDetailResolution(transferCapabilityDetails, "provide_info") ||
     hasCapabilityDetailResolution(payoutCapabilityDetails, "provide_info");
@@ -258,6 +271,13 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
     disabledReason === "requirements.pending_verification" ||
     capabilityPendingReview;
 
+  const payoutsPaused =
+    !underReview &&
+    (pastDue.length > 0 ||
+      disabledReason === "requirements.past_due" ||
+      (accountV1.details_submitted &&
+        (!accountV1.payouts_enabled || transferCapabilityStatus === "restricted" || payoutCapabilityStatus === "restricted")));
+
   // Recipient accounts in this marketplace flow do not need charges_enabled to
   // accept destination-charge payouts, but we still inspect Stripe's v1 fields
   // so restricted accounts with missing KYC or review holds are detected.
@@ -268,6 +288,7 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
     verificationBlockedByRequirements ||
     !accountV1.details_submitted ||
     !accountV1.payouts_enabled ||
+    needsAttentionSoon ||
     capabilityNeedsInfo ||
     disabledReason === "action_required.requested_capabilities" ||
     disabledReason === "requirements.past_due" ||
@@ -299,22 +320,42 @@ function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1:
     pastDue,
     pendingVerification,
     eventuallyDue,
+    futureEventuallyDue,
+    futureCurrentDue,
     requirementErrorMessages,
     requirementHighlights,
     readyToReceivePayments,
     onboardingComplete: accountV1.details_submitted && currentDue.length === 0 && pastDue.length === 0,
     needsVerification,
-    underReview
+    needsAttentionSoon,
+    underReview,
+    payoutsPaused
   };
 }
 
 function buildVerificationDetail(snapshot: ConnectedAccountSnapshot) {
+  if (snapshot.needsAttentionSoon && snapshot.currentDue.length === 0 && snapshot.pastDue.length === 0) {
+    if (snapshot.requirementHighlights.length > 0) {
+      return `Stripe will need a little more information soon to keep payouts running smoothly. Open Stripe now and add ${snapshot.requirementHighlights.join(", ")} before payouts pause.`;
+    }
+
+    return "Stripe will need a little more information soon to keep payouts running smoothly. Open Stripe now and finish verification before payouts pause.";
+  }
+
   if (snapshot.requirementHighlights.length > 0) {
     const formatted = snapshot.requirementHighlights.join(", ");
     return `Stripe still needs more information before HoosFinds can send your earnings. Most sellers can fix this by reopening Stripe and adding ${formatted}.`;
   }
 
   return "Stripe still needs more information before HoosFinds can send your earnings. Reopen Stripe and finish verification before publishing listings or accepting checkout.";
+}
+
+function buildPausedDetail(snapshot: ConnectedAccountSnapshot) {
+  if (snapshot.requirementHighlights.length > 0) {
+    return `Stripe has temporarily paused payouts until a few details are fixed. Reopen Stripe and update ${snapshot.requirementHighlights.join(", ")} to start receiving earnings again.`;
+  }
+
+  return "Stripe has temporarily paused payouts on this account. Reopen Stripe and finish the requested verification steps before you can receive earnings again.";
 }
 
 export function calculateApplicationFeeAmount(amountCents: number) {
@@ -345,6 +386,7 @@ function getDisconnectedPayoutState(): SellerPayoutState {
     headline: "Connect payouts before you sell",
     detail: "Before your listing can go live, connect where you want HoosFinds to send your earnings.",
     ctaLabel: "Connect Stripe payouts",
+    ctaTarget: "stripe",
     requirementHighlights: []
   };
 }
@@ -377,7 +419,8 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       statusLabel: "Payouts unavailable",
       headline: "Payout setup is temporarily unavailable",
       detail: "HoosFinds cannot confirm payout readiness until Stripe is configured for this environment.",
-      ctaLabel: "Try again later",
+      ctaLabel: "Refresh status",
+      ctaTarget: "refresh",
       requirementHighlights: []
     };
   }
@@ -401,6 +444,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       detail:
         "We could not confirm your payout status right now. Open Stripe again and finish verification before your listing goes live or accepts checkout.",
       ctaLabel: "Finish Stripe verification",
+      ctaTarget: "stripe",
       requirementHighlights: []
     };
   }
@@ -421,7 +465,29 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       headline: "You're ready to sell",
       detail: "Payouts are enabled and HoosFinds can route listing earnings to your connected payout account automatically.",
       ctaLabel: "Create listing",
+      ctaTarget: "sell",
       requirementHighlights: []
+    };
+  }
+
+  if (stripeStatus.payoutsPaused) {
+    return {
+      status: "payouts_paused",
+      connectedAccount: {
+        id: connectedAccount.id,
+        stripeAccountId: connectedAccount.stripeAccountId,
+        createdAt: connectedAccount.createdAt.toISOString()
+      },
+      stripeStatus,
+      readyToReceivePayments: false,
+      onboardingComplete: stripeStatus.onboardingComplete,
+      actionRequired: true,
+      statusLabel: "Payouts paused",
+      headline: "Continue in Stripe",
+      detail: buildPausedDetail(stripeStatus),
+      ctaLabel: "Continue in Stripe",
+      ctaTarget: "stripe",
+      requirementHighlights: stripeStatus.requirementHighlights
     };
   }
 
@@ -436,12 +502,13 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       stripeStatus,
       readyToReceivePayments: false,
       onboardingComplete: stripeStatus.onboardingComplete,
-      actionRequired: true,
+      actionRequired: false,
       statusLabel: "Stripe reviewing your account",
       headline: "Stripe is reviewing your account",
       detail:
         "You've already submitted the main details, but Stripe is still reviewing them. Listings and checkout stay paused until that review clears.",
-      ctaLabel: "Check Stripe verification",
+      ctaLabel: "Refresh status",
+      ctaTarget: "refresh",
       requirementHighlights: stripeStatus.requirementHighlights
     };
   }
@@ -460,7 +527,11 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
     statusLabel: "Verification incomplete",
     headline: "Finish Stripe verification",
     detail: buildVerificationDetail(stripeStatus),
-    ctaLabel: "Finish Stripe verification",
+    ctaLabel:
+      stripeStatus.currentDue.length > 0 || stripeStatus.pastDue.length > 0 || !stripeStatus.detailsSubmitted
+        ? "Finish Stripe verification"
+        : "Continue in Stripe",
+    ctaTarget: "stripe",
     requirementHighlights: stripeStatus.requirementHighlights
   };
 }

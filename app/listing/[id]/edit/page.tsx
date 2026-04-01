@@ -80,18 +80,24 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
               <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                 This listing can stay paused while you update it, but finish payout setup before putting it live on HoosFinds again.
               </p>
-              {payoutState.requirementHighlights.length > 0 ? (
+              {payoutState.ctaTarget === "stripe" && payoutState.requirementHighlights.length > 0 ? (
                 <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                   Stripe still needs {payoutState.requirementHighlights.join(", ")} before this listing can go live again.
                 </p>
               ) : null}
             </div>
-            <PayoutSetupButton
-              viewerSignedIn
-              payoutsConfigured={payoutsConfigured}
-              payoutState={payoutState}
-              callbackPath={`/listing/${listing.id}/edit`}
-            />
+            {payoutState.ctaTarget === "stripe" ? (
+              <PayoutSetupButton
+                viewerSignedIn
+                payoutsConfigured={payoutsConfigured}
+                payoutState={payoutState}
+                callbackPath={`/listing/${listing.id}/edit`}
+              />
+            ) : (
+              <Button asChild>
+                <Link href="/payments">{payoutState.ctaLabel}</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : null}

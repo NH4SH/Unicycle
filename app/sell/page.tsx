@@ -67,7 +67,9 @@ export default async function SellPage() {
                       ? "You can publish normally now. HoosFinds will route checkout earnings to your connected payout account."
                       : "You can draft your listing below, but before it goes live, connect where you want payouts sent."}
                   </p>
-                  {!payoutState.readyToReceivePayments && payoutState.requirementHighlights.length > 0 ? (
+                  {!payoutState.readyToReceivePayments &&
+                  payoutState.ctaTarget === "stripe" &&
+                  payoutState.requirementHighlights.length > 0 ? (
                     <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                       Stripe still needs {payoutState.requirementHighlights.join(", ")} before this listing can go live.
                     </p>
@@ -76,12 +78,18 @@ export default async function SellPage() {
               </div>
             </div>
             {!payoutState.readyToReceivePayments ? (
-              <PayoutSetupButton
-                viewerSignedIn
-                payoutsConfigured={payoutsConfigured}
-                payoutState={payoutState}
-                callbackPath="/sell"
-              />
+              payoutState.ctaTarget === "stripe" ? (
+                <PayoutSetupButton
+                  viewerSignedIn
+                  payoutsConfigured={payoutsConfigured}
+                  payoutState={payoutState}
+                  callbackPath="/sell"
+                />
+              ) : (
+                <Button asChild>
+                  <Link href="/payments">{payoutState.ctaLabel}</Link>
+                </Button>
+              )
             ) : null}
           </CardContent>
         </Card>

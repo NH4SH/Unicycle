@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { getPublicProfileUrl } from "@/lib/connect-onboarding";
-import { getSellerPayoutDashboardData } from "@/lib/seller-payouts";
+import { getSellerPayoutDashboardData, type SellerPayoutStatus } from "@/lib/seller-payouts";
 import { isStripeConnectConfigured } from "@/lib/stripe";
 import { formatCurrency, timeAgo } from "@/lib/utils";
 
@@ -25,6 +25,12 @@ function getSaleStatusLabel(status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANC
   return "Paid";
 }
 
+function getStatusBadgeVariant(status: SellerPayoutStatus) {
+  if (status === "ready") return "blue";
+  if (status === "under_review") return "outline";
+  return "orange";
+}
+
 export default async function PaymentsPage({ searchParams }: PaymentsPageProps) {
   const session = await getAuthSession();
   const dashboard = await getSellerPayoutDashboardData(session?.user.id);
@@ -40,7 +46,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">Payout center</Badge>
             <Badge variant="blue">Listings only</Badge>
-            <Badge variant={dashboard.payoutState.readyToReceivePayments ? "blue" : "orange"}>
+            <Badge variant={getStatusBadgeVariant(dashboard.payoutState.status)}>
               {dashboard.payoutState.statusLabel}
             </Badge>
           </div>
@@ -68,7 +74,9 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 </Link>
               </Button>
             </div>
-            {!dashboard.payoutState.readyToReceivePayments && session?.user.id ? (
+            {!dashboard.payoutState.readyToReceivePayments &&
+            dashboard.payoutState.ctaTarget === "stripe" &&
+            session?.user.id ? (
               <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
                 If Stripe asks for a website, use{" "}
                 {profileUrl ? (
@@ -100,7 +108,22 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 <p className="editorial-eyebrow">Status</p>
                 <h2 className="font-display text-2xl font-extrabold tracking-tight">{dashboard.payoutState.headline}</h2>
                 <p className="text-sm leading-7 text-muted-foreground">{dashboard.payoutState.detail}</p>
-                {dashboard.payoutState.requirementHighlights.length > 0 ? (
+                {!dashboard.payoutState.readyToReceivePayments ? (
+                  <p className="text-sm font-medium text-foreground/88">
+                    {dashboard.payoutState.status === "under_review"
+                      ? "No action in Stripe right now. We'll unlock selling once their review clears."
+                      : dashboard.payoutState.status === "unavailable"
+                        ? "Next step: refresh here after Stripe payouts are available in this environment."
+                      : dashboard.payoutState.status === "not_connected"
+                        ? "Next step: connect payouts so HoosFinds knows where to send your earnings."
+                      : dashboard.payoutState.status === "payouts_paused"
+                        ? "Next step: continue in Stripe and fix the requested details."
+                      : dashboard.payoutState.status === "verification_incomplete"
+                          ? "Next step: continue in Stripe and finish verification."
+                          : "Next step: connect payouts to start selling."}
+                  </p>
+                ) : null}
+                {dashboard.payoutState.requirementHighlights.length > 0 && dashboard.payoutState.ctaTarget === "stripe" ? (
                   <div className="rounded-[1.2rem] border border-border bg-background/70 px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Stripe still needs</p>
                     <ul className="mt-2 space-y-1 text-sm text-foreground/88">
@@ -119,6 +142,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   ? "Welcome back. HoosFinds refreshed your payout status from Stripe and your account is ready to sell."
                   : dashboard.payoutState.status === "under_review"
                     ? "Welcome back. HoosFinds refreshed your payout status from Stripe. Stripe is still reviewing your account, so payouts stay paused for now."
+                    : dashboard.payoutState.status === "payouts_paused"
+                      ? "Welcome back. HoosFinds refreshed your payout status from Stripe, but payouts are still paused until Stripe's requested details are fixed."
                     : "Welcome back. HoosFinds refreshed your payout status from Stripe, but Stripe still needs more information before payouts can go live."}
               </div>
             ) : null}
