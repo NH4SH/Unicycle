@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
+import { getPublicProfileUrl } from "@/lib/connect-onboarding";
 import { getSellerPayoutDashboardData } from "@/lib/seller-payouts";
 import { isStripeConnectConfigured } from "@/lib/stripe";
 import { formatCurrency, timeAgo } from "@/lib/utils";
@@ -30,6 +31,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
   const payoutsConfigured = isStripeConnectConfigured();
   const returnedFromStripe = Boolean(searchParams?.accountId);
   const refreshRequested = searchParams?.refresh === "1";
+  const profileUrl = getPublicProfileUrl(session?.user.username);
 
   return (
     <div className="container space-y-10 py-8 md:space-y-12 md:py-10">
@@ -52,18 +54,33 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               your earnings after a sale without making selling feel like a separate dashboard.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <PayoutActions
-              viewerSignedIn={Boolean(session?.user.id)}
-              payoutsConfigured={payoutsConfigured}
-              payoutState={dashboard.payoutState}
-            />
-            <Button asChild variant="secondary">
-              <Link href="/market">
-                Browse live listings
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
+              <PayoutActions
+                viewerSignedIn={Boolean(session?.user.id)}
+                payoutsConfigured={payoutsConfigured}
+                payoutState={dashboard.payoutState}
+              />
+              <Button asChild variant="secondary">
+                <Link href="/market">
+                  Browse live listings
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            {!dashboard.payoutState.readyToReceivePayments && session?.user.id ? (
+              <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
+                If Stripe asks for a website, use{" "}
+                {profileUrl ? (
+                  <Link href={`/u/${session.user.username}`} className="font-medium text-foreground transition hover:text-uva-orange">
+                    {profileUrl.replace(/^https?:\/\//, "")}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-foreground">your HoosFinds profile URL</span>
+                )}{" "}
+                or a public social/profile link you already use to sell.
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -73,7 +90,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <div className="mt-1 flex h-11 w-11 items-center justify-center rounded-full bg-uva-orange/10 text-uva-orange">
                 {dashboard.payoutState.readyToReceivePayments ? (
                   <BadgeCheck className="h-5 w-5" />
-                ) : dashboard.payoutState.connectedAccount ? (
+                ) : dashboard.payoutState.status === "under_review" ? (
                   <Clock3 className="h-5 w-5" />
                 ) : (
                   <CircleAlert className="h-5 w-5" />
@@ -83,14 +100,26 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 <p className="editorial-eyebrow">Status</p>
                 <h2 className="font-display text-2xl font-extrabold tracking-tight">{dashboard.payoutState.headline}</h2>
                 <p className="text-sm leading-7 text-muted-foreground">{dashboard.payoutState.detail}</p>
+                {dashboard.payoutState.requirementHighlights.length > 0 ? (
+                  <div className="rounded-[1.2rem] border border-border bg-background/70 px-4 py-3">
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Stripe still needs</p>
+                    <ul className="mt-2 space-y-1 text-sm text-foreground/88">
+                      {dashboard.payoutState.requirementHighlights.map((item) => (
+                        <li key={item}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             </div>
 
             {(returnedFromStripe || refreshRequested) && session?.user.id ? (
               <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-3 text-sm text-muted-foreground">
-                {returnedFromStripe
-                  ? "Welcome back. HoosFinds refreshed your payout status from Stripe."
-                  : "Stripe asked for another pass through setup. Refresh here after you finish the next step."}
+                {dashboard.payoutState.readyToReceivePayments
+                  ? "Welcome back. HoosFinds refreshed your payout status from Stripe and your account is ready to sell."
+                  : dashboard.payoutState.status === "under_review"
+                    ? "Welcome back. HoosFinds refreshed your payout status from Stripe. Stripe is still reviewing your account, so payouts stay paused for now."
+                    : "Welcome back. HoosFinds refreshed your payout status from Stripe, but Stripe still needs more information before payouts can go live."}
               </div>
             ) : null}
 

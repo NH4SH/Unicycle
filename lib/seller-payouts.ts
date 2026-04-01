@@ -9,17 +9,48 @@ import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 // seller payouts underneath that flow, so platform-fee math now lives here.
 export const SELLER_PAYOUT_APPLICATION_FEE_BPS = 1000;
 
+type StripeCapabilityStatus = "active" | "pending" | "restricted" | "unsupported" | null;
+
+type StripeCapabilityDetail = {
+  code: string;
+  resolution: string;
+};
+
+export type SellerPayoutStatus =
+  | "not_connected"
+  | "unavailable"
+  | "verification_incomplete"
+  | "under_review"
+  | "ready";
+
 export type ConnectedAccountSnapshot = {
   stripeAccountId: string;
   displayName: string | null;
   contactEmail: string | null;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  disabledReason: string | null;
+  requirementsStatus: string | null;
+  futureRequirementsStatus: string | null;
+  transferCapabilityStatus: StripeCapabilityStatus;
+  payoutCapabilityStatus: StripeCapabilityStatus;
+  transferCapabilityDetails: StripeCapabilityDetail[];
+  payoutCapabilityDetails: StripeCapabilityDetail[];
+  currentDue: string[];
+  pastDue: string[];
+  pendingVerification: string[];
+  eventuallyDue: string[];
+  requirementErrorMessages: string[];
+  requirementHighlights: string[];
   readyToReceivePayments: boolean;
   onboardingComplete: boolean;
-  requirementsStatus: string | null;
-  transferCapabilityStatus: string | null;
+  needsVerification: boolean;
+  underReview: boolean;
 };
 
 export type SellerPayoutState = {
+  status: SellerPayoutStatus;
   connectedAccount: {
     id: string;
     stripeAccountId: string;
@@ -33,6 +64,7 @@ export type SellerPayoutState = {
   headline: string;
   detail: string;
   ctaLabel: string;
+  requirementHighlights: string[];
 };
 
 export type SellerPayoutSaleSummary = {
@@ -61,22 +93,228 @@ export type SellerPayoutDashboardData = {
   recentSales: SellerPayoutSaleSummary[];
 };
 
-function summarizeRecipientAccount(account: Stripe.V2.Core.Account): ConnectedAccountSnapshot {
-  const transferCapabilityStatus =
-    account.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status ?? null;
-  const requirementsStatus = account.requirements?.summary?.minimum_deadline?.status ?? null;
-  const readyToReceivePayments = transferCapabilityStatus === "active";
-  const onboardingComplete = requirementsStatus !== "currently_due" && requirementsStatus !== "past_due";
+function toUniqueStrings(values: Array<string | null | undefined> | null | undefined) {
+  return [...new Set((values ?? []).filter((value): value is string => Boolean(value?.trim())))];
+}
+
+function toCapabilityDetails(
+  details:
+    | Array<{
+        code: string;
+        resolution: string;
+      }>
+    | undefined
+) {
+  return (details ?? []).map((detail) => ({
+    code: detail.code,
+    resolution: detail.resolution
+  }));
+}
+
+function humanizeFallbackRequirementName(requirement: string) {
+  const lastSegment = requirement.split(".").pop() ?? requirement;
+
+  return lastSegment
+    .replaceAll("_", " ")
+    .replace(/\bssn\b/gi, "SSN")
+    .replace(/\bid\b/gi, "ID");
+}
+
+function toFriendlyRequirementLabel(requirement: string) {
+  const normalized = requirement.toLowerCase();
+
+  if (
+    normalized.includes("ssn") ||
+    normalized.includes("id_number") ||
+    normalized.includes("tax_id") ||
+    normalized.includes("ein")
+  ) {
+    return "your SSN or taxpayer information";
+  }
+
+  if (normalized.includes("verification.document") || normalized.includes("document")) {
+    return "a government ID or verification document";
+  }
+
+  if (normalized.includes("external_account") || normalized.includes("bank_account")) {
+    return "your bank account details";
+  }
+
+  if (normalized.includes("address")) {
+    return "your address";
+  }
+
+  if (normalized.includes("dob") || normalized.includes("date_of_birth")) {
+    return "your date of birth";
+  }
+
+  if (normalized.includes("phone")) {
+    return "your phone number";
+  }
+
+  if (normalized.includes("email")) {
+    return "your email address";
+  }
+
+  if (
+    normalized.includes("business_profile") ||
+    normalized.includes("product_description") ||
+    normalized.includes(".url")
+  ) {
+    return "your HoosFinds profile or business details";
+  }
+
+  if (normalized.includes("representative")) {
+    return "your representative details";
+  }
+
+  if (normalized.includes("owner")) {
+    return "owner details";
+  }
+
+  if (normalized.includes("director") || normalized.includes("executive")) {
+    return "director or executive details";
+  }
+
+  if (normalized.includes("company")) {
+    return "business details";
+  }
+
+  if (normalized.includes("person")) {
+    return "identity details";
+  }
+
+  return humanizeFallbackRequirementName(requirement);
+}
+
+function buildRequirementHighlights(params: {
+  currentDue: string[];
+  pastDue: string[];
+  pendingVerification: string[];
+  detailsSubmitted: boolean;
+}) {
+  const actionable = [...params.currentDue, ...params.pastDue].map(toFriendlyRequirementLabel);
+  const review = params.pendingVerification.map(toFriendlyRequirementLabel);
+
+  const highlights = toUniqueStrings([...actionable, ...review]);
+  if (highlights.length > 0) {
+    return highlights.slice(0, 3);
+  }
+
+  if (!params.detailsSubmitted) {
+    return ["identity details"];
+  }
+
+  return [];
+}
+
+function hasCapabilityDetailResolution(details: StripeCapabilityDetail[], resolution: string) {
+  return details.some((detail) => detail.resolution === resolution);
+}
+
+function hasCapabilityDetailCode(details: StripeCapabilityDetail[], code: string) {
+  return details.some((detail) => detail.code === code);
+}
+
+function summarizeRecipientAccount(accountV2: Stripe.V2.Core.Account, accountV1: Stripe.Account): ConnectedAccountSnapshot {
+  const transferCapability = accountV2.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers;
+  const payoutCapability = accountV2.configuration?.recipient?.capabilities?.stripe_balance?.payouts;
+  const transferCapabilityStatus = transferCapability?.status ?? null;
+  const payoutCapabilityStatus = payoutCapability?.status ?? null;
+  const transferCapabilityDetails = toCapabilityDetails(transferCapability?.status_details);
+  const payoutCapabilityDetails = toCapabilityDetails(payoutCapability?.status_details);
+
+  const currentDue = toUniqueStrings(accountV1.requirements?.currently_due);
+  const pastDue = toUniqueStrings(accountV1.requirements?.past_due);
+  const pendingVerification = toUniqueStrings(accountV1.requirements?.pending_verification);
+  const eventuallyDue = toUniqueStrings(accountV1.requirements?.eventually_due);
+  const requirementErrorMessages = toUniqueStrings(
+    accountV1.requirements?.errors?.map((error) => error.reason || error.code || null)
+  );
+  const requirementHighlights = buildRequirementHighlights({
+    currentDue,
+    pastDue,
+    pendingVerification,
+    detailsSubmitted: accountV1.details_submitted
+  });
+
+  const requirementsStatus = accountV2.requirements?.summary?.minimum_deadline?.status ?? null;
+  const futureRequirementsStatus = accountV2.future_requirements?.summary?.minimum_deadline?.status ?? null;
+  const disabledReason = accountV1.requirements?.disabled_reason ?? accountV1.future_requirements?.disabled_reason ?? null;
+
+  const verificationBlockedByRequirements = currentDue.length > 0 || pastDue.length > 0;
+  const capabilityNeedsInfo =
+    hasCapabilityDetailResolution(transferCapabilityDetails, "provide_info") ||
+    hasCapabilityDetailResolution(payoutCapabilityDetails, "provide_info");
+  const capabilityPendingReview =
+    hasCapabilityDetailCode(transferCapabilityDetails, "requirements_pending_verification") ||
+    hasCapabilityDetailCode(payoutCapabilityDetails, "requirements_pending_verification") ||
+    hasCapabilityDetailCode(transferCapabilityDetails, "determining_status") ||
+    hasCapabilityDetailCode(payoutCapabilityDetails, "determining_status");
+
+  const underReview =
+    pendingVerification.length > 0 ||
+    disabledReason === "under_review" ||
+    disabledReason === "requirements.pending_verification" ||
+    capabilityPendingReview;
+
+  // Recipient accounts in this marketplace flow do not need charges_enabled to
+  // accept destination-charge payouts, but we still inspect Stripe's v1 fields
+  // so restricted accounts with missing KYC or review holds are detected.
+  const recipientCapabilitiesReady =
+    transferCapabilityStatus === "active" && (payoutCapabilityStatus === null || payoutCapabilityStatus === "active");
+
+  const needsVerification =
+    verificationBlockedByRequirements ||
+    !accountV1.details_submitted ||
+    !accountV1.payouts_enabled ||
+    capabilityNeedsInfo ||
+    disabledReason === "action_required.requested_capabilities" ||
+    disabledReason === "requirements.past_due" ||
+    disabledReason === "rejected.incomplete_verification";
+
+  const readyToReceivePayments =
+    accountV1.details_submitted &&
+    accountV1.payouts_enabled &&
+    recipientCapabilitiesReady &&
+    !verificationBlockedByRequirements &&
+    !underReview &&
+    !capabilityNeedsInfo;
 
   return {
-    stripeAccountId: account.id,
-    displayName: account.display_name ?? null,
-    contactEmail: account.contact_email ?? null,
-    readyToReceivePayments,
-    onboardingComplete,
+    stripeAccountId: accountV2.id,
+    displayName: accountV2.display_name ?? accountV1.business_profile?.name ?? null,
+    contactEmail: accountV2.contact_email ?? accountV1.email ?? null,
+    chargesEnabled: accountV1.charges_enabled,
+    payoutsEnabled: accountV1.payouts_enabled,
+    detailsSubmitted: accountV1.details_submitted,
+    disabledReason,
     requirementsStatus,
-    transferCapabilityStatus
+    futureRequirementsStatus,
+    transferCapabilityStatus,
+    payoutCapabilityStatus,
+    transferCapabilityDetails,
+    payoutCapabilityDetails,
+    currentDue,
+    pastDue,
+    pendingVerification,
+    eventuallyDue,
+    requirementErrorMessages,
+    requirementHighlights,
+    readyToReceivePayments,
+    onboardingComplete: accountV1.details_submitted && currentDue.length === 0 && pastDue.length === 0,
+    needsVerification,
+    underReview
   };
+}
+
+function buildVerificationDetail(snapshot: ConnectedAccountSnapshot) {
+  if (snapshot.requirementHighlights.length > 0) {
+    const formatted = snapshot.requirementHighlights.join(", ");
+    return `Stripe still needs more information before HoosFinds can send your earnings. Most sellers can fix this by reopening Stripe and adding ${formatted}.`;
+  }
+
+  return "Stripe still needs more information before HoosFinds can send your earnings. Reopen Stripe and finish verification before publishing listings or accepting checkout.";
 }
 
 export function calculateApplicationFeeAmount(amountCents: number) {
@@ -85,26 +323,35 @@ export function calculateApplicationFeeAmount(amountCents: number) {
 
 export async function getConnectedAccountStatusFromStripe(stripeAccountId: string) {
   const stripeClient = getStripeClient();
-  const account = await stripeClient.v2.core.accounts.retrieve(stripeAccountId, {
-    include: ["configuration.recipient", "requirements"]
-  });
+  const [accountV2, accountV1] = await Promise.all([
+    stripeClient.v2.core.accounts.retrieve(stripeAccountId, {
+      include: ["configuration.recipient", "future_requirements", "requirements"]
+    }),
+    stripeClient.accounts.retrieve(stripeAccountId)
+  ]);
 
-  return summarizeRecipientAccount(account);
+  return summarizeRecipientAccount(accountV2, accountV1);
+}
+
+function getDisconnectedPayoutState(): SellerPayoutState {
+  return {
+    status: "not_connected",
+    connectedAccount: null,
+    stripeStatus: null,
+    readyToReceivePayments: false,
+    onboardingComplete: false,
+    actionRequired: true,
+    statusLabel: "Payouts not connected",
+    headline: "Connect payouts before you sell",
+    detail: "Before your listing can go live, connect where you want HoosFinds to send your earnings.",
+    ctaLabel: "Connect Stripe payouts",
+    requirementHighlights: []
+  };
 }
 
 export async function getSellerPayoutState(userId?: string): Promise<SellerPayoutState> {
   if (!userId) {
-    return {
-      connectedAccount: null,
-      stripeStatus: null,
-      readyToReceivePayments: false,
-      onboardingComplete: false,
-      actionRequired: true,
-      statusLabel: "Connect payouts",
-      headline: "Connect payouts before you sell",
-      detail: "Before your listing can go live, connect where you want HoosFinds to send your earnings.",
-      ctaLabel: "Connect Stripe payouts"
-    };
+    return getDisconnectedPayoutState();
   }
 
   const connectedAccount = await prisma.connectedAccount.findUnique({
@@ -112,21 +359,12 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
   });
 
   if (!connectedAccount) {
-    return {
-      connectedAccount: null,
-      stripeStatus: null,
-      readyToReceivePayments: false,
-      onboardingComplete: false,
-      actionRequired: true,
-      statusLabel: "Connect payouts",
-      headline: "Connect payouts before you sell",
-      detail: "Before your listing can go live, connect where you want HoosFinds to send your earnings.",
-      ctaLabel: "Connect Stripe payouts"
-    };
+    return getDisconnectedPayoutState();
   }
 
   if (!isStripeConnectConfigured()) {
     return {
+      status: "unavailable",
       connectedAccount: {
         id: connectedAccount.id,
         stripeAccountId: connectedAccount.stripeAccountId,
@@ -139,7 +377,8 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       statusLabel: "Payouts unavailable",
       headline: "Payout setup is temporarily unavailable",
       detail: "HoosFinds cannot confirm payout readiness until Stripe is configured for this environment.",
-      ctaLabel: "Try again later"
+      ctaLabel: "Try again later",
+      requirementHighlights: []
     };
   }
 
@@ -147,6 +386,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
 
   if (!stripeStatus) {
     return {
+      status: "verification_incomplete",
       connectedAccount: {
         id: connectedAccount.id,
         stripeAccountId: connectedAccount.stripeAccountId,
@@ -156,15 +396,18 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       readyToReceivePayments: false,
       onboardingComplete: false,
       actionRequired: true,
-      statusLabel: "Finish setup",
-      headline: "Finish setup to get paid",
-      detail: "We could not confirm your payout status right now. Open Stripe again and finish setup before publishing listings.",
-      ctaLabel: "Finish setup"
+      statusLabel: "Verification incomplete",
+      headline: "Finish Stripe verification",
+      detail:
+        "We could not confirm your payout status right now. Open Stripe again and finish verification before your listing goes live or accepts checkout.",
+      ctaLabel: "Finish Stripe verification",
+      requirementHighlights: []
     };
   }
 
   if (stripeStatus.readyToReceivePayments) {
     return {
+      status: "ready",
       connectedAccount: {
         id: connectedAccount.id,
         stripeAccountId: connectedAccount.stripeAccountId,
@@ -174,14 +417,37 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
       readyToReceivePayments: true,
       onboardingComplete: stripeStatus.onboardingComplete,
       actionRequired: false,
-      statusLabel: "Payouts enabled",
+      statusLabel: "Ready to sell",
       headline: "You're ready to sell",
-      detail: "HoosFinds can route listing payments to your connected payout account automatically.",
-      ctaLabel: "Create listing"
+      detail: "Payouts are enabled and HoosFinds can route listing earnings to your connected payout account automatically.",
+      ctaLabel: "Create listing",
+      requirementHighlights: []
+    };
+  }
+
+  if (stripeStatus.underReview && !stripeStatus.needsVerification) {
+    return {
+      status: "under_review",
+      connectedAccount: {
+        id: connectedAccount.id,
+        stripeAccountId: connectedAccount.stripeAccountId,
+        createdAt: connectedAccount.createdAt.toISOString()
+      },
+      stripeStatus,
+      readyToReceivePayments: false,
+      onboardingComplete: stripeStatus.onboardingComplete,
+      actionRequired: true,
+      statusLabel: "Stripe reviewing your account",
+      headline: "Stripe is reviewing your account",
+      detail:
+        "You've already submitted the main details, but Stripe is still reviewing them. Listings and checkout stay paused until that review clears.",
+      ctaLabel: "Check Stripe verification",
+      requirementHighlights: stripeStatus.requirementHighlights
     };
   }
 
   return {
+    status: "verification_incomplete",
     connectedAccount: {
       id: connectedAccount.id,
       stripeAccountId: connectedAccount.stripeAccountId,
@@ -191,10 +457,11 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
     readyToReceivePayments: false,
     onboardingComplete: stripeStatus.onboardingComplete,
     actionRequired: true,
-    statusLabel: "Finish setup",
-    headline: "Finish setup to get paid",
-    detail: "Stripe still needs a few details before HoosFinds can send your earnings after a sale.",
-    ctaLabel: "Finish setup"
+    statusLabel: "Verification incomplete",
+    headline: "Finish Stripe verification",
+    detail: buildVerificationDetail(stripeStatus),
+    ctaLabel: "Finish Stripe verification",
+    requirementHighlights: stripeStatus.requirementHighlights
   };
 }
 

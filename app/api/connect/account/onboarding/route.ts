@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getStripeSellerProfileDefaults } from "@/lib/connect-onboarding";
 import { prisma } from "@/lib/prisma";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
@@ -35,6 +36,30 @@ export async function POST(request: Request) {
   const stripeClient = getStripeClient();
 
   try {
+    const accountDisplayName = session.user.name || session.user.username || session.user.email || "HoosFinds seller";
+    const defaultProfile = getStripeSellerProfileDefaults({
+      username: session.user.username,
+      displayName: accountDisplayName
+    });
+
+    // Best effort: refresh the Stripe-side profile each time onboarding opens
+    // so existing sellers also get the HoosFinds profile URL + product
+    // description prefill. If this refresh fails, sellers should still be able
+    // to continue onboarding rather than being blocked from payout setup.
+    try {
+      await stripeClient.v2.core.accounts.update(connectedAccount.stripeAccountId, {
+        display_name: accountDisplayName,
+        contact_email: session.user.email || undefined,
+        defaults: {
+          profile: defaultProfile
+        }
+      });
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[connect/account/onboarding] could not refresh Stripe profile defaults", error);
+      }
+    }
+
     const accountLink = await stripeClient.v2.core.accountLinks.create({
       account: connectedAccount.stripeAccountId,
       use_case: {

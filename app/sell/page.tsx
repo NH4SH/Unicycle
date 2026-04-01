@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { ArrowRight, CircleAlert } from "lucide-react";
 
+import { PayoutSetupButton } from "@/components/payments/payout-setup-button";
 import { SellWizard } from "@/components/sell/sell-wizard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
+import { isStripeConnectConfigured } from "@/lib/stripe";
 
 export default async function SellPage() {
   const session = await getAuthSession();
   const payoutState = await getSellerPayoutState(session?.user.id);
+  const payoutsConfigured = isStripeConnectConfigured();
 
   return (
     <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
@@ -64,13 +67,21 @@ export default async function SellPage() {
                       ? "You can publish normally now. HoosFinds will route checkout earnings to your connected payout account."
                       : "You can draft your listing below, but before it goes live, connect where you want payouts sent."}
                   </p>
+                  {!payoutState.readyToReceivePayments && payoutState.requirementHighlights.length > 0 ? (
+                    <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                      Stripe still needs {payoutState.requirementHighlights.join(", ")} before this listing can go live.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
             {!payoutState.readyToReceivePayments ? (
-              <Button asChild>
-                <Link href="/payments">{payoutState.ctaLabel}</Link>
-              </Button>
+              <PayoutSetupButton
+                viewerSignedIn
+                payoutsConfigured={payoutsConfigured}
+                payoutState={payoutState}
+                callbackPath="/sell"
+              />
             ) : null}
           </CardContent>
         </Card>
@@ -79,9 +90,12 @@ export default async function SellPage() {
       {session?.user.id ? (
         <SellWizard
           payoutsReady={payoutState.readyToReceivePayments}
+          payoutsConfigured={payoutsConfigured}
+          viewerSignedIn
           payoutSetupHref="/payments"
           payoutSetupLabel={payoutState.ctaLabel}
           payoutSetupDetail={payoutState.detail}
+          payoutState={payoutState}
         />
       ) : null}
     </div>

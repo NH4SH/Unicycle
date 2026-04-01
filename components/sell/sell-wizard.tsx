@@ -7,6 +7,7 @@ import { UploadDropzone } from "@uploadthing/react";
 import { ArrowLeft, ArrowRight, GripHorizontal, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PayoutSetupButton } from "@/components/payments/payout-setup-button";
 import { PickupChipSelector } from "@/components/shared/pickup-chip-selector";
 import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { packListingDescription } from "@/lib/listing-draft";
+import type { SellerPayoutState } from "@/lib/seller-payouts";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
 import { listingSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -61,9 +63,12 @@ type SellWizardProps = {
   initialDraft?: Draft;
   locked?: boolean;
   payoutsReady?: boolean;
+  payoutsConfigured?: boolean;
+  viewerSignedIn?: boolean;
   payoutSetupHref?: string;
   payoutSetupLabel?: string;
   payoutSetupDetail?: string;
+  payoutState?: SellerPayoutState;
 };
 
 export function SellWizard({
@@ -72,9 +77,12 @@ export function SellWizard({
   initialDraft,
   locked = false,
   payoutsReady = true,
+  payoutsConfigured = true,
+  viewerSignedIn = true,
   payoutSetupHref = "/payments",
   payoutSetupLabel = "Connect payouts",
-  payoutSetupDetail = "Before your listing can go live, connect where you want HoosFinds to send your earnings."
+  payoutSetupDetail = "Before your listing can go live, connect where you want HoosFinds to send your earnings.",
+  payoutState
 }: SellWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -531,9 +539,18 @@ export function SellWizard({
               <GripHorizontal className="ml-1.5 h-4 w-4" />
             </Button>
           ) : needsPayoutSetupToSubmit ? (
-            <Button type="button" onClick={() => router.push(payoutSetupHref)}>
-              {payoutSetupLabel}
-            </Button>
+            payoutState ? (
+              <PayoutSetupButton
+                viewerSignedIn={viewerSignedIn}
+                payoutsConfigured={payoutsConfigured}
+                payoutState={payoutState}
+                callbackPath={payoutSetupHref}
+              />
+            ) : (
+              <Button type="button" onClick={() => router.push(payoutSetupHref)}>
+                {payoutSetupLabel}
+              </Button>
+            )
           ) : (
             <Button type="button" onClick={publish} disabled={publishing || locked}>
               {publishing ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getStripeSellerProfileDefaults } from "@/lib/connect-onboarding";
 import { prisma } from "@/lib/prisma";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
@@ -37,16 +38,25 @@ export async function POST() {
   const stripeClient = getStripeClient();
 
   try {
+    const accountDisplayName = session.user.name || session.user.username || session.user.email || "HoosFinds seller";
+    const defaultProfile = getStripeSellerProfileDefaults({
+      username: session.user.username,
+      displayName: accountDisplayName
+    });
+
     // The user asked for the V2 Accounts API and explicitly requested that we
-    // only pass the documented recipient-focused properties below.
+    // only pass the documented recipient-focused properties below. We also
+    // prefill the Stripe profile so student sellers do not have to invent a
+    // "business website" during onboarding.
     const account = await stripeClient.v2.core.accounts.create({
-      display_name: session.user.name || session.user.username || session.user.email,
+      display_name: accountDisplayName,
       contact_email: session.user.email,
       identity: {
         country: "us"
       },
       dashboard: "express",
       defaults: {
+        profile: defaultProfile,
         responsibilities: {
           fees_collector: "application",
           losses_collector: "application"
