@@ -21,7 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { packListingDescription } from "@/lib/listing-draft";
 import type { SellerPayoutState } from "@/lib/seller-payouts";
-import { prepareImagesForUpload } from "@/lib/upload-image-prep";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
 import { listingSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
@@ -249,13 +248,6 @@ export function SellWizard({
             <UploadDropzone<OurFileRouter, "listingImage">
               endpoint="listingImage"
               disabled={locked || publishing}
-              onBeforeUploadBegin={(files) =>
-                prepareImagesForUpload(files, {
-                  maxDimension: 2200,
-                  quality: 0.88,
-                  purpose: "listing"
-                })
-              }
               onClientUploadComplete={(result) => {
                 const urls = result
                   .map((item) => getUploadedFileUrl(item))
@@ -273,7 +265,7 @@ export function SellWizard({
               }}
               content={{
                 allowedContent() {
-                  return "Up to 6 images · JPG, PNG, WEBP, HEIC, or HEIF.";
+                  return "Up to 6 images · 20 MB each · JPG, PNG, WEBP, HEIC, or HEIF. We optimize automatically.";
                 }
               }}
             />

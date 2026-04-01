@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ["nodemailer"]
+    serverComponentsExternalPackages: ["nodemailer", "sharp", "heic-convert", "heic-decode", "libheif-js"]
   },
   images: {
     remotePatterns: [

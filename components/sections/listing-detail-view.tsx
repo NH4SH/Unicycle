@@ -117,7 +117,7 @@ export function ListingDetailView({
 
   function getCheckoutSupportCopy() {
     if (showCheckoutCta) {
-      return "Check out now, or message the seller first if you need details.";
+      return "Review the total first, then continue to secure Stripe checkout if everything looks right.";
     }
 
     if (viewerSignedIn && !viewerCanBuy) {
@@ -145,7 +145,7 @@ export function ListingDetailView({
 
   function getTrustCopy() {
     if (showCheckoutCta) {
-      return "Stripe holds payment until pickup is confirmed. Meet in a public spot on Grounds.";
+      return "You’ll review the item price, HoosFinds fee, and tax before Stripe. Meet in a public spot on Grounds.";
     }
 
     if (viewerSignedIn && !viewerCanBuy) {
@@ -232,7 +232,7 @@ export function ListingDetailView({
 
   async function startCheckout() {
     if (status !== "authenticated") {
-      router.push("/sign-in");
+      router.push(`/sign-in?callbackUrl=${encodeURIComponent(`/checkout/review/${listing.id}`)}`);
       return;
     }
 
@@ -242,27 +242,7 @@ export function ListingDetailView({
     }
 
     setCheckingOut(true);
-    const response = await fetch("/api/checkout/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listingId: listing.id })
-    });
-
-    setCheckingOut(false);
-
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { message?: string } | null;
-      toast.error(data?.message || "Could not start Stripe checkout.");
-      return;
-    }
-
-    const data = (await response.json()) as { url?: string };
-    if (!data.url) {
-      toast.error("Stripe checkout link was missing.");
-      return;
-    }
-
-    window.location.href = data.url;
+    router.push(`/checkout/review/${listing.id}`);
   }
 
   return (
@@ -354,7 +334,7 @@ export function ListingDetailView({
               {showCheckoutCta ? (
                 <Button className="h-12 w-full" onClick={startCheckout} disabled={checkingOut}>
                   <WalletCards className="mr-1.5 h-4 w-4" />
-                  {checkingOut ? "Redirecting to Stripe..." : "Checkout with Stripe"}
+                  {checkingOut ? "Opening review..." : "Review total"}
                 </Button>
               ) : (
                 <Button className="h-12 w-full" onClick={startConversation}>

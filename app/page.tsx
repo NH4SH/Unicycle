@@ -18,6 +18,9 @@ export const dynamic = "force-dynamic";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?auto=format&fit=crop&w=900&q=80";
 
+const HERO_CARD_PILL_CLASS =
+  "border-white/14 bg-black/56 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.26)] backdrop-blur-md dark:border-white/16 dark:bg-black/60 dark:text-white";
+
 export default async function HomePage() {
   const session = await getAuthSession();
   const [landing, waitlistCount, interviewsCount, partnersCount, followingFeed, suggestedSellers] = await Promise.all([
@@ -47,7 +50,7 @@ export default async function HomePage() {
   return (
     <div className="container space-y-20 py-8 md:space-y-24 md:py-12">
       <section className="grid gap-10 xl:grid-cols-[1.02fr_0.98fr] xl:items-end">
-        <div className="space-y-8">
+        <div className="space-y-7">
           <div className="space-y-4">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
             <h1 className="max-w-4xl font-display text-5xl font-extrabold tracking-[-0.04em] md:text-7xl md:leading-[0.92]">
@@ -75,27 +78,6 @@ export default async function HomePage() {
               </span>
             ))}
           </div>
-
-          <div className="grid gap-4 border-t border-border/80 pt-6 md:grid-cols-3">
-            <div>
-              <p className="editorial-eyebrow">Why HoosFinds</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Better than random GroupMe chaos. Built for stylish, local, student-to-student resale.
-              </p>
-            </div>
-            <div>
-              <p className="editorial-eyebrow">What moves</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Vintage sweats, everyday campus fits, game day layers, dorm cleanout gems, and move-out steals.
-              </p>
-            </div>
-            <div>
-              <p className="editorial-eyebrow">Pickup vibe</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Meet at Newcomb, The Corner, JPJ, or between classes on Grounds without leaving the UVA bubble.
-              </p>
-            </div>
-          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-[1.08fr_0.92fr]">
@@ -110,18 +92,12 @@ export default async function HomePage() {
                   sizes="(max-width: 640px) 100vw, 42vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/24 to-transparent" />
-                <div className="absolute left-4 top-4">
-                  <Badge
-                    variant="outline"
-                    className="border-white/16 bg-black/58 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-md dark:border-white/18 dark:bg-black/62 dark:text-white"
-                  >
-                    Featured on Grounds
-                  </Badge>
-                </div>
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
                   <div className="rounded-[1.35rem] bg-black/45 px-4 py-3 text-white backdrop-blur-sm">
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/80">Fresh listing</p>
-                    <p className="mt-2 max-w-xs font-display text-2xl font-extrabold leading-tight [text-wrap:balance]">
+                    <Badge variant="outline" className={cn("inline-flex", HERO_CARD_PILL_CLASS)}>
+                      Fresh listing
+                    </Badge>
+                    <p className="mt-3 max-w-xs font-display text-[2rem] font-extrabold leading-[0.95] tracking-tight [text-wrap:balance]">
                       {heroLead.title}
                     </p>
                   </div>
@@ -164,8 +140,8 @@ export default async function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/16 to-transparent" />
                     <div className="absolute left-4 top-4">
                       <Badge
-                        variant={index === 0 ? "orange" : "blue"}
-                        className="border-white/14 bg-black/56 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.26)] backdrop-blur-md dark:border-white/16 dark:bg-black/60 dark:text-white"
+                        variant="outline"
+                        className={HERO_CARD_PILL_CLASS}
                       >
                         {index === 0 ? "Game day lane" : "Campus favorite"}
                       </Badge>

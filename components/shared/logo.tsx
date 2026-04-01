@@ -16,7 +16,6 @@ export function Logo() {
       </span>
       <div className="leading-tight">
         <p className="font-display text-[1.02rem] font-extrabold tracking-tight">HoosFinds</p>
-        <p className="text-[10px] uppercase tracking-[0.26em] text-muted-foreground">UVA fashion resale</p>
       </div>
     </Link>
   );

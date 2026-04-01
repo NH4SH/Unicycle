@@ -185,8 +185,30 @@ export default async function VerifiedSellerPortalPage() {
                         {sale.listingTitle}
                       </Link>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        {sale.buyer.displayName} paid {formatCurrency(sale.amountCents / 100)}
+                        {sale.buyer.displayName} paid {formatCurrency(sale.buyerTotalCents / 100)}
                       </p>
+                      <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Sale price</span>
+                          <span>{formatCurrency(sale.listingPriceCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Seller fee</span>
+                          <span>-{formatCurrency(sale.sellerFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Processing fee</span>
+                          <span>-{formatCurrency(sale.stripeFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Per-order fee</span>
+                          <span>-{formatCurrency(sale.perOrderFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 font-semibold text-foreground">
+                          <span>You&apos;ll receive</span>
+                          <span>{formatCurrency(sale.sellerPayoutCents / 100)}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

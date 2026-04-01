@@ -237,8 +237,30 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                         {sale.listingTitle}
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        Buyer {sale.buyer.displayName} paid {formatCurrency(sale.amountCents / 100)} · {timeAgo(sale.createdAt)} ago
+                        Buyer {sale.buyer.displayName} paid {formatCurrency(sale.buyerTotalCents / 100)} · {timeAgo(sale.createdAt)} ago
                       </p>
+                      <div className="grid gap-1 pt-2 text-xs text-muted-foreground sm:grid-cols-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Sale price</span>
+                          <span>{formatCurrency(sale.listingPriceCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Seller fee</span>
+                          <span>-{formatCurrency(sale.sellerFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Processing fee</span>
+                          <span>-{formatCurrency(sale.stripeFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Per-order fee</span>
+                          <span>-{formatCurrency(sale.perOrderFeeCents / 100)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 font-semibold text-foreground sm:col-span-2">
+                          <span>You&apos;ll receive</span>
+                          <span>{formatCurrency(sale.sellerPayoutCents / 100)}</span>
+                        </div>
+                      </div>
                     </div>
                     <Badge variant={sale.handoffStatus === "COMPLETED" ? "blue" : "outline"}>
                       {getSaleStatusLabel(sale.handoffStatus)}

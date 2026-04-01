@@ -233,10 +233,24 @@ model Order {
   listingId               String
   buyerId                 String
   sellerId                String
+  /// Canonical merchandise price. Buyer totals and payout math live in the
+  /// explicit breakdown fields below so checkout and reconciliation stay clear.
   amountCents             Int
+  buyerPercentFeeCents    Int         @default(0)
+  buyerFlatFeeCents       Int         @default(0)
+  buyerFeeTotalCents      Int         @default(0)
+  taxAmountCents          Int         @default(0)
+  taxRateBps              Int         @default(0)
+  buyerTotalCents         Int         @default(0)
+  sellerFeeCents          Int         @default(0)
+  stripeFeeCents          Int         @default(0)
+  perOrderFeeCents        Int         @default(0)
+  sellerPayoutCents       Int         @default(0)
+  applicationFeeCents     Int         @default(0)
   status                  OrderStatus @default(CHECKOUT_CREATED)
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?     @unique
+  checkoutExpiresAt       DateTime?
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
 

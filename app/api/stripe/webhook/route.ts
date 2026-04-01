@@ -50,6 +50,7 @@ export async function POST(request: Request) {
                 data: {
                   status: OrderStatus.PAID,
                   stripeCheckoutSessionId: session.id,
+                  checkoutExpiresAt: null,
                   stripePaymentIntentId:
                     typeof session.payment_intent === "string" ? session.payment_intent : order.stripePaymentIntentId
                 }
@@ -109,7 +110,8 @@ export async function POST(request: Request) {
         },
         data: {
           status: OrderStatus.EXPIRED,
-          stripeCheckoutSessionId: session.id
+          stripeCheckoutSessionId: session.id,
+          checkoutExpiresAt: session.expires_at ? new Date(session.expires_at * 1000) : undefined
         }
       });
     }

@@ -43,6 +43,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
   });
 
   const paymentComplete = checkoutSession.payment_status === "paid";
+  const reviewedTotalCents = order?.buyerTotalCents || order?.amountCents || 0;
 
   return (
     <div className="container py-10">
@@ -87,14 +88,27 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Order</p>
                 <p className="font-display text-2xl font-black">{order.listing.title}</p>
                 <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside HoosFinds.</p>
-                <p className="text-sm text-muted-foreground">Seller payouts are handled underneath the normal listing flow.</p>
+                <div className="grid gap-1 text-sm text-muted-foreground sm:max-w-md">
+                  <div className="flex items-center justify-between gap-4">
+                    <span>Item price</span>
+                    <span>${(order.amountCents / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span>HoosFinds fee</span>
+                    <span>${((order.buyerFeeTotalCents || 0) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span>Sales tax</span>
+                    <span>${((order.taxAmountCents || 0) / 100).toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
               <div className="rounded-2xl bg-card px-4 py-3 text-right shadow-soft">
                 <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70 dark:text-white/72">
                   <WalletCards className="h-3.5 w-3.5 text-electric" />
                   Total
                 </div>
-                <p className="font-display text-2xl font-black text-uva-blue dark:text-white">${(order.amountCents / 100).toFixed(2)}</p>
+                <p className="font-display text-2xl font-black text-uva-blue dark:text-white">${(reviewedTotalCents / 100).toFixed(2)}</p>
               </div>
             </div>
           ) : null}

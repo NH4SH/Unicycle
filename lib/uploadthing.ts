@@ -11,9 +11,11 @@ type UploadThingFileLike = {
   ufsUrl?: string | null;
   serverData?: {
     url?: string | null;
+    width?: number | null;
+    height?: number | null;
   } | null;
 };
 
 export function getUploadedFileUrl(file: UploadThingFileLike) {
-  return file.ufsUrl ?? file.url ?? file.serverData?.url ?? null;
+  return file.serverData?.url ?? file.ufsUrl ?? file.url ?? null;
 }

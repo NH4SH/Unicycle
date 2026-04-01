@@ -10,10 +10,6 @@ import { prisma } from "@/lib/prisma";
 import { publicUserSummarySelect, toPublicUserSummary, type PublicUserSummary } from "@/lib/public-user";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
-// Canonical marketplace sales use the Listing model. Stripe Connect only powers
-// seller payouts underneath that flow, so platform-fee math now lives here.
-export const SELLER_PAYOUT_APPLICATION_FEE_BPS = 1000;
-
 type StripeCapabilityStatus = "active" | "pending" | "restricted" | "unsupported" | null;
 
 type StripeCapabilityDetail = {
@@ -85,8 +81,13 @@ export type SellerPayoutSaleSummary = {
   orderId: string;
   listingId: string;
   listingTitle: string;
-  amountCents: number;
+  listingPriceCents: number;
+  buyerTotalCents: number;
   applicationFeeCents: number;
+  sellerFeeCents: number;
+  stripeFeeCents: number;
+  perOrderFeeCents: number;
+  sellerPayoutCents: number;
   createdAt: string;
   orderStatus: OrderStatus;
   handoffStatus: TransactionStatus | null;
@@ -371,10 +372,6 @@ function buildPausedDetail(snapshot: ConnectedAccountSnapshot) {
   }
 
   return "Stripe has temporarily paused payouts on this account. Reopen Stripe and finish the requested verification steps before you can receive earnings again.";
-}
-
-export function calculateApplicationFeeAmount(amountCents: number) {
-  return Math.max(50, Math.round((amountCents * SELLER_PAYOUT_APPLICATION_FEE_BPS) / 10_000));
 }
 
 export async function getConnectedAccountStatusFromStripe(stripeAccountId: string) {
@@ -662,8 +659,13 @@ export async function getSellerPayoutDashboardData(userId?: string): Promise<Sel
       orderId: order.id,
       listingId: order.listingId,
       listingTitle: order.listing.title,
-      amountCents: order.amountCents,
-      applicationFeeCents: calculateApplicationFeeAmount(order.amountCents),
+      listingPriceCents: order.amountCents,
+      buyerTotalCents: order.buyerTotalCents,
+      applicationFeeCents: order.applicationFeeCents,
+      sellerFeeCents: order.sellerFeeCents,
+      stripeFeeCents: order.stripeFeeCents,
+      perOrderFeeCents: order.perOrderFeeCents,
+      sellerPayoutCents: order.sellerPayoutCents,
       createdAt: order.createdAt.toISOString(),
       orderStatus: order.status,
       handoffStatus: order.transaction?.status ?? null,

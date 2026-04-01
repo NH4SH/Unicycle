@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
-import { prepareImagesForUpload } from "@/lib/upload-image-prep";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
 
 type ProfileImagePickerProps = {
@@ -34,13 +33,6 @@ export function ProfileImagePicker({ value, username, name, disabled, onChange }
       <div className="flex flex-wrap gap-2">
         <UploadButton<OurFileRouter, "profileImage">
           endpoint="profileImage"
-          onBeforeUploadBegin={(files) =>
-            prepareImagesForUpload(files, {
-              maxDimension: 1400,
-              quality: 0.9,
-              purpose: "profile"
-            })
-          }
           onClientUploadComplete={(result) => {
             const nextUrl = getUploadedFileUrl(result[0] ?? {});
             if (nextUrl) {
@@ -65,7 +57,7 @@ export function ProfileImagePicker({ value, username, name, disabled, onChange }
               return isUploading ? "Uploading..." : "Upload photo";
             },
             allowedContent() {
-              return "JPG, PNG, WEBP, HEIC, or HEIF";
+              return "Up to 10 MB · JPG, PNG, WEBP, HEIC, or HEIF. We optimize automatically.";
             }
           }}
         />

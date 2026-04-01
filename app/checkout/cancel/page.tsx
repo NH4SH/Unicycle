@@ -12,7 +12,7 @@ type CheckoutCancelPageProps = {
 };
 
 export default function CheckoutCancelPage({ searchParams }: CheckoutCancelPageProps) {
-  const returnHref = searchParams?.listingId ? `/listing/${searchParams.listingId}` : "/market";
+  const returnHref = searchParams?.listingId ? `/checkout/review/${searchParams.listingId}` : "/market";
 
   return (
     <div className="container py-10">
@@ -40,7 +40,7 @@ export default function CheckoutCancelPage({ searchParams }: CheckoutCancelPageP
             <Button asChild>
               <Link href={returnHref}>
                 <ArrowLeft className="mr-1.5 h-4 w-4" />
-                Return to listing
+                Return to checkout review
               </Link>
             </Button>
             <Button asChild variant="secondary">

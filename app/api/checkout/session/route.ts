@@ -1,10 +1,10 @@
-import { ListingStatus, OrderStatus } from "@prisma/client";
+import { OrderStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getCheckoutReviewData } from "@/lib/listing-checkout";
 import { prisma } from "@/lib/prisma";
 import { getStripe, isStripeCheckoutEnabled } from "@/lib/stripe";
-import { calculateApplicationFeeAmount, getSellerPayoutState } from "@/lib/seller-payouts";
 import { checkoutSessionSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -27,97 +27,181 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Invalid checkout payload", errors: parsed.error.flatten() }, { status: 400 });
   }
 
-  const listing = await prisma.listing.findUnique({
-    where: { id: parsed.data.listingId },
-    include: {
-      orders: {
-        where: {
-          status: OrderStatus.PAID
-        }
-      }
-    }
-  });
-
-  if (!listing) {
+  const review = await getCheckoutReviewData(parsed.data.listingId, session.user.id);
+  if (!review.listing || !review.pricing) {
     return NextResponse.json({ message: "Listing not found" }, { status: 404 });
   }
 
-  if (listing.status !== ListingStatus.ACTIVE || listing.orders.length > 0) {
-    return NextResponse.json({ message: "This item is no longer available for checkout." }, { status: 409 });
+  if (review.issue) {
+    const issueMessage =
+      review.issue === "listing_inactive" || review.issue === "already_paid"
+        ? "This item is no longer available for checkout."
+        : review.issue === "own_listing"
+          ? "You cannot checkout your own listing."
+          : review.issue === "checkout_in_progress"
+            ? "Another secure checkout is already in progress for this item. Please try again in a few minutes."
+            : review.issue === "seller_payouts_reconnect_required"
+              ? "This seller needs to reconnect payouts before HoosFinds can process checkout."
+              : "This seller still needs to finish payout setup before HoosFinds can process checkout.";
+
+    return NextResponse.json({ message: issueMessage }, { status: review.issue === "own_listing" ? 400 : 409 });
   }
 
-  if (listing.sellerId === session.user.id) {
-    return NextResponse.json({ message: "You cannot checkout your own listing." }, { status: 400 });
-  }
+  const stripe = getStripe();
+  const listing = review.listing;
+  const pricing = review.pricing;
+  const sellerPayoutState = review.payoutState!;
 
-  const sellerPayoutState = await getSellerPayoutState(listing.sellerId);
+  if (review.reusableOrderId) {
+    const reusableOrder = await prisma.order.findUnique({
+      where: { id: review.reusableOrderId }
+    });
 
-  if (!sellerPayoutState.connectedAccount || !sellerPayoutState.readyToReceivePayments) {
-    return NextResponse.json(
-      {
-        message:
-          sellerPayoutState.status === "requires_reconnect"
-            ? "This seller needs to reconnect payouts before HoosFinds can process checkout."
-            : "This seller still needs to finish payout setup before HoosFinds can process checkout."
-      },
-      { status: 409 }
-    );
+    if (
+      reusableOrder?.stripeCheckoutSessionId &&
+      reusableOrder.checkoutExpiresAt &&
+      reusableOrder.checkoutExpiresAt.getTime() > Date.now()
+    ) {
+      try {
+        const existingSession = await stripe.checkout.sessions.retrieve(reusableOrder.stripeCheckoutSessionId);
+        if (existingSession.status === "open" && existingSession.url) {
+          return NextResponse.json({ url: existingSession.url, orderId: reusableOrder.id });
+        }
+
+        await prisma.order.update({
+          where: { id: reusableOrder.id },
+          data: {
+            status: OrderStatus.EXPIRED
+          }
+        });
+      } catch {
+        await prisma.order.update({
+          where: { id: reusableOrder.id },
+          data: {
+            status: OrderStatus.FAILED
+          }
+        });
+      }
+    }
   }
 
   const order = await prisma.order.create({
     data: {
       listingId: listing.id,
       buyerId: session.user.id,
-      sellerId: listing.sellerId,
-      amountCents: listing.priceCents
+      sellerId: listing.seller.id,
+      amountCents: pricing.listingPriceCents,
+      buyerPercentFeeCents: pricing.buyerPercentFeeCents,
+      buyerFlatFeeCents: pricing.buyerFlatFeeCents,
+      buyerFeeTotalCents: pricing.buyerFeeTotalCents,
+      taxAmountCents: pricing.taxAmountCents,
+      taxRateBps: pricing.taxRateBps,
+      buyerTotalCents: pricing.buyerTotalCents,
+      sellerFeeCents: pricing.sellerFeeCents,
+      stripeFeeCents: pricing.stripeFeeCents,
+      perOrderFeeCents: pricing.perOrderFeeCents,
+      sellerPayoutCents: pricing.sellerPayoutCents,
+      applicationFeeCents: pricing.applicationFeeCents
     }
   });
 
   const origin = new URL(request.url).origin;
-  const stripe = getStripe();
-  const applicationFeeAmount = Math.min(listing.priceCents - 1, calculateApplicationFeeAmount(listing.priceCents));
-  const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "payment",
-    client_reference_id: order.id,
-    customer_email: session.user.email,
-    success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/checkout/cancel?listingId=${listing.id}`,
-    payment_method_types: ["card"],
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-    metadata: {
-      orderId: order.id,
-      listingId: listing.id,
-      buyerId: session.user.id,
-      sellerId: listing.sellerId,
-      connectedAccountId: sellerPayoutState.connectedAccount.stripeAccountId
-    },
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "usd",
-          unit_amount: listing.priceCents,
-          product_data: {
-            name: listing.title,
-            description: listing.description.slice(0, 160)
+  const expiresAt = Math.floor(Date.now() / 1000) + 30 * 60;
+
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: order.id,
+      customer_email: session.user.email,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/checkout/cancel?listingId=${listing.id}`,
+      payment_method_types: ["card"],
+      expires_at: expiresAt,
+      metadata: {
+        orderId: order.id,
+        listingId: listing.id,
+        buyerId: session.user.id,
+        sellerId: listing.seller.id,
+        connectedAccountId: sellerPayoutState.connectedAccount!.stripeAccountId,
+        listingPriceCents: String(pricing.listingPriceCents),
+        buyerPercentFeeCents: String(pricing.buyerPercentFeeCents),
+        buyerFlatFeeCents: String(pricing.buyerFlatFeeCents),
+        buyerFeeTotalCents: String(pricing.buyerFeeTotalCents),
+        taxAmountCents: String(pricing.taxAmountCents),
+        buyerTotalCents: String(pricing.buyerTotalCents),
+        sellerFeeCents: String(pricing.sellerFeeCents),
+        stripeFeeCents: String(pricing.stripeFeeCents),
+        perOrderFeeCents: String(pricing.perOrderFeeCents),
+        sellerPayoutCents: String(pricing.sellerPayoutCents),
+        applicationFeeCents: String(pricing.applicationFeeCents)
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: pricing.listingPriceCents,
+            product_data: {
+              name: listing.title,
+              description: listing.description.slice(0, 160)
+            }
           }
+        },
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: pricing.buyerFeeTotalCents,
+            product_data: {
+              name: "HoosFinds fee"
+            }
+          }
+        },
+        ...(pricing.taxAmountCents > 0
+          ? [
+              {
+                quantity: 1,
+                price_data: {
+                  currency: "usd",
+                  unit_amount: pricing.taxAmountCents,
+                  product_data: {
+                    name: "Sales tax"
+                  }
+                }
+              }
+            ]
+          : [])
+      ],
+      payment_intent_data: {
+        application_fee_amount: pricing.applicationFeeCents,
+        transfer_data: {
+          destination: sellerPayoutState.connectedAccount!.stripeAccountId
         }
       }
-    ],
-    payment_intent_data: {
-      application_fee_amount: applicationFeeAmount,
-      transfer_data: {
-        destination: sellerPayoutState.connectedAccount.stripeAccountId
+    });
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        stripeCheckoutSessionId: checkoutSession.id,
+        checkoutExpiresAt: new Date(expiresAt * 1000)
       }
-    }
-  });
+    });
 
-  await prisma.order.update({
-    where: { id: order.id },
-    data: {
-      stripeCheckoutSessionId: checkoutSession.id
-    }
-  });
+    return NextResponse.json({ url: checkoutSession.url, orderId: order.id });
+  } catch (error) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: OrderStatus.FAILED
+      }
+    });
 
-  return NextResponse.json({ url: checkoutSession.url, orderId: order.id });
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : "Could not start Stripe checkout."
+      },
+      { status: 500 }
+    );
+  }
 }
