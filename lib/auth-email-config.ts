@@ -107,9 +107,12 @@ export function getRequiredAppUrl() {
 }
 
 export function getRequiredEmailFrom() {
+  // Sender verification is domain-specific with most providers. A verified root
+  // domain sender like auth@hoosfinds.com will work, but a subdomain sender such
+  // as auth@mail.hoosfinds.com usually requires separate verification.
   const value = readRequiredEnv(
     "EMAIL_FROM",
-    'Use a verified sender identity such as "HoosFinds <auth@your-mail-domain.example>".'
+    'Use a verified sender identity such as "HoosFinds <auth@hoosfinds.com>". If you send from a subdomain like "mail.hoosfinds.com", verify that subdomain separately in your email provider.'
   );
   const address = extractEmailAddress(value);
 

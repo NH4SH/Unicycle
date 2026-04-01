@@ -214,22 +214,13 @@ Notes:
 
 HoosFinds keeps auth email delivery SMTP-based.
 
-For hosted environments such as Netlify, prefer the single `EMAIL_SERVER` connection string over the split `EMAIL_SERVER_*` vars. That keeps email config server-side while reducing false-positive secret-scan matches on common values like provider usernames.
-
 1. Verify a sending domain or subdomain such as `mail.your-domain.com` with your email provider.
 2. Add the provider DNS records for that subdomain.
    This usually includes the provider's required verification records plus SPF/DKIM.
 3. Create a provider API key / SMTP credential after the domain is verified.
 4. Map those SMTP credentials into HoosFinds env vars.
 
-Preferred hosted-environment config:
-
-```bash
-EMAIL_SERVER="smtps://YOUR_SMTP_USERNAME:YOUR_SMTP_PASSWORD@YOUR_SMTP_HOST:465"
-EMAIL_FROM="HoosFinds <auth@your-verified-mail-domain.com>"
-```
-
-Optional split SMTP envs:
+Example split SMTP envs:
 
 ```bash
 EMAIL_SERVER_HOST="YOUR_SMTP_HOST"
@@ -237,7 +228,13 @@ EMAIL_SERVER_PORT="465"
 EMAIL_SERVER_SECURE="true"
 EMAIL_SERVER_USER="YOUR_SMTP_USERNAME"
 EMAIL_SERVER_PASSWORD="YOUR_SMTP_PASSWORD"
-EMAIL_FROM="HoosFinds <auth@your-verified-mail-domain.com>"
+EMAIL_FROM="HoosFinds <auth@hoosfinds.com>"
+```
+
+Optional single-string SMTP URL:
+
+```bash
+EMAIL_SERVER="smtps://YOUR_SMTP_USERNAME:YOUR_SMTP_PASSWORD@YOUR_SMTP_HOST:465"
 ```
 
 Before testing real emails:
@@ -415,7 +412,7 @@ Set these env vars in Netlify for both builds and runtime functions:
 - `DIRECT_URL`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
-- `EMAIL_SERVER`
+- `EMAIL_SERVER` or the split `EMAIL_SERVER_*` vars
 - `EMAIL_FROM`
 - `UPLOADTHING_TOKEN`
 - `STRIPE_SECRET_KEY`
@@ -428,10 +425,9 @@ Recommended production email setup:
 
 1. verify a sending domain or subdomain with your SMTP provider
 2. add the provider DNS records
-3. store the provider SMTP credentials in `EMAIL_SERVER`
-4. set `EMAIL_FROM` to a verified sender on that domain, such as `HoosFinds <auth@your-verified-mail-domain.com>`
-
-If you previously deployed with the split `EMAIL_SERVER_*` vars and secret scanning failed on cached webpack artifacts, clear the Netlify build cache before redeploying so old `.netlify/.next/cache/webpack/*` files are rebuilt from the cleaned code path.
+3. store the provider SMTP credentials in the `EMAIL_SERVER_*` vars or `EMAIL_SERVER`
+4. set `EMAIL_FROM` to a verified sender on that domain, such as `HoosFinds <auth@hoosfinds.com>`
+   If you want to send from a subdomain like `mail.hoosfinds.com`, verify that subdomain separately with your provider first.
 
 This repo includes `netlify.toml` with:
 
@@ -456,7 +452,6 @@ Deployment steps:
 - If local SMTP is not ready yet, enable `DEV_AUTH_BYPASS="true"` and use preview links
 - If an older account exists without a password, use `/forgot-password` to create the first password
 - If a non-UVA user tries to sign up, they should be routed to the UVA-only waitlist flow
-- If Netlify still flags only `EMAIL_SERVER_HOST`, `EMAIL_SERVER_USER`, or `EMAIL_FROM` after this refactor, it is reasonable to use `SECRETS_SCAN_OMIT_KEYS` only for those non-secret identifiers. Do not omit `EMAIL_SERVER_PASSWORD` or `NEXTAUTH_SECRET`.
 
 ### Seller payouts
 
