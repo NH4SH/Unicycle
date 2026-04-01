@@ -1,3 +1,5 @@
+import "server-only";
+
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,7 +9,7 @@ import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
 import {
   assertAuthRuntimeConfiguration,
   isDevAuthBypassEnabled as getDevAuthBypassEnabled
-} from "@/lib/auth-config";
+} from "@/lib/auth-runtime.server";
 import { verifyPassword } from "@/lib/auth-passwords";
 import { findOrCreateBypassedUser, findUserByNormalizedEmail } from "@/lib/auth-users";
 import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";

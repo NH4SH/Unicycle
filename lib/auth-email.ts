@@ -1,14 +1,16 @@
+import "server-only";
+
 import nodemailer from "nodemailer";
 
 import {
-  canPreviewAuthEmailsInDev,
   getAuthEmailConfigurationError,
   getAuthEmailProviderLabel,
   getAuthEmailTransportConfig,
   getRequiredAppUrl,
   getRequiredEmailFrom,
   isAuthEmailConfigured
-} from "@/lib/auth-config";
+} from "@/lib/auth-email-config.server";
+import { canPreviewAuthEmailsInDev } from "@/lib/auth-runtime.server";
 
 type SentAuthEmailResult = {
   previewUrl: string | null;

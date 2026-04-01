@@ -5,14 +5,13 @@ loadEnvConfig(process.cwd());
 
 async function main() {
   const {
-    assertAuthRuntimeConfiguration,
-    canPreviewAuthEmailsInDev,
     getAuthEmailConfigurationIssues,
     getAuthEmailProviderLabel,
     getAuthEmailTransportConfig,
     getRequiredAppUrl,
     getRequiredEmailFrom
-  } = await import("../lib/auth-config");
+  } = await import("../lib/auth-email-config");
+  const { assertAuthRuntimeConfiguration, canPreviewAuthEmailsInDev } = await import("../lib/auth-runtime");
 
   try {
     assertAuthRuntimeConfiguration();
