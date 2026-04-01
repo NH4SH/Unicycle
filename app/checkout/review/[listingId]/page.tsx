@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { DEFAULT_SALES_TAX_BPS } from "@/lib/checkout-pricing";
 import { getCheckoutReviewData } from "@/lib/listing-checkout";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyFromCents } from "@/lib/utils";
 
 type CheckoutReviewPageProps = {
   params: {
@@ -195,21 +195,27 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
               <div className="space-y-4 rounded-[1.6rem] border border-border bg-background/70 px-5 py-5">
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <span className="text-muted-foreground">Item price</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(pricing!.listingPriceCents / 100)}</span>
+                  <span className="font-semibold text-foreground">
+                    {formatCurrencyFromCents(pricing!.listingPriceCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <span className="text-muted-foreground">HoosFinds fee</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(pricing!.buyerFeeTotalCents / 100)}</span>
+                  <span className="font-semibold text-foreground">
+                    {formatCurrencyFromCents(pricing!.buyerFeeTotalCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <span className="text-muted-foreground">Sales tax</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(pricing!.taxAmountCents / 100)}</span>
+                  <span className="font-semibold text-foreground">
+                    {formatCurrencyFromCents(pricing!.taxAmountCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
                 <div className="border-t border-border/80 pt-4">
                   <div className="flex items-center justify-between gap-4">
                     <span className="font-display text-2xl font-extrabold tracking-tight">Total</span>
                     <span className="font-display text-3xl font-extrabold tracking-tight text-uva-blue dark:text-white">
-                      {formatCurrency(pricing!.buyerTotalCents / 100)}
+                      {formatCurrencyFromCents(pricing!.buyerTotalCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>

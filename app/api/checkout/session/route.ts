@@ -2,6 +2,7 @@ import { OrderStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getAppOrigin } from "@/lib/app-url";
 import { getCheckoutReviewData } from "@/lib/listing-checkout";
 import { prisma } from "@/lib/prisma";
 import { getStripe, isStripeCheckoutEnabled } from "@/lib/stripe";
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
     }
   });
 
-  const origin = new URL(request.url).origin;
+  const origin = getAppOrigin(request);
   const expiresAt = Math.floor(Date.now() / 1000) + 30 * 60;
 
   try {

@@ -2,6 +2,7 @@ import { ConnectedAccountStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getAppOrigin } from "@/lib/app-url";
 import {
   getReconnectReason,
   isReconnectableConnectedAccountError,
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     return getReconnectRequiredResponse();
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = getAppOrigin(request);
   const stripeClient = getStripeClient();
 
   try {

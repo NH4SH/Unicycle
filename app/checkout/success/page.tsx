@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { getStripe, isStripeCheckoutEnabled } from "@/lib/stripe";
+import { formatCurrencyFromCents } from "@/lib/utils";
 
 type CheckoutSuccessPageProps = {
   searchParams?: {
@@ -91,15 +92,17 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <div className="grid gap-1 text-sm text-muted-foreground sm:max-w-md">
                   <div className="flex items-center justify-between gap-4">
                     <span>Item price</span>
-                    <span>${(order.amountCents / 100).toFixed(2)}</span>
+                    <span>{formatCurrencyFromCents(order.amountCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span>HoosFinds fee</span>
-                    <span>${((order.buyerFeeTotalCents || 0) / 100).toFixed(2)}</span>
+                    <span>
+                      {formatCurrencyFromCents(order.buyerFeeTotalCents || 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span>Sales tax</span>
-                    <span>${((order.taxAmountCents || 0) / 100).toFixed(2)}</span>
+                    <span>{formatCurrencyFromCents(order.taxAmountCents || 0, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -108,7 +111,9 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                   <WalletCards className="h-3.5 w-3.5 text-electric" />
                   Total
                 </div>
-                <p className="font-display text-2xl font-black text-uva-blue dark:text-white">${(reviewedTotalCents / 100).toFixed(2)}</p>
+                <p className="font-display text-2xl font-black text-uva-blue dark:text-white">
+                  {formatCurrencyFromCents(reviewedTotalCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
             </div>
           ) : null}

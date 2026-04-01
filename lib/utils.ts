@@ -5,12 +5,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number) {
+type CurrencyFormatOptions = {
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+};
+
+export function formatCurrency(value: number, options: CurrencyFormatOptions = {}) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0
+    minimumFractionDigits: options.minimumFractionDigits ?? 0,
+    maximumFractionDigits: options.maximumFractionDigits ?? 0
   }).format(value);
+}
+
+export function formatCurrencyFromCents(cents: number, options: CurrencyFormatOptions = {}) {
+  return formatCurrency(cents / 100, options);
 }
 
 export function timeAgo(date: Date | string) {
