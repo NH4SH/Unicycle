@@ -93,13 +93,15 @@ export default async function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/24 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
-                  <div className="rounded-[1.35rem] bg-black/45 px-4 py-3 text-white backdrop-blur-sm">
+                  <div className="space-y-3">
                     <Badge variant="outline" className={cn("inline-flex", HERO_CARD_PILL_CLASS)}>
                       Fresh listing
                     </Badge>
-                    <p className="mt-3 max-w-xs font-display text-[2rem] font-extrabold leading-[0.95] tracking-tight [text-wrap:balance]">
-                      {heroLead.title}
-                    </p>
+                    <div className="rounded-[1.35rem] bg-black/45 px-4 py-3 text-white backdrop-blur-sm">
+                      <p className="max-w-xs font-display text-[2rem] font-extrabold leading-[0.95] tracking-tight [text-wrap:balance]">
+                        {heroLead.title}
+                      </p>
+                    </div>
                   </div>
                   <div className="rounded-full bg-card/88 px-4 py-2 text-sm font-semibold text-foreground shadow-soft">
                     {formatCurrency(heroLead.priceCents / 100)}
@@ -147,9 +149,11 @@ export default async function HomePage() {
                       </Badge>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-4">
-                      <div className="rounded-[1.15rem] bg-black/42 px-3 py-3 text-white backdrop-blur-sm">
-                        <p className="font-display text-xl font-bold leading-tight [text-wrap:balance]">{listing.title}</p>
-                        <p className="mt-2 text-sm text-white/92">{formatCurrency(listing.priceCents / 100)}</p>
+                      <div className="rounded-[1.15rem] border border-white/10 bg-black/68 px-3 py-3 text-white shadow-[0_14px_36px_rgba(0,0,0,0.34)]">
+                        <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-white [text-wrap:balance]">
+                          {listing.title}
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-white/88">{formatCurrency(listing.priceCents / 100)}</p>
                       </div>
                     </div>
                   </div>
