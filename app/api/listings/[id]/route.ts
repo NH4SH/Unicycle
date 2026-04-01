@@ -42,7 +42,10 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!payoutState.readyToReceivePayments) {
       return NextResponse.json(
         {
-          message: "Finish payout setup before putting this listing live on HoosFinds."
+          message:
+            payoutState.status === "requires_reconnect"
+              ? "Reconnect payouts before putting this listing live on HoosFinds."
+              : "Finish payout setup before putting this listing live on HoosFinds."
         },
         { status: 409 }
       );

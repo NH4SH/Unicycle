@@ -27,7 +27,7 @@ type ListingDetailViewProps = {
   similar: ListingCardData[];
   checkoutState: {
     enabled: boolean;
-    issue: "payments_unavailable" | "seller_payouts_incomplete" | null;
+    issue: "payments_unavailable" | "seller_payouts_incomplete" | "seller_payouts_reconnect_required" | null;
   };
   saleContext: {
     currentTransaction: {
@@ -104,6 +104,12 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
         : "This seller is still finishing payout setup, so checkout is paused for now. You can still message first.";
     }
 
+    if (checkoutState.issue === "seller_payouts_reconnect_required") {
+      return isOwner
+        ? "Reconnect payouts before buyers can check out and send earnings to your payout account."
+        : "This seller needs to reconnect payouts before checkout can go live. You can still message first.";
+    }
+
     if (checkoutState.issue === "payments_unavailable") {
       return "Checkout is temporarily unavailable, so use chat to sort out details first.";
     }
@@ -120,6 +126,12 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
       return isOwner
         ? "Once payouts are enabled, HoosFinds can route checkout earnings to your connected payout account automatically."
         : "Meet in a public spot on Grounds and use chat until this seller finishes payout setup.";
+    }
+
+    if (checkoutState.issue === "seller_payouts_reconnect_required") {
+      return isOwner
+        ? "Once payouts are reconnected, HoosFinds can route checkout earnings to your connected payout account automatically."
+        : "Meet in a public spot on Grounds and use chat until this seller reconnects payouts.";
     }
 
     return "Meet in a public spot on Grounds and use chat to confirm the details first.";
@@ -332,11 +344,15 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
                   ? "Buyers can message first or check out with Stripe when they’re ready. Sale management stays just below once someone claims the piece."
                   : checkoutState.issue === "seller_payouts_incomplete"
                     ? "Finish payout setup before this listing can accept checkout. Buyers can still message you in the meantime."
+                    : checkoutState.issue === "seller_payouts_reconnect_required"
+                      ? "Reconnect payouts before this listing can accept checkout again. Buyers can still message you in the meantime."
                     : "Checkout is temporarily unavailable right now. Buyers can still message you while HoosFinds finishes payment setup."}
               </p>
-              {checkoutState.issue === "seller_payouts_incomplete" ? (
+              {checkoutState.issue === "seller_payouts_incomplete" || checkoutState.issue === "seller_payouts_reconnect_required" ? (
                 <Button asChild size="sm" className="w-full sm:w-auto">
-                  <Link href="/payments">Finish setup to get paid</Link>
+                  <Link href="/payments">
+                    {checkoutState.issue === "seller_payouts_reconnect_required" ? "Reconnect payouts" : "Finish setup to get paid"}
+                  </Link>
                 </Button>
               ) : null}
             </div>

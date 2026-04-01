@@ -267,15 +267,27 @@ model SellerReview {
   @@index([reviewerId, createdAt])
 }
 
+enum ConnectedAccountStatus {
+  ACTIVE
+  REQUIRES_RECONNECT
+}
+
 model ConnectedAccount {
   id              String   @id @default(cuid())
   userId          String   @unique
   stripeAccountId String   @unique
+  status          ConnectedAccountStatus @default(ACTIVE)
+  statusReason    String?
+  disconnectedAt  DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   /// Stripe Connect sits underneath marketplace listings and only tracks where
   /// HoosFinds should route seller payouts.
+  /// ACTIVE means the Stripe account ID is still usable and Stripe may simply
+  /// need more onboarding details. REQUIRES_RECONNECT means the stored Stripe
+  /// account ID is stale, closed, or inaccessible and the seller must create a
+  /// fresh connection instead of reopening verification on the old one.
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   products ConnectProduct[]
   orders   ConnectOrder[]

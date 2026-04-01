@@ -78,7 +78,9 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
             <div className="space-y-1">
               <p className="font-display text-2xl font-bold tracking-tight">{payoutState.headline}</p>
               <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                This listing can stay paused while you update it, but finish payout setup before putting it live on HoosFinds again.
+                {payoutState.status === "requires_reconnect"
+                  ? "This listing can stay paused while you update it, but reconnect payouts before putting it live on HoosFinds again."
+                  : "This listing can stay paused while you update it, but finish payout setup before putting it live on HoosFinds again."}
               </p>
               {payoutState.ctaTarget === "stripe" && payoutState.requirementHighlights.length > 0 ? (
                 <p className="max-w-2xl text-sm leading-7 text-muted-foreground">

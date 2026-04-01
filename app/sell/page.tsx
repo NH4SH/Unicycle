@@ -65,7 +65,9 @@ export default async function SellPage() {
                   <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
                     {payoutState.readyToReceivePayments
                       ? "You can publish normally now. HoosFinds will route checkout earnings to your connected payout account."
-                      : "You can draft your listing below, but before it goes live, connect where you want payouts sent."}
+                      : payoutState.status === "requires_reconnect"
+                        ? "You can draft your listing below, but before it goes live, reconnect payouts so HoosFinds knows where to send your earnings."
+                        : "You can draft your listing below, but before it goes live, connect where you want payouts sent."}
                   </p>
                   {!payoutState.readyToReceivePayments &&
                   payoutState.ctaTarget === "stripe" &&

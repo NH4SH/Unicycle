@@ -27,7 +27,9 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     ? "payments_unavailable"
     : sellerPayoutState.readyToReceivePayments
       ? null
-      : "seller_payouts_incomplete";
+      : sellerPayoutState.status === "requires_reconnect"
+        ? "seller_payouts_reconnect_required"
+        : "seller_payouts_incomplete";
 
   return (
     <div className="container py-8">

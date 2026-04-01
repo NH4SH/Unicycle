@@ -114,6 +114,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                       ? "No action in Stripe right now. We'll unlock selling once their review clears."
                       : dashboard.payoutState.status === "unavailable"
                         ? "Next step: refresh here after Stripe payouts are available in this environment."
+                      : dashboard.payoutState.status === "requires_reconnect"
+                        ? "Next step: reconnect payouts so HoosFinds can send your earnings again."
                       : dashboard.payoutState.status === "not_connected"
                         ? "Next step: connect payouts so HoosFinds knows where to send your earnings."
                       : dashboard.payoutState.status === "payouts_paused"
@@ -142,6 +144,8 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   ? "Welcome back. HoosFinds refreshed your payout status from Stripe and your account is ready to sell."
                   : dashboard.payoutState.status === "under_review"
                     ? "Welcome back. HoosFinds refreshed your payout status from Stripe. Stripe is still reviewing your account, so payouts stay paused for now."
+                    : dashboard.payoutState.status === "requires_reconnect"
+                      ? "Welcome back. HoosFinds refreshed your payout status from Stripe, but your previous Stripe connection is no longer available. Reconnect payouts to keep selling."
                     : dashboard.payoutState.status === "payouts_paused"
                       ? "Welcome back. HoosFinds refreshed your payout status from Stripe, but payouts are still paused until Stripe's requested details are fixed."
                     : "Welcome back. HoosFinds refreshed your payout status from Stripe, but Stripe still needs more information before payouts can go live."}

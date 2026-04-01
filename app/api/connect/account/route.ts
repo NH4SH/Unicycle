@@ -1,3 +1,4 @@
+import { ConnectedAccountStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
@@ -27,7 +28,7 @@ export async function POST() {
     where: { userId: session.user.id }
   });
 
-  if (existingAccount) {
+  if (existingAccount?.status === ConnectedAccountStatus.ACTIVE) {
     return NextResponse.json({
       connectedAccountId: existingAccount.id,
       stripeAccountId: existingAccount.stripeAccountId,
@@ -75,12 +76,22 @@ export async function POST() {
       }
     });
 
-    const connectedAccount = await prisma.connectedAccount.create({
-      data: {
-        userId: session.user.id,
-        stripeAccountId: account.id
-      }
-    });
+    const connectedAccount = existingAccount
+      ? await prisma.connectedAccount.update({
+          where: { id: existingAccount.id },
+          data: {
+            stripeAccountId: account.id,
+            status: ConnectedAccountStatus.ACTIVE,
+            statusReason: null,
+            disconnectedAt: null
+          }
+        })
+      : await prisma.connectedAccount.create({
+          data: {
+            userId: session.user.id,
+            stripeAccountId: account.id
+          }
+        });
 
     return NextResponse.json({
       connectedAccountId: connectedAccount.id,

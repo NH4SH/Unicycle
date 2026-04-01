@@ -1,9 +1,25 @@
+import { ConnectedAccountStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import {
+  getReconnectReason,
+  isReconnectableConnectedAccountError,
+  markConnectedAccountRequiresReconnect
+} from "@/lib/connected-account-lifecycle";
 import { getStripeSellerProfileDefaults } from "@/lib/connect-onboarding";
 import { prisma } from "@/lib/prisma";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
+
+function getReconnectRequiredResponse() {
+  return NextResponse.json(
+    {
+      code: "RECONNECT_REQUIRED",
+      message: "Your previous Stripe connection is no longer available. Reconnect payouts to continue."
+    },
+    { status: 409 }
+  );
+}
 
 export async function POST(request: Request) {
   const session = await getAuthSession();
@@ -32,6 +48,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (connectedAccount.status === ConnectedAccountStatus.REQUIRES_RECONNECT) {
+    return getReconnectRequiredResponse();
+  }
+
   const origin = new URL(request.url).origin;
   const stripeClient = getStripeClient();
 
@@ -55,6 +75,23 @@ export async function POST(request: Request) {
         }
       });
     } catch (error) {
+      if (isReconnectableConnectedAccountError(error)) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[connect/account/onboarding] stale connected account while refreshing profile", {
+            connectedAccountId: connectedAccount.id,
+            stripeAccountId: connectedAccount.stripeAccountId,
+            reason: getReconnectReason(error)
+          });
+        }
+
+        await markConnectedAccountRequiresReconnect({
+          connectedAccountId: connectedAccount.id,
+          reason: getReconnectReason(error)
+        });
+
+        return getReconnectRequiredResponse();
+      }
+
       if (process.env.NODE_ENV !== "production") {
         console.error("[connect/account/onboarding] could not refresh Stripe profile defaults", error);
       }
@@ -74,6 +111,23 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: accountLink.url });
   } catch (error) {
+    if (isReconnectableConnectedAccountError(error)) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[connect/account/onboarding] stale connected account while creating account link", {
+          connectedAccountId: connectedAccount.id,
+          stripeAccountId: connectedAccount.stripeAccountId,
+          reason: getReconnectReason(error)
+        });
+      }
+
+      await markConnectedAccountRequiresReconnect({
+        connectedAccountId: connectedAccount.id,
+        reason: getReconnectReason(error)
+      });
+
+      return getReconnectRequiredResponse();
+    }
+
     return NextResponse.json(
       {
         message: error instanceof Error ? error.message : "Stripe could not create the onboarding link."

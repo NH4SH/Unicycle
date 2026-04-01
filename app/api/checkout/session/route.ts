@@ -51,7 +51,10 @@ export async function POST(request: Request) {
   if (!sellerPayoutState.connectedAccount || !sellerPayoutState.readyToReceivePayments) {
     return NextResponse.json(
       {
-        message: "This seller still needs to finish payout setup before HoosFinds can process checkout."
+        message:
+          sellerPayoutState.status === "requires_reconnect"
+            ? "This seller needs to reconnect payouts before HoosFinds can process checkout."
+            : "This seller still needs to finish payout setup before HoosFinds can process checkout."
       },
       { status: 409 }
     );

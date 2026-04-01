@@ -57,7 +57,10 @@ export async function POST(request: Request) {
   if (!payoutState.readyToReceivePayments) {
     return NextResponse.json(
       {
-        message: "Before your listing can go live, connect payouts so HoosFinds knows where to send your earnings."
+        message:
+          payoutState.status === "requires_reconnect"
+            ? "Before your listing can go live, reconnect payouts so HoosFinds knows where to send your earnings."
+            : "Before your listing can go live, connect payouts so HoosFinds knows where to send your earnings."
       },
       { status: 409 }
     );

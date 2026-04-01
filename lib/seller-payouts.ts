@@ -1,6 +1,11 @@
-import { ListingStatus, OrderStatus, TransactionStatus } from "@prisma/client";
+import { ConnectedAccountStatus, ListingStatus, OrderStatus, TransactionStatus } from "@prisma/client";
 import type Stripe from "stripe";
 
+import {
+  getReconnectReason,
+  isReconnectableConnectedAccountError,
+  markConnectedAccountRequiresReconnect
+} from "@/lib/connected-account-lifecycle";
 import { prisma } from "@/lib/prisma";
 import { publicUserSummarySelect } from "@/lib/public-user";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
@@ -18,6 +23,7 @@ type StripeCapabilityDetail = {
 
 export type SellerPayoutStatus =
   | "not_connected"
+  | "requires_reconnect"
   | "unavailable"
   | "verification_incomplete"
   | "payouts_paused"
@@ -100,6 +106,18 @@ export type SellerPayoutDashboardData = {
   };
   recentSales: SellerPayoutSaleSummary[];
 };
+
+function toConnectedAccountSummary(connectedAccount: {
+  id: string;
+  stripeAccountId: string;
+  createdAt: Date;
+}) {
+  return {
+    id: connectedAccount.id,
+    stripeAccountId: connectedAccount.stripeAccountId,
+    createdAt: connectedAccount.createdAt.toISOString()
+  };
+}
 
 function toUniqueStrings(values: Array<string | null | undefined> | null | undefined) {
   return [...new Set((values ?? []).filter((value): value is string => Boolean(value?.trim())))];
@@ -391,6 +409,24 @@ function getDisconnectedPayoutState(): SellerPayoutState {
   };
 }
 
+function getReconnectRequiredPayoutState(): SellerPayoutState {
+  return {
+    status: "requires_reconnect",
+    connectedAccount: null,
+    stripeStatus: null,
+    readyToReceivePayments: false,
+    onboardingComplete: false,
+    actionRequired: true,
+    statusLabel: "Reconnect payouts",
+    headline: "Reconnect Stripe payouts",
+    detail:
+      "Your previous Stripe connection is no longer available. Reconnect payouts so HoosFinds knows where to send your earnings.",
+    ctaLabel: "Reconnect Stripe payouts",
+    ctaTarget: "stripe",
+    requirementHighlights: []
+  };
+}
+
 export async function getSellerPayoutState(userId?: string): Promise<SellerPayoutState> {
   if (!userId) {
     return getDisconnectedPayoutState();
@@ -404,14 +440,14 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
     return getDisconnectedPayoutState();
   }
 
+  if (connectedAccount.status === ConnectedAccountStatus.REQUIRES_RECONNECT) {
+    return getReconnectRequiredPayoutState();
+  }
+
   if (!isStripeConnectConfigured()) {
     return {
       status: "unavailable",
-      connectedAccount: {
-        id: connectedAccount.id,
-        stripeAccountId: connectedAccount.stripeAccountId,
-        createdAt: connectedAccount.createdAt.toISOString()
-      },
+      connectedAccount: toConnectedAccountSummary(connectedAccount),
       stripeStatus: null,
       readyToReceivePayments: false,
       onboardingComplete: false,
@@ -425,16 +461,41 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
     };
   }
 
-  const stripeStatus = await getConnectedAccountStatusFromStripe(connectedAccount.stripeAccountId).catch(() => null);
+  let stripeStatus: ConnectedAccountSnapshot | null = null;
+
+  try {
+    stripeStatus = await getConnectedAccountStatusFromStripe(connectedAccount.stripeAccountId);
+  } catch (error) {
+    if (isReconnectableConnectedAccountError(error)) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[seller-payouts] stale or inaccessible connected account", {
+          connectedAccountId: connectedAccount.id,
+          stripeAccountId: connectedAccount.stripeAccountId,
+          reason: getReconnectReason(error)
+        });
+      }
+
+      await markConnectedAccountRequiresReconnect({
+        connectedAccountId: connectedAccount.id,
+        reason: getReconnectReason(error)
+      });
+
+      return getReconnectRequiredPayoutState();
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[seller-payouts] could not fetch Stripe connected account status", {
+        connectedAccountId: connectedAccount.id,
+        stripeAccountId: connectedAccount.stripeAccountId,
+        error
+      });
+    }
+  }
 
   if (!stripeStatus) {
     return {
       status: "verification_incomplete",
-      connectedAccount: {
-        id: connectedAccount.id,
-        stripeAccountId: connectedAccount.stripeAccountId,
-        createdAt: connectedAccount.createdAt.toISOString()
-      },
+      connectedAccount: toConnectedAccountSummary(connectedAccount),
       stripeStatus: null,
       readyToReceivePayments: false,
       onboardingComplete: false,
@@ -452,11 +513,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
   if (stripeStatus.readyToReceivePayments) {
     return {
       status: "ready",
-      connectedAccount: {
-        id: connectedAccount.id,
-        stripeAccountId: connectedAccount.stripeAccountId,
-        createdAt: connectedAccount.createdAt.toISOString()
-      },
+      connectedAccount: toConnectedAccountSummary(connectedAccount),
       stripeStatus,
       readyToReceivePayments: true,
       onboardingComplete: stripeStatus.onboardingComplete,
@@ -473,11 +530,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
   if (stripeStatus.payoutsPaused) {
     return {
       status: "payouts_paused",
-      connectedAccount: {
-        id: connectedAccount.id,
-        stripeAccountId: connectedAccount.stripeAccountId,
-        createdAt: connectedAccount.createdAt.toISOString()
-      },
+      connectedAccount: toConnectedAccountSummary(connectedAccount),
       stripeStatus,
       readyToReceivePayments: false,
       onboardingComplete: stripeStatus.onboardingComplete,
@@ -494,11 +547,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
   if (stripeStatus.underReview && !stripeStatus.needsVerification) {
     return {
       status: "under_review",
-      connectedAccount: {
-        id: connectedAccount.id,
-        stripeAccountId: connectedAccount.stripeAccountId,
-        createdAt: connectedAccount.createdAt.toISOString()
-      },
+      connectedAccount: toConnectedAccountSummary(connectedAccount),
       stripeStatus,
       readyToReceivePayments: false,
       onboardingComplete: stripeStatus.onboardingComplete,
@@ -515,11 +564,7 @@ export async function getSellerPayoutState(userId?: string): Promise<SellerPayou
 
   return {
     status: "verification_incomplete",
-    connectedAccount: {
-      id: connectedAccount.id,
-      stripeAccountId: connectedAccount.stripeAccountId,
-      createdAt: connectedAccount.createdAt.toISOString()
-    },
+    connectedAccount: toConnectedAccountSummary(connectedAccount),
     stripeStatus,
     readyToReceivePayments: false,
     onboardingComplete: stripeStatus.onboardingComplete,

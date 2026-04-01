@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import {
+  getReconnectReason,
+  isReconnectableConnectedAccountError,
+  markConnectedAccountRequiresReconnectByStripeAccountId
+} from "@/lib/connected-account-lifecycle";
 import { getConnectedAccountStatusFromStripe } from "@/lib/seller-payouts";
 import {
   getStripeClient,
@@ -9,6 +14,28 @@ import {
 } from "@/lib/stripe";
 
 export const runtime = "nodejs";
+
+async function getLatestStatusForWebhook(stripeAccountId: string) {
+  try {
+    return await getConnectedAccountStatusFromStripe(stripeAccountId);
+  } catch (error) {
+    if (isReconnectableConnectedAccountError(error)) {
+      await markConnectedAccountRequiresReconnectByStripeAccountId({
+        stripeAccountId,
+        reason: getReconnectReason(error)
+      });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[connect/webhook] could not refresh connected account after Stripe event", {
+        stripeAccountId,
+        reason: getReconnectReason(error)
+      });
+    }
+
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   if (!isStripeConnectWebhookConfigured()) {
@@ -52,7 +79,7 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case "v2.core.account[requirements].updated": {
-      const latestStatus = await getConnectedAccountStatusFromStripe(event.related_object.id);
+      const latestStatus = await getLatestStatusForWebhook(event.related_object.id);
 
       // We intentionally do not persist onboarding status. The UI
       // always asks Stripe for the latest status directly. This handler exists
@@ -61,19 +88,19 @@ export async function POST(request: Request) {
         received: true,
         type: event.type,
         stripeAccountId: event.related_object.id,
-        requirementsStatus: latestStatus.requirementsStatus,
-        readyToReceivePayments: latestStatus.readyToReceivePayments
+        requirementsStatus: latestStatus?.requirementsStatus ?? null,
+        readyToReceivePayments: latestStatus?.readyToReceivePayments ?? false
       });
     }
     case "v2.core.account[configuration.recipient].capability_status_updated": {
-      const latestStatus = await getConnectedAccountStatusFromStripe(event.related_object.id);
+      const latestStatus = await getLatestStatusForWebhook(event.related_object.id);
 
       return NextResponse.json({
         received: true,
         type: event.type,
         stripeAccountId: event.related_object.id,
-        transferCapabilityStatus: latestStatus.transferCapabilityStatus,
-        readyToReceivePayments: latestStatus.readyToReceivePayments
+        transferCapabilityStatus: latestStatus?.transferCapabilityStatus ?? null,
+        readyToReceivePayments: latestStatus?.readyToReceivePayments ?? false
       });
     }
     default:
