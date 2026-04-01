@@ -3,7 +3,7 @@ import "server-only";
 import crypto from "crypto";
 
 import { prisma } from "@/lib/prisma";
-import { normalizeUvaEmail } from "@/lib/domain";
+import { normalizeEmail } from "@/lib/domain";
 import {
   EMAIL_VERIFICATION_TOKEN_TTL_HOURS,
   PASSWORD_RESET_TOKEN_TTL_MINUTES
@@ -20,7 +20,7 @@ function createRawToken() {
 }
 
 export async function createEmailVerificationToken(userId: string, email: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
+  const normalizedEmail = normalizeEmail(email);
   const rawToken = createRawToken();
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_TOKEN_TTL_HOURS * 60 * 60 * 1000);
@@ -47,7 +47,7 @@ export async function createEmailVerificationToken(userId: string, email: string
 }
 
 export async function createPasswordResetToken(userId: string, email: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
+  const normalizedEmail = normalizeEmail(email);
   const rawToken = createRawToken();
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000);
@@ -74,7 +74,7 @@ export async function createPasswordResetToken(userId: string, email: string) {
 }
 
 export async function consumeEmailVerificationToken(email: string, rawToken: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
+  const normalizedEmail = normalizeEmail(email);
   const tokenHash = hashToken(rawToken);
   const token = await prisma.emailVerificationToken.findUnique({
     where: { tokenHash }
@@ -113,7 +113,7 @@ export async function consumeEmailVerificationToken(email: string, rawToken: str
 }
 
 export async function consumePasswordResetToken(email: string, rawToken: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
+  const normalizedEmail = normalizeEmail(email);
   const tokenHash = hashToken(rawToken);
   const token = await prisma.passwordResetToken.findUnique({
     where: { tokenHash }

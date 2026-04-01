@@ -16,23 +16,52 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ message: "Invalid profile", errors: parsed.error.flatten() }, { status: 400 });
   }
 
+  const nextUsername = parsed.data.username;
+  if (nextUsername && nextUsername !== session.user.username) {
+    const existingUsername = await prisma.user.findUnique({
+      where: {
+        username: nextUsername
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (existingUsername && existingUsername.id !== session.user.id) {
+      return NextResponse.json({ message: "That username is already taken." }, { status: 409 });
+    }
+  }
+
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      name: parsed.data.name,
+      username: nextUsername,
+      usernameConfirmed: nextUsername && nextUsername !== session.user.username ? true : undefined,
       bio: parsed.data.bio,
       gradYear: parsed.data.gradYear,
       favoritePickup: parsed.data.favoritePickup,
+      verifiedShopLocation: parsed.data.verifiedShopLocation,
+      verifiedShopInstagram: parsed.data.verifiedShopInstagram,
+      verifiedShopWebsite: parsed.data.verifiedShopWebsite === undefined ? undefined : parsed.data.verifiedShopWebsite || null,
       profileImageUrl: parsed.data.profileImageUrl === undefined ? undefined : parsed.data.profileImageUrl || null
     },
     select: {
       id: true,
       name: true,
       username: true,
+      usernameConfirmed: true,
       image: true,
       profileImageUrl: true,
       bio: true,
       gradYear: true,
-      favoritePickup: true
+      favoritePickup: true,
+      sellerKind: true,
+      verifiedShopName: true,
+      verifiedShopApprovedAt: true,
+      verifiedShopLocation: true,
+      verifiedShopInstagram: true,
+      verifiedShopWebsite: true
     }
   });
 

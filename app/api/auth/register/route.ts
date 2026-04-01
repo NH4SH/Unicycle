@@ -51,6 +51,7 @@ export async function POST(request: Request) {
     const user = await createPasswordUser({
       email: normalizedEmail,
       name: parsed.data.name,
+      username: parsed.data.username,
       passwordHash
     });
 

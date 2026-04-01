@@ -10,6 +10,7 @@ import {
 import { getStripeSellerProfileDefaults } from "@/lib/connect-onboarding";
 import { prisma } from "@/lib/prisma";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
+import { getAccountDisplayName } from "@/lib/user-identity";
 
 function getReconnectRequiredResponse() {
   return NextResponse.json(
@@ -56,7 +57,12 @@ export async function POST(request: Request) {
   const stripeClient = getStripeClient();
 
   try {
-    const accountDisplayName = session.user.name || session.user.username || session.user.email || "HoosFinds seller";
+    const accountDisplayName = getAccountDisplayName({
+      name: session.user.name,
+      username: session.user.username,
+      usernameConfirmed: session.user.usernameConfirmed,
+      sellerKind: session.user.sellerKind
+    });
     const defaultProfile = getStripeSellerProfileDefaults({
       username: session.user.username,
       displayName: accountDisplayName

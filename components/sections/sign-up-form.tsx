@@ -20,6 +20,7 @@ function isAllowedEmail(email: string) {
 export function SignUpForm() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,6 +47,7 @@ export function SignUpForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
+        username,
         email: normalizedEmail,
         password,
         confirmPassword
@@ -72,7 +74,7 @@ export function SignUpForm() {
   return (
     <AuthShell
       title="Create your HoosFinds account."
-      description="Use your UVA email once, set a password, verify your inbox, and then sign in normally after that."
+      description="Student accounts are UVA-only. Pick the name and handle you want buyers to recognize, verify your inbox once, and then sign in normally after that."
     >
       {submittedTo ? (
         <div className="space-y-4">
@@ -91,16 +93,36 @@ export function SignUpForm() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="sign-up-name" className="text-sm font-semibold text-foreground">
-              Name (optional)
+              Display name
             </Label>
             <Input
               id="sign-up-name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Your name"
+              placeholder="How you want your profile to appear"
               autoComplete="name"
+              required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sign-up-username" className="text-sm font-semibold text-foreground">
+              Username (optional)
+            </Label>
+            <Input
+              id="sign-up-username"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="noel-sierra"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <p className="text-xs leading-6 text-muted-foreground">
+              We’ll use this for your public profile URL. Leave it blank and HoosFinds will generate a clean handle from your name.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -171,6 +193,12 @@ export function SignUpForm() {
           Used HoosFinds before the password update?{" "}
           <Link href="/forgot-password" className="font-semibold text-foreground transition hover:text-uva-orange">
             Set your password
+          </Link>
+        </p>
+        <p>
+          Local shop or resale partner?{" "}
+          <Link href="/verified-seller/apply" className="font-semibold text-foreground transition hover:text-uva-orange">
+            Apply to become a Verified Shop
           </Link>
         </p>
       </div>

@@ -541,9 +541,7 @@ export function ConnectDemoClient({
                           <p className="text-sm font-semibold text-foreground">{order.productName}</p>
                           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Buyer: {order.counterparty.name || order.counterparty.username}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Buyer: {order.counterparty.name || "HoosFinds buyer"}</p>
                         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
                           <span>{formatCurrency(order.amountCents / 100)}</span>
                           <span>Fee {formatCurrency(order.applicationFeeCents / 100)}</span>
@@ -574,9 +572,7 @@ export function ConnectDemoClient({
                           <p className="text-sm font-semibold text-foreground">{order.productName}</p>
                           <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Seller: {order.counterparty.name || order.counterparty.username}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Seller: {order.counterparty.name || "HoosFinds seller"}</p>
                         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
                           <span>{formatCurrency(order.amountCents / 100)}</span>
                           <span>Fee {formatCurrency(order.applicationFeeCents / 100)}</span>
@@ -646,14 +642,13 @@ export function ConnectDemoClient({
                   <div className="space-y-4 p-5">
                     <div className="flex items-center gap-3">
                       <UserAvatar
-                        name={product.seller.name}
+                        name={product.seller.name || "HoosFinds seller"}
                         username={product.seller.username}
                         imageUrl={product.seller.profileImageUrl}
                         className="h-11 w-11"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">{product.seller.name || product.seller.username}</p>
-                        <p className="text-xs text-muted-foreground">@{product.seller.username}</p>
+                        <p className="text-sm font-semibold text-foreground">{product.seller.name || "HoosFinds seller"}</p>
                       </div>
                     </div>
 

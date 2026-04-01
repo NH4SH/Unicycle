@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Heart, MessageCircle, PackageCheck, Plus, Search } from "lucide-react";
+import { Heart, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
 
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -11,17 +11,17 @@ import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/market", label: "Browse", icon: Search },
-  { href: "/sell", label: "Sell", icon: Plus },
-  { href: "/favorites", label: "Saved", icon: Heart },
-  { href: "/messages", label: "Messages", icon: MessageCircle },
-  { href: "/purchases", label: "Purchases", icon: PackageCheck }
-];
-
 export function NavBar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const isVerifiedShop = session?.user.sellerKind === "VERIFIED_SHOP" && Boolean(session.user.verifiedShopApprovedAt);
+  const navItems = [
+    { href: "/market", label: "Browse", icon: Search },
+    isVerifiedShop ? { href: "/verified-seller/portal", label: "Portal", icon: Store } : { href: "/sell", label: "Sell", icon: Plus },
+    { href: "/favorites", label: "Saved", icon: Heart },
+    { href: "/messages", label: "Messages", icon: MessageCircle },
+    { href: "/purchases", label: "Purchases", icon: PackageCheck }
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 backdrop-blur-xl">
@@ -55,7 +55,12 @@ export function NavBar() {
                 className="surface-pill inline-flex touch-target items-center justify-center rounded-full p-1 transition hover:-translate-y-0.5"
                 aria-label="Go to profile"
               >
-                <UserAvatar name={session.user.name} username={session.user.username} imageUrl={session.user.image} className="h-8 w-8" />
+                <UserAvatar
+                  name={session.user.publicDisplayName ?? session.user.name}
+                  username={session.user.publicUsername ?? session.user.username}
+                  imageUrl={session.user.image}
+                  className="h-8 w-8"
+                />
               </Link>
               <Button size="sm" variant="secondary" onClick={() => signOut({ callbackUrl: "/" })}>
                 Log out

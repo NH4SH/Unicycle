@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { sendVerificationEmail } from "@/lib/auth-email";
 import { createEmailVerificationToken } from "@/lib/auth-tokens";
 import { findUserByNormalizedEmail } from "@/lib/auth-users";
-import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";
+import { normalizeEmail } from "@/lib/domain";
 import { resendVerificationSchema } from "@/lib/validators";
 
-const genericMessage = "If there's an unverified HoosFinds account for that UVA email, we sent a new verification link.";
+const genericMessage = "If there's an unverified HoosFinds account for that email, we sent a new verification link.";
 
 export async function POST(request: Request) {
   const payload = await request.json();
@@ -16,17 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Invalid email address.", errors: parsed.error.flatten() }, { status: 400 });
   }
 
-  const normalizedEmail = normalizeUvaEmail(parsed.data.email);
-
-  if (!isUvaEmail(normalizedEmail)) {
-    return NextResponse.json(
-      {
-        message: "HoosFinds is UVA-only right now.",
-        redirectTo: `/auth/uva-only?email=${encodeURIComponent(normalizedEmail)}`
-      },
-      { status: 403 }
-    );
-  }
+  const normalizedEmail = normalizeEmail(parsed.data.email);
 
   const user = await findUserByNormalizedEmail(normalizedEmail);
   if (!user || user.emailVerified) {

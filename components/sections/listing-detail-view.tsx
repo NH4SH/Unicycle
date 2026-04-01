@@ -14,6 +14,7 @@ import { HeartButton } from "@/components/cards/heart-button";
 import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
 import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ListingSaleManager } from "@/components/transactions/listing-sale-manager";
@@ -24,6 +25,8 @@ import { formatCurrency, timeAgo } from "@/lib/utils";
 type ListingDetailViewProps = {
   listing: ListingCardData;
   isOwner: boolean;
+  viewerSignedIn: boolean;
+  viewerCanBuy: boolean;
   similar: ListingCardData[];
   checkoutState: {
     enabled: boolean;
@@ -43,6 +46,9 @@ type ListingDetailViewProps = {
         name: string | null;
         profileImageUrl: string | null;
         username: string;
+        usernameConfirmed: boolean;
+        displayName: string;
+        publicUsername: string | null;
       };
       review: {
         stars: number;
@@ -53,6 +59,9 @@ type ListingDetailViewProps = {
           name: string | null;
           profileImageUrl: string | null;
           username: string;
+          usernameConfirmed: boolean;
+          displayName: string;
+          publicUsername: string | null;
         };
       } | null;
     } | null;
@@ -63,6 +72,9 @@ type ListingDetailViewProps = {
         name: string | null;
         profileImageUrl: string | null;
         username: string;
+        usernameConfirmed: boolean;
+        displayName: string;
+        publicUsername: string | null;
       };
       lastMessage: string | null;
       lastMessageAt: string | null;
@@ -71,15 +83,25 @@ type ListingDetailViewProps = {
   };
 };
 
-export function ListingDetailView({ listing, isOwner, similar, checkoutState, saleContext }: ListingDetailViewProps) {
+export function ListingDetailView({
+  listing,
+  isOwner,
+  viewerSignedIn,
+  viewerCanBuy,
+  similar,
+  checkoutState,
+  saleContext
+}: ListingDetailViewProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
   const router = useRouter();
-  const { status } = useSession();
+  const { data: sessionData, status } = useSession();
   const listingIsLive = listing.status === "ACTIVE";
-  const sellerDisplayName = listing.seller.name || listing.seller.username;
+  const sellerDisplayName = listing.seller.displayName;
+  const publicUsername = listing.seller.publicUsername;
+  const isVerifiedShop = listing.seller.sellerKind === "VERIFIED_SHOP" && Boolean(listing.seller.verifiedShopApprovedAt);
   const sellerTrustSummary = listing.sellerRating
     ? `${listing.sellerRating.toFixed(1)} seller rating`
     : listing.sellerCompletedSales > 0
@@ -90,12 +112,16 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
     : listing.sellerCompletedSales > 0
       ? "Buyer reviews unlock after confirmed handoffs."
       : "Buyer trust builds after the first confirmed pickup.";
-  const canBuyerAct = !isOwner && listingIsLive;
+  const canBuyerAct = !isOwner && listingIsLive && (!viewerSignedIn || viewerCanBuy);
   const showCheckoutCta = canBuyerAct && checkoutState.enabled;
 
   function getCheckoutSupportCopy() {
     if (showCheckoutCta) {
       return "Check out now, or message the seller first if you need details.";
+    }
+
+    if (viewerSignedIn && !viewerCanBuy) {
+      return "Buying on HoosFinds stays exclusive to UVA students. Verified Shops can still sell through their own portal.";
     }
 
     if (checkoutState.issue === "seller_payouts_incomplete") {
@@ -122,6 +148,10 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
       return "Stripe holds payment until pickup is confirmed. Meet in a public spot on Grounds.";
     }
 
+    if (viewerSignedIn && !viewerCanBuy) {
+      return "Only UVA students can message or check out as buyers on HoosFinds.";
+    }
+
     if (checkoutState.issue === "seller_payouts_incomplete") {
       return isOwner
         ? "Once payouts are enabled, HoosFinds can route checkout earnings to your connected payout account automatically."
@@ -140,6 +170,11 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
   async function startConversation() {
     if (status !== "authenticated") {
       router.push("/sign-in");
+      return;
+    }
+
+    if (!sessionData?.user.canBuy) {
+      toast.error("Buying on HoosFinds stays exclusive to UVA students.");
       return;
     }
 
@@ -198,6 +233,11 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
   async function startCheckout() {
     if (status !== "authenticated") {
       router.push("/sign-in");
+      return;
+    }
+
+    if (!sessionData?.user.canBuy) {
+      toast.error("Buying on HoosFinds stays exclusive to UVA students.");
       return;
     }
 
@@ -392,7 +432,7 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <UserAvatar
-                  name={listing.seller.name}
+                  name={sellerDisplayName}
                   username={listing.seller.username}
                   imageUrl={listing.seller.profileImageUrl}
                   className="h-12 w-12"
@@ -402,7 +442,8 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
                   <Link href={`/u/${listing.seller.username}`} className="block font-display text-xl font-bold hover:text-uva-orange">
                     {sellerDisplayName}
                   </Link>
-                  <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
+                  {publicUsername ? <p className="text-xs text-muted-foreground">@{publicUsername}</p> : null}
+                  {isVerifiedShop ? <VerifiedShopBadge className="mt-2" /> : null}
                 </div>
               </div>
 
@@ -418,7 +459,7 @@ export function ListingDetailView({ listing, isOwner, similar, checkoutState, sa
                   href={`/u/${listing.seller.username}`}
                   className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
                 >
-                  View closet
+                  {isVerifiedShop ? "View shop" : "View closet"}
                 </Link>
               </div>
             </div>

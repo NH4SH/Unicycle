@@ -12,8 +12,10 @@ import {
 } from "@/lib/auth-runtime.server";
 import { verifyPassword } from "@/lib/auth-passwords";
 import { findOrCreateBypassedUser, findUserByNormalizedEmail } from "@/lib/auth-users";
-import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";
+import { normalizeEmail } from "@/lib/domain";
 import { prisma } from "@/lib/prisma";
+import { getPublicDisplayName, getPublicUsername } from "@/lib/user-identity";
+import { canUserBuy, canUserSignIn } from "@/lib/user-access";
 
 // Development bypass is intentionally impossible in production. It exists only
 // so local work can proceed when SMTP is unavailable.
@@ -30,10 +32,10 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     CredentialsProvider({
-      name: "UVA credentials",
+      name: "HoosFinds credentials",
       credentials: {
         email: {
-          label: "UVA email",
+          label: "Email",
           type: "email"
         },
         password: {
@@ -42,16 +44,16 @@ export const authOptions: NextAuthOptions = {
         }
       },
       async authorize(credentials) {
-        const email = normalizeUvaEmail(credentials?.email || "");
+        const email = normalizeEmail(credentials?.email || "");
         const password = credentials?.password || "";
-
-        if (!isUvaEmail(email)) {
-          throw new Error(AUTH_ERROR_CODES.DISALLOWED_DOMAIN);
-        }
 
         const user = await findUserByNormalizedEmail(email);
         if (!user) {
           throw new Error(AUTH_ERROR_CODES.USER_NOT_FOUND);
+        }
+
+        if (!canUserSignIn(user)) {
+          throw new Error(AUTH_ERROR_CODES.DISALLOWED_DOMAIN);
         }
 
         if (!user.passwordHash) {
@@ -73,8 +75,15 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.profileImageUrl ?? user.image,
           username: user.username,
+          usernameConfirmed: user.usernameConfirmed,
+          publicDisplayName: getPublicDisplayName(user),
+          publicUsername: getPublicUsername(user.username, user.usernameConfirmed),
           gradYear: user.gradYear,
-          favoritePickup: user.favoritePickup
+          favoritePickup: user.favoritePickup,
+          role: user.role,
+          sellerKind: user.sellerKind,
+          verifiedShopApprovedAt: user.verifiedShopApprovedAt?.toISOString() ?? null,
+          canBuy: canUserBuy(user)
         };
       }
     }),
@@ -85,13 +94,16 @@ export const authOptions: NextAuthOptions = {
             name: "Development bypass",
             credentials: {
               email: {
-                label: "UVA email",
+                label: "Email",
                 type: "email"
               }
             },
             async authorize(credentials) {
-              const email = normalizeUvaEmail(credentials?.email || "");
-              if (!isUvaEmail(email)) {
+              const email = normalizeEmail(credentials?.email || "");
+              const isBypassEmailEligible = canUserBuy({
+                email
+              });
+              if (!isBypassEmailEligible) {
                 return null;
               }
 
@@ -102,8 +114,15 @@ export const authOptions: NextAuthOptions = {
                 name: user.name,
                 image: user.profileImageUrl ?? user.image,
                 username: user.username,
+                usernameConfirmed: user.usernameConfirmed,
+                publicDisplayName: getPublicDisplayName(user),
+                publicUsername: getPublicUsername(user.username, user.usernameConfirmed),
                 gradYear: user.gradYear,
-                favoritePickup: user.favoritePickup
+                favoritePickup: user.favoritePickup,
+                role: user.role,
+                sellerKind: user.sellerKind,
+                verifiedShopApprovedAt: user.verifiedShopApprovedAt?.toISOString() ?? null,
+                canBuy: canUserBuy(user)
               };
             }
           })
@@ -111,24 +130,24 @@ export const authOptions: NextAuthOptions = {
       : [])
   ],
   callbacks: {
-    async signIn({ user }) {
-      const identifier = user.email ?? "";
-
-      if (!isUvaEmail(identifier)) {
-        const encoded = encodeURIComponent(identifier);
-        return `/auth/uva-only?email=${encoded}`;
-      }
-
+    async signIn() {
       return true;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
+        token.usernameConfirmed = user.usernameConfirmed;
+        token.publicDisplayName = user.publicDisplayName;
+        token.publicUsername = user.publicUsername;
         token.gradYear = user.gradYear;
         token.favoritePickup = user.favoritePickup;
         token.image = typeof user.image === "string" ? user.image : null;
         token.email = user.email;
+        token.role = user.role;
+        token.sellerKind = user.sellerKind;
+        token.verifiedShopApprovedAt = user.verifiedShopApprovedAt;
+        token.canBuy = user.canBuy;
       }
 
       if (!token.email) return token;
@@ -137,9 +156,16 @@ export const authOptions: NextAuthOptions = {
 
       token.id = dbUser.id;
       token.username = dbUser.username;
+      token.usernameConfirmed = dbUser.usernameConfirmed;
+      token.publicDisplayName = getPublicDisplayName(dbUser);
+      token.publicUsername = getPublicUsername(dbUser.username, dbUser.usernameConfirmed);
       token.gradYear = dbUser.gradYear;
       token.favoritePickup = dbUser.favoritePickup;
       token.image = dbUser.profileImageUrl ?? dbUser.image;
+      token.role = dbUser.role;
+      token.sellerKind = dbUser.sellerKind;
+      token.verifiedShopApprovedAt = dbUser.verifiedShopApprovedAt?.toISOString() ?? null;
+      token.canBuy = canUserBuy(dbUser);
 
       return token;
     },
@@ -147,9 +173,16 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id;
         session.user.username = token.username;
+        session.user.usernameConfirmed = token.usernameConfirmed;
+        session.user.publicDisplayName = token.publicDisplayName;
+        session.user.publicUsername = token.publicUsername;
         session.user.gradYear = token.gradYear;
         session.user.favoritePickup = token.favoritePickup;
         session.user.image = typeof token.image === "string" ? token.image : null;
+        session.user.role = token.role;
+        session.user.sellerKind = token.sellerKind;
+        session.user.verifiedShopApprovedAt = token.verifiedShopApprovedAt;
+        session.user.canBuy = token.canBuy;
       }
 
       return session;

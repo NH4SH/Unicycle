@@ -27,6 +27,8 @@ type FollowingFeedSectionProps = {
 type ClosetActivity = {
   sellerId: string;
   username: string;
+  publicUsername: string | null;
+  displayName: string;
   name: string | null;
   profileImageUrl: string | null;
   primaryPickup: string;
@@ -47,6 +49,8 @@ function buildClosetActivity(items: ListingCardData[]) {
       activity.set(item.seller.id, {
         sellerId: item.seller.id,
         username: item.seller.username,
+        publicUsername: item.seller.publicUsername,
+        displayName: item.seller.displayName,
         name: item.seller.name,
         profileImageUrl: item.seller.profileImageUrl,
         primaryPickup: item.pickupLocations[0] || "Grounds",
@@ -106,7 +110,7 @@ function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
             href={`/u/${closet.username}`}
             className="surface-chip inline-flex min-h-10 items-center gap-2 px-3.5 py-2 text-[0.8rem] font-medium text-foreground transition hover:border-uva-orange/35 hover:text-uva-orange"
           >
-            <span>@{closet.username}</span>
+            <span>{closet.publicUsername ? `@${closet.publicUsername}` : closet.displayName}</span>
             <span className="text-muted-foreground">{closet.dropCount} live</span>
           </Link>
         ))}
@@ -128,8 +132,8 @@ function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
             />
             <div className="min-w-0 space-y-1">
               <div className="space-y-0.5">
-                <p className="truncate font-medium text-foreground">{closet.name || closet.username}</p>
-                <p className="text-xs text-muted-foreground">@{closet.username}</p>
+                <p className="truncate font-medium text-foreground">{closet.displayName}</p>
+                {closet.publicUsername ? <p className="text-xs text-muted-foreground">@{closet.publicUsername}</p> : null}
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 <span>{closet.dropCount} live</span>
@@ -148,7 +152,7 @@ function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
 }
 
 function LeadDropPanel({ listing, closet }: { listing: ListingCardData; closet: ClosetActivity | undefined }) {
-  const sellerLabel = listing.seller.name || listing.seller.username;
+  const sellerLabel = listing.seller.displayName;
 
   return (
     <div className="space-y-4">
@@ -165,7 +169,7 @@ function LeadDropPanel({ listing, closet }: { listing: ListingCardData; closet: 
             className="h-9 w-9 shrink-0"
           />
           <span className="font-medium">{sellerLabel}</span>
-          <span className="text-xs text-muted-foreground">@{listing.seller.username}</span>
+          {listing.seller.publicUsername ? <span className="text-xs text-muted-foreground">@{listing.seller.publicUsername}</span> : null}
         </Link>
 
         <span className="inline-flex items-center gap-1.5 text-foreground/88 dark:text-white/88">
@@ -173,7 +177,7 @@ function LeadDropPanel({ listing, closet }: { listing: ListingCardData; closet: 
           {closet?.primaryPickup || listing.pickupLocations[0] || "Grounds"}
         </span>
 
-        {closet?.dropCount && closet.dropCount > 1 ? <span>{closet.dropCount} live from this closet</span> : null}
+        {closet?.dropCount && closet.dropCount > 1 ? <span>{closet.dropCount} live from this seller</span> : null}
         <span>{timeAgo(listing.createdAt)}</span>
 
         {listing.sellerRating ? (

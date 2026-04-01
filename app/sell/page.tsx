@@ -9,11 +9,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { isStripeConnectConfigured } from "@/lib/stripe";
+import { canUserSell } from "@/lib/user-access";
 
 export default async function SellPage() {
   const session = await getAuthSession();
   const payoutState = await getSellerPayoutState(session?.user.id);
   const payoutsConfigured = isStripeConnectConfigured();
+  const viewerCanSell = session?.user
+    ? canUserSell({
+        email: session.user.email ?? "",
+        role: session.user.role,
+        sellerKind: session.user.sellerKind,
+        verifiedShopApprovedAt: session.user.verifiedShopApprovedAt ?? null
+      })
+    : false;
 
   return (
     <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
@@ -92,12 +101,16 @@ export default async function SellPage() {
                   <Link href="/payments">{payoutState.ctaLabel}</Link>
                 </Button>
               )
+            ) : session.user.sellerKind === "VERIFIED_SHOP" && session.user.verifiedShopApprovedAt ? (
+              <Button asChild variant="secondary">
+                <Link href="/verified-seller/portal">Open Verified Shop portal</Link>
+              </Button>
             ) : null}
           </CardContent>
         </Card>
       )}
 
-      {session?.user.id ? (
+      {session?.user.id && viewerCanSell ? (
         <SellWizard
           payoutsReady={payoutState.readyToReceivePayments}
           payoutsConfigured={payoutsConfigured}
@@ -107,6 +120,18 @@ export default async function SellPage() {
           payoutSetupDetail={payoutState.detail}
           payoutState={payoutState}
         />
+      ) : session?.user.id ? (
+        <Card className="surface-panel-strong">
+          <CardContent className="space-y-3 p-6">
+            <p className="font-semibold text-foreground">Selling is limited to UVA students and approved Verified Shops.</p>
+            <p className="text-sm leading-7 text-muted-foreground">
+              If you run a local thrift or resale business, apply as a Verified Shop and HoosFinds will review you for the marketplace.
+            </p>
+            <Button asChild>
+              <Link href="/verified-seller/apply">Apply as a Verified Shop</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : null}
     </div>
   );

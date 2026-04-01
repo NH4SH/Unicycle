@@ -6,6 +6,10 @@ export function isUvaEmail(email?: string | null) {
   return !!domain && ALLOWED_DOMAINS.includes(domain);
 }
 
-export function normalizeUvaEmail(email: string) {
+export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+export function normalizeUvaEmail(email: string) {
+  return normalizeEmail(email);
 }

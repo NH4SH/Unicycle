@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
 import {
+  type PublicUserSummary,
   publicUserProfileSelect,
   publicUserSummarySelect,
   toPublicUserProfile,
@@ -125,12 +126,7 @@ export type ListingCardData = {
   soldToUserId: string | null;
   transactionStatus: TransactionStatus | null;
   createdAt: string;
-  seller: {
-    id: string;
-    name: string | null;
-    profileImageUrl: string | null;
-    username: string;
-  };
+  seller: PublicUserSummary;
   favoriteCount: number;
   isFavorited: boolean;
   sellerRating: number | null;
@@ -149,6 +145,9 @@ export type SellerReviewData = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
   };
   listing: {
     id: string;
@@ -170,6 +169,9 @@ export type PurchaseSummaryData = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
   };
   conversationId: string | null;
   review: {

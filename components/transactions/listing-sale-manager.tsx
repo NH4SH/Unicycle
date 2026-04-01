@@ -21,6 +21,9 @@ type InterestedBuyer = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
   };
   lastMessage: string | null;
   lastMessageAt: string | null;
@@ -40,17 +43,23 @@ type CurrentTransaction = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
   };
   review: {
     stars: number;
     comment: string | null;
     createdAt: string;
-    reviewer: {
-      id: string;
-      name: string | null;
-      profileImageUrl: string | null;
-      username: string;
-    };
+      reviewer: {
+        id: string;
+        name: string | null;
+        profileImageUrl: string | null;
+        username: string;
+        usernameConfirmed: boolean;
+        displayName: string;
+        publicUsername: string | null;
+      };
   } | null;
 };
 
@@ -146,17 +155,17 @@ export function ListingSaleManager({
                 <div key={entry.conversationId} className="surface-subtle flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3">
                     <UserAvatar
-                      name={entry.buyer.name}
+                      name={entry.buyer.displayName}
                       username={entry.buyer.username}
                       imageUrl={entry.buyer.profileImageUrl}
                       className="h-11 w-11"
                     />
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-foreground">{entry.buyer.name || entry.buyer.username}</p>
+                        <p className="font-medium text-foreground">{entry.buyer.displayName}</p>
                         {entry.transactionStatus ? <TransactionStatusBadge status={entry.transactionStatus} /> : null}
                       </div>
-                      <p className="text-xs text-muted-foreground">@{entry.buyer.username}</p>
+                      {entry.buyer.publicUsername ? <p className="text-xs text-muted-foreground">@{entry.buyer.publicUsername}</p> : null}
                       <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
                         <LinkedPlaceText text={entry.lastMessage || "Conversation started. No message has landed yet."} />
                       </p>
@@ -190,7 +199,7 @@ export function ListingSaleManager({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="font-medium text-foreground">Waiting on buyer confirmation</p>
-                <p className="text-sm text-muted-foreground">The item is marked sold to {currentTransaction.buyer.name || currentTransaction.buyer.username}.</p>
+                <p className="text-sm text-muted-foreground">The item is marked sold to {currentTransaction.buyer.displayName}.</p>
               </div>
               <TransactionStatusBadge status={currentTransaction.status} />
             </div>
@@ -217,7 +226,7 @@ export function ListingSaleManager({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
                 <p className="font-medium text-foreground">Transaction completed</p>
-                <p className="text-sm text-muted-foreground">Confirmed by {currentTransaction.buyer.name || currentTransaction.buyer.username}.</p>
+                <p className="text-sm text-muted-foreground">Confirmed by {currentTransaction.buyer.displayName}.</p>
               </div>
               <CheckCircle2 className="h-5 w-5 text-uva-orange" />
             </div>

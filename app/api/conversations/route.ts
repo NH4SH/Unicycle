@@ -21,6 +21,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await getAuthSession();
   if (!session?.user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!session.user.canBuy) {
+    return NextResponse.json({ message: "Buying on HoosFinds stays exclusive to UVA students." }, { status: 403 });
+  }
 
   const payload = await request.json();
   const listingId = payload.listingId as string | undefined;

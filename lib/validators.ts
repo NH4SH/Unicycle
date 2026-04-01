@@ -1,5 +1,6 @@
 import { Category, Condition, ListingStatus } from "@prisma/client";
 import { z } from "zod";
+import { isValidUsername, normalizeUsername } from "@/lib/user-identity";
 
 export const waitlistSchema = z.object({
   email: z.string().email("Please enter a valid email."),
@@ -29,6 +30,18 @@ export const listingUpdateSchema = listingSchema
   });
 
 export const profileSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .max(80, "Keep your display name under 80 characters.")
+    .optional()
+    .transform((value) => value || undefined),
+  username: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? normalizeUsername(value) : undefined))
+    .refine((value) => !value || isValidUsername(value), "Use 3-24 lowercase letters, numbers, hyphens, or underscores."),
   bio: z.string().max(240).optional(),
   gradYear: z
     .string()
@@ -36,6 +49,14 @@ export const profileSchema = z.object({
     .transform((v) => (v ? Number(v) : undefined))
     .pipe(z.number().int().min(2024).max(2035).optional()),
   favoritePickup: z.string().max(80).optional(),
+  verifiedShopLocation: z.string().max(120).optional(),
+  verifiedShopInstagram: z.string().max(120).optional(),
+  verifiedShopWebsite: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid website URL"),
   profileImageUrl: z
     .string()
     .trim()
@@ -58,9 +79,14 @@ export const signUpSchema = z
     name: z
       .string()
       .trim()
-      .max(80, "Keep your name under 80 characters.")
+      .min(2, "Add the name you want buyers and sellers to see.")
+      .max(80, "Keep your display name under 80 characters."),
+    username: z
+      .string()
+      .trim()
       .optional()
-      .transform((value) => value || undefined),
+      .transform((value) => (value ? normalizeUsername(value) : undefined))
+      .refine((value) => !value || isValidUsername(value), "Use 3-24 lowercase letters, numbers, hyphens, or underscores."),
     email: z.string().email("Enter a valid UVA email."),
     password: z.string().min(8, "Use at least 8 characters."),
     confirmPassword: z.string().min(8, "Confirm your password.")
@@ -71,21 +97,21 @@ export const signUpSchema = z
   });
 
 export const credentialsSignInSchema = z.object({
-  email: z.string().email("Enter a valid UVA email."),
+  email: z.string().email("Enter a valid email."),
   password: z.string().min(1, "Enter your password.")
 });
 
 export const resendVerificationSchema = z.object({
-  email: z.string().email("Enter a valid UVA email.")
+  email: z.string().email("Enter a valid email.")
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Enter a valid UVA email.")
+  email: z.string().email("Enter a valid email.")
 });
 
 export const resetPasswordSchema = z
   .object({
-    email: z.string().email("Enter a valid UVA email."),
+    email: z.string().email("Enter a valid email."),
     token: z.string().min(1, "Reset token is missing."),
     password: z.string().min(8, "Use at least 8 characters."),
     confirmPassword: z.string().min(8, "Confirm your password.")
@@ -136,4 +162,32 @@ export const followSuggestionsQuerySchema = z.object({
 export const followingFeedQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(100).default(1),
   limit: z.coerce.number().int().min(1).max(16).default(8)
+});
+
+export const verifiedSellerApplicationSchema = z.object({
+  businessName: z.string().trim().min(2).max(80),
+  contactName: z.string().trim().min(2).max(80),
+  email: z.string().email("Enter a valid contact email."),
+  phone: z.string().trim().min(7).max(32),
+  instagram: z.string().trim().min(2).max(120),
+  website: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid website URL"),
+  location: z.string().trim().min(2).max(120),
+  whatTheySell: z.string().trim().min(10).max(160),
+  description: z.string().trim().min(20).max(280),
+  whyJoin: z.string().trim().min(20).max(500)
+});
+
+export const verifiedSellerReviewSchema = z.object({
+  action: z.enum(["approve", "reject", "revoke"]),
+  internalNotes: z
+    .string()
+    .trim()
+    .max(1000)
+    .optional()
+    .transform((value) => value || undefined)
 });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { clearEmailVerificationTokensForUser, clearPasswordResetTokensForUser, consumePasswordResetToken } from "@/lib/auth-tokens";
 import { getPasswordValidationMessage, hashPassword } from "@/lib/auth-passwords";
-import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";
+import { normalizeEmail } from "@/lib/domain";
 import { prisma } from "@/lib/prisma";
 import { resetPasswordSchema } from "@/lib/validators";
 
@@ -14,16 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Invalid reset payload.", errors: parsed.error.flatten() }, { status: 400 });
   }
 
-  const normalizedEmail = normalizeUvaEmail(parsed.data.email);
-  if (!isUvaEmail(normalizedEmail)) {
-    return NextResponse.json(
-      {
-        message: "HoosFinds is UVA-only right now.",
-        redirectTo: `/auth/uva-only?email=${encodeURIComponent(normalizedEmail)}`
-      },
-      { status: 403 }
-    );
-  }
+  const normalizedEmail = normalizeEmail(parsed.data.email);
 
   const passwordMessage = getPasswordValidationMessage(parsed.data.password);
   if (passwordMessage) {

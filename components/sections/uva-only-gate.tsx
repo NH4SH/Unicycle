@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -53,6 +54,14 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
 
           <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-7 text-muted-foreground">
             We&apos;re starting with UVA first and expanding carefully. Drop your email below if you want to hear when your campus opens next.
+          </div>
+
+          <div className="rounded-[1.5rem] border border-uva-blue/15 bg-uva-blue/6 p-4 text-sm leading-7 text-muted-foreground dark:border-white/16 dark:bg-white/[0.08]">
+            Local thrift or vintage shop?{" "}
+            <Link href="/verified-seller/apply" className="font-semibold text-foreground transition hover:text-uva-orange">
+              Apply as a Verified Shop
+            </Link>{" "}
+            instead of joining the student waitlist.
           </div>
 
           {submitted ? (

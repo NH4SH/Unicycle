@@ -17,6 +17,8 @@ type ConnectionsDashboardProps = {
     id: string;
     username: string;
     name: string | null;
+    displayName: string;
+    publicUsername: string | null;
   };
   viewerSignedIn: boolean;
   isSelf: boolean;
@@ -177,12 +179,12 @@ export function ConnectionsDashboard({
           <div className="space-y-2">
             <p className="editorial-eyebrow">Connections</p>
             <h2 className="font-display text-3xl font-extrabold tracking-tight">
-              {isSelf ? "Your follows" : `@${user.username}'s network`}
+              {isSelf ? "Your follows" : `${user.displayName}'s network`}
             </h2>
             <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
               {isSelf
                 ? "Track the sellers you trust, see who keeps up with your closet, and shape a smarter feed for future drops."
-                : `Browse the closets and followers shaping @${user.username}'s HoosFinds presence.`}
+                : `Browse the closets and followers shaping ${user.displayName}'s HoosFinds presence.`}
             </p>
           </div>
 
@@ -239,7 +241,7 @@ export function ConnectionsDashboard({
                     title={direction === "followers" ? "No followers yet" : "Not following anyone yet"}
                     description={
                       direction === "followers"
-                        ? `Once people start following @${user.username} for drops, they’ll show up here.`
+                        ? `Once people start following ${user.displayName} for drops, they’ll show up here.`
                         : "Following sellers keeps their newest listings close instead of getting buried in the full marketplace."
                     }
                     ctaHref="/market"

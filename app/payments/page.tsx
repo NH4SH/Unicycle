@@ -67,6 +67,11 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 payoutsConfigured={payoutsConfigured}
                 payoutState={dashboard.payoutState}
               />
+              {session?.user.sellerKind === "VERIFIED_SHOP" && session.user.verifiedShopApprovedAt ? (
+                <Button asChild variant="secondary">
+                  <Link href="/verified-seller/portal">Open Verified Shop portal</Link>
+                </Button>
+              ) : null}
               <Button asChild variant="secondary">
                 <Link href="/market">
                   Browse live listings
@@ -232,7 +237,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                         {sale.listingTitle}
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        Buyer {sale.buyer.name || sale.buyer.username} paid {formatCurrency(sale.amountCents / 100)} · {timeAgo(sale.createdAt)} ago
+                        Buyer {sale.buyer.displayName} paid {formatCurrency(sale.amountCents / 100)} · {timeAgo(sale.createdAt)} ago
                       </p>
                     </div>
                     <Badge variant={sale.handoffStatus === "COMPLETED" ? "blue" : "outline"}>

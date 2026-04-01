@@ -19,7 +19,7 @@ export default function ResetPasswordPage({ searchParams }: ResetPasswordPagePro
     return (
       <AuthShell
         title="That reset link is incomplete."
-        description="Request a fresh password reset email and use the newest link from your UVA inbox."
+        description="Request a fresh password reset email and use the newest link in your inbox."
       >
         <div className="space-y-4">
           <Button asChild className="w-full">

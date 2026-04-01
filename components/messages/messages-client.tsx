@@ -28,6 +28,9 @@ type ConversationPayload = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
   };
   messages: {
     id: string;
@@ -186,7 +189,7 @@ export function MessagesClient({ userId }: { userId: string }) {
           <div className="space-y-2">
             <p className="font-medium text-foreground">Ready to close the handoff?</p>
             <p className="text-sm leading-6 text-muted-foreground">
-              Once you’ve met up with {conversation.otherUser.name || conversation.otherUser.username}, mark this listing sold to move it into buyer confirmation.
+              Once you’ve met up with {conversation.otherUser.displayName}, mark this listing sold to move it into buyer confirmation.
             </p>
           </div>
           <Button onClick={() => void markSold(conversation.id)} disabled={actionKey === `mark-${conversation.id}`}>
@@ -340,7 +343,7 @@ export function MessagesClient({ userId }: { userId: string }) {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-display text-base font-bold tracking-tight">
-                        {conversation.otherUser.name || conversation.otherUser.username}
+                        {conversation.otherUser.displayName}
                       </p>
                       {conversation.transaction ? <TransactionStatusBadge status={conversation.transaction.status} className="px-2.5 py-1 text-[10px]" /> : null}
                     </div>
@@ -364,16 +367,18 @@ export function MessagesClient({ userId }: { userId: string }) {
             <div className="grid gap-4 border-b border-border/80 px-4 py-4 md:grid-cols-[1fr_auto] md:items-center">
               <div className="flex items-center gap-3">
                 <UserAvatar
-                  name={activeConversation.otherUser.name}
+                  name={activeConversation.otherUser.displayName}
                   username={activeConversation.otherUser.username}
                   imageUrl={activeConversation.otherUser.profileImageUrl}
                   className="h-11 w-11"
                 />
                 <div className="min-w-0">
                   <p className="font-display text-xl font-bold tracking-tight">
-                    {activeConversation.otherUser.name || activeConversation.otherUser.username}
+                    {activeConversation.otherUser.displayName}
                   </p>
-                  <p className="text-xs text-muted-foreground">@{activeConversation.otherUser.username}</p>
+                  {activeConversation.otherUser.publicUsername ? (
+                    <p className="text-xs text-muted-foreground">@{activeConversation.otherUser.publicUsername}</p>
+                  ) : null}
                 </div>
               </div>
               <div className="grid grid-cols-[56px_1fr] items-center gap-3 rounded-[1.2rem] border border-border bg-background/70 p-2">

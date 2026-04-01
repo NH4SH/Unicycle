@@ -41,11 +41,11 @@ export default async function ConnectionsPage({ params, searchParams }: Connecti
       <div className="space-y-3">
         <Link href={`/u/${user.username}`} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
-          Back to @{user.username}
+          Back to {user.displayName}
         </Link>
         <p className="editorial-eyebrow">Campus style network</p>
         <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
-          {session?.user.id === user.id ? "Your closet network" : `${user.name || user.username}'s network`}
+          {session?.user.id === user.id ? "Your closet network" : `${user.displayName}'s network`}
         </h1>
         <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
           Followers, follows, and seller discovery for HoosFinds closets people actually want to keep up with.
@@ -56,7 +56,9 @@ export default async function ConnectionsPage({ params, searchParams }: Connecti
         user={{
           id: user.id,
           username: user.username,
-          name: user.name
+          name: user.name,
+          displayName: user.displayName,
+          publicUsername: user.publicUsername
         }}
         viewerSignedIn={Boolean(session?.user.id)}
         isSelf={session?.user.id === user.id}

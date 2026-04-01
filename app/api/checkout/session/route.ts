@@ -13,6 +13,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  if (!session.user.canBuy) {
+    return NextResponse.json({ message: "Buying on HoosFinds stays exclusive to UVA students." }, { status: 403 });
+  }
+
   if (!isStripeCheckoutEnabled()) {
     return NextResponse.json({ message: "Stripe checkout is not configured." }, { status: 503 });
   }

@@ -7,7 +7,7 @@ import {
   markConnectedAccountRequiresReconnect
 } from "@/lib/connected-account-lifecycle";
 import { prisma } from "@/lib/prisma";
-import { publicUserSummarySelect } from "@/lib/public-user";
+import { publicUserSummarySelect, toPublicUserSummary, type PublicUserSummary } from "@/lib/public-user";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
 
 // Canonical marketplace sales use the Listing model. Stripe Connect only powers
@@ -90,10 +90,7 @@ export type SellerPayoutSaleSummary = {
   createdAt: string;
   orderStatus: OrderStatus;
   handoffStatus: TransactionStatus | null;
-  buyer: {
-    name: string | null;
-    username: string;
-  };
+  buyer: PublicUserSummary;
 };
 
 export type SellerPayoutDashboardData = {
@@ -671,8 +668,7 @@ export async function getSellerPayoutDashboardData(userId?: string): Promise<Sel
       orderStatus: order.status,
       handoffStatus: order.transaction?.status ?? null,
       buyer: {
-        name: order.buyer.name,
-        username: order.buyer.username
+        ...toPublicUserSummary(order.buyer)
       }
     }))
   };

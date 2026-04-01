@@ -8,6 +8,7 @@ import { MapPin, Star } from "lucide-react";
 import { HeartButton } from "@/components/cards/heart-button";
 import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
@@ -26,7 +27,9 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
   const sellerTrustLabel = listing.sellerRating
     ? `${listing.sellerRating.toFixed(1)} (${listing.sellerReviewCount})`
     : "New seller";
-  const sellerDisplayName = listing.seller.name || listing.seller.username;
+  const sellerDisplayName = listing.seller.displayName;
+  const publicUsername = listing.seller.publicUsername;
+  const isVerifiedShop = listing.seller.sellerKind === "VERIFIED_SHOP" && Boolean(listing.seller.verifiedShopApprovedAt);
   const isLead = layout === "lead";
   const isFeatured = layout === "featured";
   const hasElevatedTreatment = isLead || isFeatured;
@@ -154,7 +157,8 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 space-y-0.5">
                     <p className="truncate font-medium text-foreground">{sellerDisplayName}</p>
-                    <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
+                    {publicUsername ? <p className="text-xs text-muted-foreground">@{publicUsername}</p> : null}
+                    {isVerifiedShop ? <VerifiedShopBadge className="mt-2" /> : null}
                   </div>
                   <p className="inline-flex items-center gap-1 text-xs text-foreground/88">
                     <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
@@ -172,7 +176,8 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
             <div className="space-y-2 text-sm">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{sellerDisplayName}</span>
-                <span>@{listing.seller.username}</span>
+                {publicUsername ? <span>@{publicUsername}</span> : null}
+                {isVerifiedShop ? <VerifiedShopBadge className="px-2 py-1 text-[10px]" /> : null}
                 {listing.sellerRating ? (
                   <span className="inline-flex items-center gap-1 text-foreground/88">
                     <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
@@ -200,7 +205,9 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <p className="truncate font-medium text-foreground">@{listing.seller.username}</p>
+                  <p className="truncate font-medium text-foreground">{sellerDisplayName}</p>
+                  {publicUsername ? <span className="text-xs text-muted-foreground">@{publicUsername}</span> : null}
+                  {isVerifiedShop ? <VerifiedShopBadge className="px-2 py-1 text-[10px]" /> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1">

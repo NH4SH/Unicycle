@@ -26,9 +26,18 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           name: profile.user.name,
           profileImageUrl: profile.user.profileImageUrl,
           username: profile.user.username,
+          usernameConfirmed: profile.user.usernameConfirmed,
+          displayName: profile.user.displayName,
+          publicUsername: profile.user.publicUsername,
           bio: profile.user.bio,
           gradYear: profile.user.gradYear,
-          favoritePickup: profile.user.favoritePickup
+          favoritePickup: profile.user.favoritePickup,
+          sellerKind: profile.user.sellerKind,
+          verifiedShopName: profile.user.verifiedShopName,
+          verifiedShopApprovedAt: profile.user.verifiedShopApprovedAt,
+          verifiedShopLocation: profile.user.verifiedShopLocation,
+          verifiedShopInstagram: profile.user.verifiedShopInstagram,
+          verifiedShopWebsite: profile.user.verifiedShopWebsite
         }}
         social={profile.social}
         stats={profile.stats}

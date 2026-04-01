@@ -46,7 +46,26 @@ enum TransactionStatus {
   CANCELLED
 }
 
+enum UserRole {
+  MEMBER
+  ADMIN
+}
+
+enum SellerKind {
+  STUDENT
+  VERIFIED_SHOP
+}
+
+enum VerifiedSellerApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
 model User {
+  /// Public display name shown across the marketplace. Keep UVA email / local
+  /// computing ID internal to auth and account recovery, not profile identity.
   id              String    @id @default(cuid())
   name            String?
   email           String    @unique
@@ -56,9 +75,17 @@ model User {
   profileImageUrl String?
   uvaStudentId    String?
   username        String    @unique @default(cuid())
+  usernameConfirmed Boolean @default(true)
   bio             String?
   gradYear        Int?
   favoritePickup  String?
+  role            UserRole  @default(MEMBER)
+  sellerKind      SellerKind @default(STUDENT)
+  verifiedShopName String?
+  verifiedShopApprovedAt DateTime?
+  verifiedShopLocation String?
+  verifiedShopInstagram String?
+  verifiedShopWebsite String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -89,9 +116,13 @@ model User {
   connectProducts       ConnectProduct[]  @relation("ConnectProductOwner")
   connectBuyerOrders    ConnectOrder[]    @relation("ConnectBuyerOrders")
   connectSellerOrders   ConnectOrder[]    @relation("ConnectSellerOrders")
+  reviewedVerifiedSellerApplications VerifiedSellerApplication[] @relation("VerifiedSellerApplicationReviewedBy")
+  approvedVerifiedSellerApplication VerifiedSellerApplication? @relation("VerifiedSellerApplicationApprovedUser")
 
   @@index([username])
   @@index([createdAt])
+  @@index([role])
+  @@index([sellerKind])
 }
 
 model Listing {
@@ -360,6 +391,34 @@ model WaitlistEntry {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+model VerifiedSellerApplication {
+  id               String                          @id @default(cuid())
+  businessName     String
+  contactName      String
+  email            String                          @unique
+  phone            String
+  instagram        String
+  website          String?
+  location         String
+  whatTheySell     String
+  description      String
+  whyJoin          String
+  status           VerifiedSellerApplicationStatus @default(PENDING)
+  internalNotes    String?
+  createdAt        DateTime                        @default(now())
+  updatedAt        DateTime                        @updatedAt
+  reviewedAt       DateTime?
+  approvedAt       DateTime?
+  reviewedById     String?
+  approvedUserId   String?                         @unique
+
+  reviewedBy User? @relation("VerifiedSellerApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  approvedUser User? @relation("VerifiedSellerApplicationApprovedUser", fields: [approvedUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reviewedById, reviewedAt])
 }
 
 model Account {

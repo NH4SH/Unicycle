@@ -28,8 +28,9 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           ) : (
             <div className="space-y-2 text-center text-xs leading-6 text-muted-foreground">
               <p>
-                UVA domains only: <span className="font-semibold text-foreground">@virginia.edu</span> and
-                <span className="font-semibold text-foreground"> @mail.virginia.edu</span>.
+                Student accounts use <span className="font-semibold text-foreground">@virginia.edu</span> and
+                <span className="font-semibold text-foreground"> @mail.virginia.edu</span>. Local shops join through the
+                Verified Shop application.
               </p>
               <p>
                 Want the meetup basics first?{" "}

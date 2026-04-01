@@ -5,11 +5,12 @@ import { getAuthSession } from "@/lib/auth";
 import { getStripeSellerProfileDefaults } from "@/lib/connect-onboarding";
 import { prisma } from "@/lib/prisma";
 import { getStripeClient, isStripeConnectConfigured } from "@/lib/stripe";
+import { getAccountDisplayName } from "@/lib/user-identity";
 
 export async function POST() {
   const session = await getAuthSession();
   if (!session?.user?.id || !session.user.email) {
-    return NextResponse.json({ message: "Sign in with your UVA email before creating a connected account." }, { status: 401 });
+    return NextResponse.json({ message: "Sign in before creating a connected payout account." }, { status: 401 });
   }
 
   if (!isStripeConnectConfigured()) {
@@ -39,7 +40,12 @@ export async function POST() {
   const stripeClient = getStripeClient();
 
   try {
-    const accountDisplayName = session.user.name || session.user.username || session.user.email || "HoosFinds seller";
+    const accountDisplayName = getAccountDisplayName({
+      name: session.user.name,
+      username: session.user.username,
+      usernameConfirmed: session.user.usernameConfirmed,
+      sellerKind: session.user.sellerKind
+    });
     const defaultProfile = getStripeSellerProfileDefaults({
       username: session.user.username,
       displayName: accountDisplayName

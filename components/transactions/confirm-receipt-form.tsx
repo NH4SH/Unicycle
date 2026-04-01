@@ -83,7 +83,7 @@ export function ConfirmReceiptForm({ transaction }: { transaction: PurchaseSumma
               <div>
                 <p className="font-display text-2xl font-extrabold tracking-tight">{transaction.listing.title}</p>
                 <p className="text-sm text-muted-foreground">
-                  Seller: {transaction.counterparty.name || transaction.counterparty.username}
+                  Seller: {transaction.counterparty.displayName}
                 </p>
               </div>
             </div>

@@ -11,25 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const allowedDomains = ["virginia.edu", "mail.virginia.edu"];
-
-function isAllowedEmail(email: string) {
-  const domain = email.trim().toLowerCase().split("@").at(1);
-  return Boolean(domain && allowedDomains.includes(domain));
-}
-
 function getErrorMessage(errorCode?: string | null) {
   switch (errorCode) {
     case AUTH_ERROR_CODES.USER_NOT_FOUND:
-      return "We couldn't find a HoosFinds account for that UVA email.";
+      return "We couldn't find a HoosFinds account for that email.";
     case AUTH_ERROR_CODES.INVALID_CREDENTIALS:
       return "That password didn't match our records.";
     case AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED:
-      return "Verify your UVA email before signing in.";
+      return "Verify your email before signing in.";
     case AUTH_ERROR_CODES.PASSWORD_NOT_SET:
       return "This account still needs a password. Use forgot password to set one.";
     case AUTH_ERROR_CODES.DISALLOWED_DOMAIN:
-      return "HoosFinds is UVA-only right now.";
+      return "Student accounts need a UVA email. Local shops need approval before signing in.";
     default:
       return "Could not sign you in right now. Please try again.";
   }
@@ -56,10 +49,6 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
     event.preventDefault();
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (!isAllowedEmail(normalizedEmail)) {
-      router.push(`/auth/uva-only?email=${encodeURIComponent(normalizedEmail)}`);
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -75,11 +64,6 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
     setLoading(false);
 
     if (response?.error) {
-      if (response.error === AUTH_ERROR_CODES.DISALLOWED_DOMAIN) {
-        router.push(`/auth/uva-only?email=${encodeURIComponent(normalizedEmail)}`);
-        return;
-      }
-
       setErrorCode(response.error);
       setError(getErrorMessage(response.error));
       return;
@@ -91,10 +75,6 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
 
   async function handleDevBypass() {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!isAllowedEmail(normalizedEmail)) {
-      router.push(`/auth/uva-only?email=${encodeURIComponent(normalizedEmail)}`);
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -120,19 +100,19 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
   return (
     <AuthShell
       title="Welcome back to HoosFinds."
-      description="Sign in with your UVA email and password to browse, message, buy, and sell on Grounds."
+      description="Sign in with your UVA email, or use your approved verified shop account to manage listings and payouts."
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="sign-in-email" className="text-sm font-semibold text-foreground">
-            UVA email
+            UVA or verified shop email
           </Label>
           <Input
             id="sign-in-email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@virginia.edu"
+            placeholder="you@virginia.edu or shop@example.com"
             autoComplete="email"
             required
           />
@@ -171,6 +151,11 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
                 Set your password
               </Link>
             ) : null}
+            {errorCode === AUTH_ERROR_CODES.DISALLOWED_DOMAIN ? (
+              <Link href="/verified-seller/apply" className="font-semibold underline underline-offset-4">
+                Apply to become a Verified Shop
+              </Link>
+            ) : null}
           </div>
         ) : null}
 
@@ -190,6 +175,12 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
           New to HoosFinds?{" "}
           <Link href="/sign-up" className="font-semibold text-foreground transition hover:text-uva-orange">
             Create your account
+          </Link>
+        </p>
+        <p>
+          Local thrift or vintage shop?{" "}
+          <Link href="/verified-seller/apply" className="font-semibold text-foreground transition hover:text-uva-orange">
+            Apply to become a Verified Shop
           </Link>
         </p>
         {enableDevBypass ? <p className="text-uva-orange">Dev bypass is enabled locally. It still requires a UVA email format.</p> : null}

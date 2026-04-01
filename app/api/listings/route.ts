@@ -5,6 +5,7 @@ import { getMarketListings } from "@/lib/data";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
+import { canUserSell } from "@/lib/user-access";
 import { listingSchema } from "@/lib/validators";
 
 export async function GET(request: Request) {
@@ -44,6 +45,17 @@ export async function POST(request: Request) {
   const session = await getAuthSession();
   if (!session?.user) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  if (
+    !canUserSell({
+      email: session.user.email ?? "",
+      role: session.user.role,
+      sellerKind: session.user.sellerKind,
+      verifiedShopApprovedAt: session.user.verifiedShopApprovedAt ?? null
+    })
+  ) {
+    return NextResponse.json({ message: "Only UVA students and approved Verified Shops can publish listings." }, { status: 403 });
   }
 
   const payload = await request.json();

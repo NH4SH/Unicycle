@@ -17,10 +17,16 @@ export type SellerNetworkProfile = {
   id: string;
   name: string | null;
   username: string;
+  usernameConfirmed: boolean;
+  displayName: string;
+  publicUsername: string | null;
   profileImageUrl: string | null;
   bio: string | null;
   gradYear: number | null;
   favoritePickup: string | null;
+  sellerKind: "STUDENT" | "VERIFIED_SHOP";
+  verifiedShopName: string | null;
+  verifiedShopApprovedAt: string | null;
   followerCount: number;
   followingCount: number;
   isFollowing: boolean;
@@ -37,10 +43,16 @@ export type UserSocialSnapshot = {
     id: string;
     name: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
     profileImageUrl: string | null;
     bio: string | null;
     gradYear: number | null;
     favoritePickup: string | null;
+    sellerKind: "STUDENT" | "VERIFIED_SHOP";
+    verifiedShopName: string | null;
+    verifiedShopApprovedAt: string | null;
   };
   followerCount: number;
   followingCount: number;
@@ -286,12 +298,14 @@ function buildSuggestionReason(params: {
 }
 
 export async function getUserSummaryByUsername(username: string) {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       username
     },
     select: publicUserProfileSelect
   });
+
+  return user ? toPublicUserProfile(user) : null;
 }
 
 export async function getUserSocialSnapshot(userId: string, viewerId?: string): Promise<UserSocialSnapshot | null> {
@@ -306,10 +320,16 @@ export async function getUserSocialSnapshot(userId: string, viewerId?: string): 
       id: profile.id,
       name: profile.name,
       username: profile.username,
+      usernameConfirmed: profile.usernameConfirmed,
+      displayName: profile.displayName,
+      publicUsername: profile.publicUsername,
       profileImageUrl: profile.profileImageUrl,
       bio: profile.bio,
       gradYear: profile.gradYear,
-      favoritePickup: profile.favoritePickup
+      favoritePickup: profile.favoritePickup,
+      sellerKind: profile.sellerKind,
+      verifiedShopName: profile.verifiedShopName,
+      verifiedShopApprovedAt: profile.verifiedShopApprovedAt
     },
     followerCount: profile.followerCount,
     followingCount: profile.followingCount,

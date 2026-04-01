@@ -12,6 +12,7 @@ import { ProfileImagePicker } from "@/components/profile/profile-image-picker";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { type ListingCardData, type SellerReviewData } from "@/lib/data";
+import { getEditableDisplayName, needsPublicIdentitySetup } from "@/lib/user-identity";
 import { timeAgo } from "@/lib/utils";
 
 type ProfileViewProps = {
@@ -28,9 +30,18 @@ type ProfileViewProps = {
     name: string | null;
     profileImageUrl: string | null;
     username: string;
+    usernameConfirmed: boolean;
+    displayName: string;
+    publicUsername: string | null;
     bio: string | null;
     gradYear: number | null;
     favoritePickup: string | null;
+    sellerKind: "STUDENT" | "VERIFIED_SHOP";
+    verifiedShopName: string | null;
+    verifiedShopApprovedAt: string | null;
+    verifiedShopLocation: string | null;
+    verifiedShopInstagram: string | null;
+    verifiedShopWebsite: string | null;
   };
   social: {
     followerCount: number;
@@ -71,15 +82,24 @@ export function ProfileView({
   isOwner,
   viewerSignedIn
 }: ProfileViewProps) {
-  const [editing, setEditing] = useState(false);
+  const editableDisplayName = getEditableDisplayName(user);
+  const needsIdentitySetup = isOwner && needsPublicIdentitySetup(user);
+  const [editing, setEditing] = useState(needsIdentitySetup);
   const [form, setForm] = useState({
+    name: editableDisplayName,
+    username: user.publicUsername ?? "",
     profileImageUrl: user.profileImageUrl ?? "",
     bio: user.bio ?? "",
     gradYear: user.gradYear?.toString() ?? "",
-    favoritePickup: user.favoritePickup ?? ""
+    favoritePickup: user.favoritePickup ?? "",
+    verifiedShopLocation: user.verifiedShopLocation ?? "",
+    verifiedShopInstagram: user.verifiedShopInstagram ?? "",
+    verifiedShopWebsite: user.verifiedShopWebsite ?? ""
   });
   const [saving, setSaving] = useState(false);
   const [followState, setFollowState] = useState(social);
+  const isVerifiedShop = user.sellerKind === "VERIFIED_SHOP" && Boolean(user.verifiedShopApprovedAt);
+  const inventoryLabel = isVerifiedShop ? "Shop" : "Closet";
 
   async function saveProfile() {
     setSaving(true);
@@ -92,7 +112,8 @@ export function ProfileView({
     setSaving(false);
 
     if (response.ok === false) {
-      toast.error("Could not update profile.");
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not update profile.");
       return;
     }
 
@@ -106,22 +127,30 @@ export function ProfileView({
       <Card className="surface-panel-strong">
         <CardContent className="space-y-6 p-6 md:p-8">
           <div className="grid gap-6 md:grid-cols-[auto_1fr_auto] md:items-start">
-            <UserAvatar name={user.name} username={user.username} imageUrl={form.profileImageUrl || null} className="h-20 w-20" fallbackClassName="text-lg" />
+            <UserAvatar name={user.displayName} username={user.username} imageUrl={form.profileImageUrl || null} className="h-20 w-20" fallbackClassName="text-lg" />
 
             <div className="space-y-3">
               <div className="space-y-1">
                 <p className="editorial-eyebrow">Profile</p>
-                <h1 className="font-display text-4xl font-extrabold tracking-tight">{user.name || user.username}</h1>
-                <p className="text-sm text-muted-foreground">@{user.username}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="font-display text-4xl font-extrabold tracking-tight">{user.displayName}</h1>
+                  {isVerifiedShop ? <VerifiedShopBadge /> : null}
+                </div>
+                {user.publicUsername ? (
+                  <p className="text-sm text-muted-foreground">@{user.publicUsername}</p>
+                ) : isOwner ? (
+                  <p className="text-sm text-muted-foreground">Choose a public username so buyers can recognize your profile.</p>
+                ) : null}
               </div>
               {user.bio ? <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{user.bio}</p> : null}
               {!isOwner && followState.mutualCount > 0 ? (
                 <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {followState.mutualCount} people you follow also follow this closet
+                  {followState.mutualCount} people you follow also follow this {isVerifiedShop ? "shop" : "closet"}
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
+                {isVerifiedShop ? <Badge variant="blue">Reviewed local partner</Badge> : null}
                 {user.gradYear ? <Badge variant="outline">Class of {user.gradYear}</Badge> : null}
                 {user.favoritePickup ? (
                   <Badge variant="blue">
@@ -132,6 +161,15 @@ export function ProfileView({
                     >
                       {user.favoritePickup}
                     </PlaceMapLink>
+                  </Badge>
+                ) : null}
+                {isVerifiedShop && user.verifiedShopLocation ? <Badge variant="outline">{user.verifiedShopLocation}</Badge> : null}
+                {isVerifiedShop && user.verifiedShopInstagram ? <Badge variant="outline">{user.verifiedShopInstagram}</Badge> : null}
+                {isVerifiedShop && user.verifiedShopWebsite ? (
+                  <Badge variant="outline">
+                    <a href={user.verifiedShopWebsite} target="_blank" rel="noreferrer" className="hover:text-foreground">
+                      Website
+                    </a>
                   </Badge>
                 ) : null}
                 <Link
@@ -223,8 +261,8 @@ export function ProfileView({
                           className="h-10 w-10"
                         />
                         <div>
-                          <p className="font-medium text-foreground">{review.reviewer.name || review.reviewer.username}</p>
-                          <p className="text-xs text-muted-foreground">@{review.reviewer.username}</p>
+                          <p className="font-medium text-foreground">{review.reviewer.displayName}</p>
+                          {review.reviewer.publicUsername ? <p className="text-xs text-muted-foreground">@{review.reviewer.publicUsername}</p> : null}
                         </div>
                       </div>
                       <div className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
@@ -252,42 +290,96 @@ export function ProfileView({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-display text-xl font-bold">Edit your profile</p>
-                  <p className="text-sm text-muted-foreground">Keep your closet and meetup preferences current.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isVerifiedShop ? "Keep your shop details current." : "Keep your closet and meetup preferences current."}
+                  </p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => setEditing((prev) => !prev)}>
                   {editing ? "Close" : "Edit"}
                 </Button>
               </div>
 
+              {needsIdentitySetup ? (
+                <div className="mt-4 rounded-[1.3rem] border border-uva-orange/20 bg-uva-orange/7 px-4 py-3 text-sm leading-6 text-uva-orange">
+                  Pick a public display name and username so HoosFinds shows you like a real seller, not a UVA login.
+                </div>
+              ) : null}
+
               {editing ? (
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="md:col-span-2">
                     <ProfileImagePicker
                       value={form.profileImageUrl}
-                      name={user.name}
+                      name={user.displayName}
                       username={user.username}
                       disabled={saving}
                       onChange={(url) => setForm((prev) => ({ ...prev, profileImageUrl: url }))}
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
+                    <Label>Display name</Label>
+                    <Input value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label>Username</Label>
+                    <Input
+                      value={form.username}
+                      onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    <p className="text-xs leading-6 text-muted-foreground">
+                      This becomes your public profile URL at{" "}
+                      <span className="font-medium text-foreground">/u/{form.username || user.publicUsername || "your-handle"}</span>.
+                    </p>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
                     <Label>Bio</Label>
                     <Textarea value={form.bio} onChange={(event) => setForm((prev) => ({ ...prev, bio: event.target.value }))} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Graduation year</Label>
-                    <Input
-                      value={form.gradYear}
-                      onChange={(event) => setForm((prev) => ({ ...prev, gradYear: event.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Favorite pickup spot</Label>
-                    <Input
-                      value={form.favoritePickup}
-                      onChange={(event) => setForm((prev) => ({ ...prev, favoritePickup: event.target.value }))}
-                    />
-                  </div>
+                  {isVerifiedShop ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Location</Label>
+                        <Input
+                          value={form.verifiedShopLocation}
+                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopLocation: event.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Instagram</Label>
+                        <Input
+                          value={form.verifiedShopInstagram}
+                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopInstagram: event.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Website</Label>
+                        <Input
+                          value={form.verifiedShopWebsite}
+                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopWebsite: event.target.value }))}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Graduation year</Label>
+                        <Input
+                          value={form.gradYear}
+                          onChange={(event) => setForm((prev) => ({ ...prev, gradYear: event.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Favorite pickup spot</Label>
+                        <Input
+                          value={form.favoritePickup}
+                          onChange={(event) => setForm((prev) => ({ ...prev, favoritePickup: event.target.value }))}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="md:col-span-2">
                     <Button onClick={saveProfile} disabled={saving}>
                       {saving ? "Saving..." : "Save profile"}
@@ -302,7 +394,7 @@ export function ProfileView({
 
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="active">Closet ({activeListings.length})</TabsTrigger>
+          <TabsTrigger value="active">{inventoryLabel} ({activeListings.length})</TabsTrigger>
           <TabsTrigger value="past">Past sales ({pastListings.length})</TabsTrigger>
           <TabsTrigger value="favorites">Saved ({favorites.length})</TabsTrigger>
         </TabsList>
@@ -314,7 +406,14 @@ export function ProfileView({
               ))}
             </div>
           ) : (
-            <EmptyState title="No active listings" description="This closet is quiet right now. New finds will show up here as soon as they go live." />
+            <EmptyState
+              title="No active listings"
+              description={
+                isVerifiedShop
+                  ? "This shop is quiet right now. New finds will show up here as soon as they go live."
+                  : "This closet is quiet right now. New finds will show up here as soon as they go live."
+              }
+            />
           )}
         </TabsContent>
         <TabsContent value="past">
@@ -325,7 +424,14 @@ export function ProfileView({
               ))}
             </div>
           ) : (
-            <EmptyState title="No past sales yet" description="Pending, completed, and cancelled listings will show up here once this closet starts moving items." />
+            <EmptyState
+              title="No past sales yet"
+              description={
+                isVerifiedShop
+                  ? "Pending, completed, and cancelled listings will show up here once this shop starts moving items."
+                  : "Pending, completed, and cancelled listings will show up here once this closet starts moving items."
+              }
+            />
           )}
         </TabsContent>
         <TabsContent value="favorites">

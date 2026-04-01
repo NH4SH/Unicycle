@@ -24,7 +24,14 @@ export default async function HomePage() {
     getLandingDrops(session?.user.id),
     prisma.waitlistEntry.count(),
     prisma.conversation.count(),
-    prisma.user.count(),
+    prisma.user.count({
+      where: {
+        sellerKind: "VERIFIED_SHOP",
+        verifiedShopApprovedAt: {
+          not: null
+        }
+      }
+    }),
     session?.user.id ? getFollowingFeedListings(session.user.id, 1, 4) : Promise.resolve(null),
     getSuggestedSellers(session?.user.id, 6)
   ]);
@@ -428,9 +435,9 @@ export default async function HomePage() {
             <p className="mt-2 text-sm text-muted-foreground">Campus demand signals flowing through the marketplace.</p>
           </div>
           <div className="surface-subtle rounded-[1.5rem] p-5">
-            <p className="editorial-eyebrow">Community</p>
-            <p className="mt-3 font-display text-3xl font-extrabold">{Math.max(3, Math.floor(partnersCount / 2))}</p>
-            <p className="mt-2 text-sm text-muted-foreground">Students and org touchpoints shaping the next iteration.</p>
+            <p className="editorial-eyebrow">Verified shops</p>
+            <p className="mt-3 font-display text-3xl font-extrabold">{partnersCount}</p>
+            <p className="mt-2 text-sm text-muted-foreground">Reviewed local thrift and vintage partners inside the marketplace.</p>
           </div>
         </div>
       </section>

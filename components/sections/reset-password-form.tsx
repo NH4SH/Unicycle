@@ -64,7 +64,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
           <div className="rounded-[1.7rem] border border-uva-blue/15 bg-uva-blue/6 p-5 text-center dark:border-white/16 dark:bg-white/[0.08]">
             <p className="font-display text-2xl font-bold text-uva-blue dark:text-white">Password updated</p>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Your password is ready. Sign in with your UVA email and the new password.
+              Your password is ready. Sign in with your email and the new password.
             </p>
           </div>
           <Button asChild className="w-full">
@@ -75,7 +75,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="reset-email" className="text-sm font-semibold text-foreground">
-              UVA email
+              Email
             </Label>
             <Input id="reset-email" type="email" value={email} readOnly disabled />
           </div>

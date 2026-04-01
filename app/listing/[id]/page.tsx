@@ -36,6 +36,8 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
       <ListingDetailView
         listing={detail.listing}
         isOwner={detail.isOwner}
+        viewerSignedIn={Boolean(session?.user.id)}
+        viewerCanBuy={session?.user.canBuy ?? false}
         similar={detail.similarItems}
         checkoutState={{
           enabled: checkoutEnabled,

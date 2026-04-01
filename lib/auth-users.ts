@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { normalizeUvaEmail } from "@/lib/domain";
-import { slugify } from "@/lib/utils";
+import { normalizeEmail } from "@/lib/domain";
+import { getUsernameCandidates, normalizeDisplayName } from "@/lib/user-identity";
 
-export async function reserveUsername(seed: string) {
-  const base = slugify(seed).slice(0, 20) || "hooseller";
+async function reserveUniqueUsername(base: string) {
   let attempt = base;
   let count = 0;
 
@@ -17,10 +16,36 @@ export async function reserveUsername(seed: string) {
   return `${base}${Date.now().toString().slice(-4)}`;
 }
 
+export async function reserveUsername({
+  requestedUsername,
+  displayName,
+  fallbackPrefix
+}: {
+  requestedUsername?: string | null;
+  displayName?: string | null;
+  fallbackPrefix?: string;
+}) {
+  const candidates = getUsernameCandidates({
+    requestedUsername,
+    displayName,
+    fallbackPrefix
+  });
+
+  for (const candidate of candidates) {
+    const reserved = await reserveUniqueUsername(candidate);
+    if (reserved) {
+      return reserved;
+    }
+  }
+
+  const safeFallback = getUsernameCandidates({ fallbackPrefix }).at(0) ?? "grounds";
+  return reserveUniqueUsername(safeFallback);
+}
+
 export async function findUserByNormalizedEmail(email: string) {
   return prisma.user.findUnique({
     where: {
-      email: normalizeUvaEmail(email)
+      email: normalizeEmail(email)
     }
   });
 }
@@ -28,30 +53,77 @@ export async function findUserByNormalizedEmail(email: string) {
 export async function createPasswordUser({
   email,
   name,
+  username,
   passwordHash,
   emailVerified
 }: {
   email: string;
   name?: string | null;
+  username?: string | null;
   passwordHash?: string | null;
   emailVerified?: Date | null;
 }) {
-  const normalizedEmail = normalizeUvaEmail(email);
-  const username = await reserveUsername(name || normalizedEmail.split("@")[0] || "hooseller");
+  const normalizedEmail = normalizeEmail(email);
+  const displayName = normalizeDisplayName(name);
+  const reservedUsername = await reserveUsername({
+    requestedUsername: username,
+    displayName,
+    fallbackPrefix: "grounds"
+  });
 
   return prisma.user.create({
     data: {
       email: normalizedEmail,
-      name: name?.trim() || normalizedEmail.split("@")[0] || null,
-      username,
+      name: displayName,
+      username: reservedUsername,
+      usernameConfirmed: true,
       passwordHash: passwordHash ?? null,
       emailVerified: emailVerified ?? null
     }
   });
 }
 
+export async function createVerifiedShopUser({
+  email,
+  businessName,
+  description,
+  location,
+  instagram,
+  website
+}: {
+  email: string;
+  businessName: string;
+  description?: string | null;
+  location?: string | null;
+  instagram?: string | null;
+  website?: string | null;
+}) {
+  const normalizedEmail = normalizeEmail(email);
+  const displayName = normalizeDisplayName(businessName);
+  const reservedUsername = await reserveUsername({
+    displayName,
+    fallbackPrefix: "shop"
+  });
+
+  return prisma.user.create({
+    data: {
+      email: normalizedEmail,
+      name: displayName,
+      username: reservedUsername,
+      usernameConfirmed: true,
+      bio: description?.trim() || null,
+      sellerKind: "VERIFIED_SHOP",
+      verifiedShopName: displayName,
+      verifiedShopApprovedAt: null,
+      verifiedShopLocation: location?.trim() || null,
+      verifiedShopInstagram: instagram?.trim() || null,
+      verifiedShopWebsite: website?.trim() || null
+    }
+  });
+}
+
 export async function findOrCreateBypassedUser(email: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
+  const normalizedEmail = normalizeEmail(email);
   const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   if (existingUser) {

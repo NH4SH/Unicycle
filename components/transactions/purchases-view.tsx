@@ -59,18 +59,18 @@ function TransactionCard({
               <div>
                 <p className="font-display text-2xl font-extrabold tracking-tight">{item.listing.title}</p>
                 <p className="text-sm text-muted-foreground">
-                  {role === "buyer" ? "Seller" : "Buyer"}: {item.counterparty.name || item.counterparty.username}
+                  {role === "buyer" ? "Seller" : "Buyer"}: {item.counterparty.displayName}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs text-muted-foreground">
               <UserAvatar
-                name={item.counterparty.name}
+                name={item.counterparty.displayName}
                 username={item.counterparty.username}
                 imageUrl={item.counterparty.profileImageUrl}
                 className="h-6 w-6"
               />
-              @{item.counterparty.username}
+              {item.counterparty.publicUsername ? `@${item.counterparty.publicUsername}` : item.counterparty.displayName}
             </div>
           </div>
 

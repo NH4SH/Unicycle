@@ -5,7 +5,7 @@ import { ResendVerificationForm } from "@/components/sections/resend-verificatio
 import { Button } from "@/components/ui/button";
 import { consumeEmailVerificationToken } from "@/lib/auth-tokens";
 import { findUserByNormalizedEmail } from "@/lib/auth-users";
-import { normalizeUvaEmail } from "@/lib/domain";
+import { normalizeEmail } from "@/lib/domain";
 
 type VerifyEmailPageProps = {
   searchParams?: {
@@ -19,14 +19,14 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   const token = searchParams?.token?.trim();
 
   if (email && token) {
-    const normalizedEmail = normalizeUvaEmail(email);
+    const normalizedEmail = normalizeEmail(email);
     const result = await consumeEmailVerificationToken(normalizedEmail, token);
 
     if (result.ok) {
       return (
         <AuthShell
           title="Your email is verified."
-          description="You're ready to sign in with your UVA email and password."
+          description="You're ready to sign in with your HoosFinds email and password."
         >
           <Button asChild className="w-full">
             <Link href="/sign-in">Go to sign in</Link>
@@ -52,7 +52,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
     return (
       <AuthShell
         title={result.reason === "expired" ? "That verification link expired." : "That verification link is invalid."}
-        description="Request a fresh verification email below and use the newest link from your UVA inbox."
+        description="Request a fresh verification email below and use the newest link from your inbox."
       >
         <ResendVerificationForm prefilledEmail={normalizedEmail} />
       </AuthShell>
@@ -61,8 +61,8 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
 
   return (
     <AuthShell
-      title="Verify your UVA email."
-      description="Need another verification link? Enter your UVA email and we'll send a fresh one."
+      title="Verify your email."
+      description="Need another verification link? Enter your HoosFinds email and we'll send a fresh one."
     >
       <ResendVerificationForm prefilledEmail={email} />
     </AuthShell>

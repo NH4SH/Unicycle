@@ -6,6 +6,7 @@ import { ArrowUpRight, Clock3, Sparkles, Users } from "lucide-react";
 
 import { FollowButton } from "@/components/profile/follow-button";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
 import type { SellerNetworkProfile } from "@/lib/user-social";
 import { cn, timeAgo } from "@/lib/utils";
@@ -30,6 +31,7 @@ export function SellerNetworkCard({
     followerCount: seller.followerCount
   });
   const styleTags = seller.styleTags.slice(0, compact ? 2 : 3);
+  const isVerifiedShop = seller.sellerKind === "VERIFIED_SHOP" && Boolean(seller.verifiedShopApprovedAt);
 
   useEffect(() => {
     setFollowState({
@@ -53,9 +55,10 @@ export function SellerNetworkCard({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={`/u/${seller.username}`} className="font-display text-xl font-bold tracking-tight hover:text-uva-orange">
-                  {seller.name || seller.username}
+                  {seller.displayName}
                 </Link>
-                <span className="text-sm text-muted-foreground">@{seller.username}</span>
+                {isVerifiedShop ? <VerifiedShopBadge className="px-2 py-1 text-[10px]" /> : null}
+                {seller.publicUsername ? <span className="text-sm text-muted-foreground">@{seller.publicUsername}</span> : null}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
@@ -114,6 +117,7 @@ export function SellerNetworkCard({
           ) : (
             <Badge variant="blue">Curated closet</Badge>
           )}
+          {isVerifiedShop ? <Badge variant="outline">Reviewed local partner</Badge> : null}
           {seller.favoritePickup ? <Badge variant="orange">Meets at {seller.favoritePickup}</Badge> : null}
           {seller.mutualCount > 0 ? <Badge variant="blue">{seller.mutualCount} mutuals</Badge> : null}
         </div>
@@ -122,7 +126,7 @@ export function SellerNetworkCard({
           href={`/u/${seller.username}`}
           className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-foreground dark:text-white/92 dark:hover:text-white"
         >
-          View closet <ArrowUpRight className="h-4 w-4" />
+          {isVerifiedShop ? "View shop" : "View closet"} <ArrowUpRight className="h-4 w-4" />
         </Link>
       </div>
     </article>
