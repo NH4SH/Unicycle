@@ -36,7 +36,7 @@ export function SuggestedSellersSection({
         {ctaHref && ctaLabel ? (
           <Link
             href={ctaHref}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-uva-blue transition hover:gap-3"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
           >
             {ctaLabel} <ArrowRight className="h-4 w-4" />
           </Link>

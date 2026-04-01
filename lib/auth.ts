@@ -1,67 +1,18 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import EmailProvider from "next-auth/providers/email";
 import { getServerSession } from "next-auth";
 
+import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
+import { isDevAuthBypassEnabled as getDevAuthBypassEnabled } from "@/lib/auth-config";
+import { verifyPassword } from "@/lib/auth-passwords";
+import { findOrCreateBypassedUser, findUserByNormalizedEmail } from "@/lib/auth-users";
 import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 
-async function reserveUsername(seed: string) {
-  const base = slugify(seed).slice(0, 20) || "hooseller";
-  let attempt = base;
-  let count = 0;
-
-  while (count < 40) {
-    const exists = await prisma.user.findUnique({ where: { username: attempt } });
-    if (!exists) return attempt;
-    count += 1;
-    attempt = `${base}${count}`;
-  }
-
-  return `${base}${Date.now().toString().slice(-4)}`;
-}
-
-function getEmailServerConfig() {
-  if (process.env.EMAIL_SERVER) {
-    return process.env.EMAIL_SERVER;
-  }
-
-  return {
-    host: process.env.EMAIL_SERVER_HOST || "",
-    port: Number(process.env.EMAIL_SERVER_PORT || "587"),
-    secure: process.env.EMAIL_SERVER_SECURE === "true",
-    auth: {
-      user: process.env.EMAIL_SERVER_USER || "",
-      pass: process.env.EMAIL_SERVER_PASSWORD || ""
-    }
-  };
-}
-
-const devAuthBypassEnabled =
-  process.env.NODE_ENV !== "production" && process.env.DEV_AUTH_BYPASS === "true";
-const teamAuthBypassCode = process.env.TEST_AUTH_BYPASS_CODE?.trim();
-const teamAuthBypassEnabled =
-  process.env.TEST_AUTH_BYPASS === "true" && Boolean(teamAuthBypassCode);
-const authBypassEnabled = devAuthBypassEnabled || teamAuthBypassEnabled;
-
-async function findOrCreateUserByEmail(email: string) {
-  const normalizedEmail = normalizeUvaEmail(email);
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existingUser) {
-    return existingUser;
-  }
-
-  const username = await reserveUsername(normalizedEmail.split("@")[0] || "hooseller");
-  return prisma.user.create({
-    data: {
-      email: normalizedEmail,
-      username,
-      name: normalizedEmail.split("@")[0]
-    }
-  });
-}
+// Development bypass is intentionally impossible in production. It exists only
+// so local work can proceed when SMTP is unavailable.
+const devAuthBypassEnabled = getDevAuthBypassEnabled();
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -72,19 +23,64 @@ export const authOptions: NextAuthOptions = {
     signIn: "/sign-in"
   },
   providers: [
-    ...(authBypassEnabled
+    CredentialsProvider({
+      name: "UVA credentials",
+      credentials: {
+        email: {
+          label: "UVA email",
+          type: "email"
+        },
+        password: {
+          label: "Password",
+          type: "password"
+        }
+      },
+      async authorize(credentials) {
+        const email = normalizeUvaEmail(credentials?.email || "");
+        const password = credentials?.password || "";
+
+        if (!isUvaEmail(email)) {
+          throw new Error(AUTH_ERROR_CODES.DISALLOWED_DOMAIN);
+        }
+
+        const user = await findUserByNormalizedEmail(email);
+        if (!user) {
+          throw new Error(AUTH_ERROR_CODES.USER_NOT_FOUND);
+        }
+
+        if (!user.passwordHash) {
+          throw new Error(AUTH_ERROR_CODES.PASSWORD_NOT_SET);
+        }
+
+        if (!user.emailVerified) {
+          throw new Error(AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED);
+        }
+
+        const passwordMatches = await verifyPassword(password, user.passwordHash);
+        if (!passwordMatches) {
+          throw new Error(AUTH_ERROR_CODES.INVALID_CREDENTIALS);
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.profileImageUrl ?? user.image,
+          username: user.username,
+          gradYear: user.gradYear,
+          favoritePickup: user.favoritePickup
+        };
+      }
+    }),
+    ...(devAuthBypassEnabled
       ? [
           CredentialsProvider({
             id: "auth-bypass",
-            name: "Testing bypass",
+            name: "Development bypass",
             credentials: {
               email: {
                 label: "UVA email",
                 type: "email"
-              },
-              accessCode: {
-                label: "Access code",
-                type: "password"
               }
             },
             async authorize(credentials) {
@@ -93,11 +89,7 @@ export const authOptions: NextAuthOptions = {
                 return null;
               }
 
-              if (teamAuthBypassEnabled && credentials?.accessCode !== teamAuthBypassCode) {
-                return null;
-              }
-
-              const user = await findOrCreateUserByEmail(email);
+              const user = await findOrCreateBypassedUser(email);
               return {
                 id: user.id,
                 email: user.email,
@@ -110,14 +102,7 @@ export const authOptions: NextAuthOptions = {
             }
           })
         ]
-      : []),
-    EmailProvider({
-      server: getEmailServerConfig(),
-      from: process.env.EMAIL_FROM || "HoosFinds <no-reply@hoosfinds.com>",
-      normalizeIdentifier(identifier) {
-        return normalizeUvaEmail(identifier);
-      }
-    })
+      : [])
   ],
   callbacks: {
     async signIn({ user }) {
@@ -128,19 +113,18 @@ export const authOptions: NextAuthOptions = {
         return `/auth/uva-only?email=${encoded}`;
       }
 
-      if (!identifier) {
-        return false;
-      }
-
-      const normalizedEmail = normalizeUvaEmail(identifier);
-      if (!isUvaEmail(normalizedEmail)) {
-        const email = encodeURIComponent(normalizedEmail);
-        return `/auth/uva-only?email=${email}`;
-      }
-
       return true;
     },
-    async jwt({ token }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.username = user.username;
+        token.gradYear = user.gradYear;
+        token.favoritePickup = user.favoritePickup;
+        token.image = typeof user.image === "string" ? user.image : null;
+        token.email = user.email;
+      }
+
       if (!token.email) return token;
       const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
       if (!dbUser) return token;
@@ -164,13 +148,6 @@ export const authOptions: NextAuthOptions = {
 
       return session;
     }
-  },
-  events: {
-    async createUser({ user }) {
-      const baseSeed = user.name || user.email?.split("@")[0] || "hooseller";
-      const username = await reserveUsername(baseSeed);
-      await prisma.user.update({ where: { id: user.id }, data: { username } });
-    }
   }
 };
 
@@ -179,9 +156,5 @@ export function getAuthSession() {
 }
 
 export function isDevAuthBypassEnabled() {
-  return authBypassEnabled;
-}
-
-export function authBypassRequiresCode() {
-  return teamAuthBypassEnabled;
+  return devAuthBypassEnabled;
 }

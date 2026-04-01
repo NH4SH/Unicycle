@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getStripe, isStripeCheckoutEnabled } from "@/lib/stripe";
+import { calculateApplicationFeeAmount, getSellerPayoutState } from "@/lib/seller-payouts";
 import { checkoutSessionSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -45,6 +46,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "You cannot checkout your own listing." }, { status: 400 });
   }
 
+  const sellerPayoutState = await getSellerPayoutState(listing.sellerId);
+
+  if (!sellerPayoutState.connectedAccount || !sellerPayoutState.readyToReceivePayments) {
+    return NextResponse.json(
+      {
+        message: "This seller still needs to finish payout setup before HoosFinds can process checkout."
+      },
+      { status: 409 }
+    );
+  }
+
   const order = await prisma.order.create({
     data: {
       listingId: listing.id,
@@ -56,6 +68,7 @@ export async function POST(request: Request) {
 
   const origin = new URL(request.url).origin;
   const stripe = getStripe();
+  const applicationFeeAmount = Math.min(listing.priceCents - 1, calculateApplicationFeeAmount(listing.priceCents));
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
     client_reference_id: order.id,
@@ -68,7 +81,8 @@ export async function POST(request: Request) {
       orderId: order.id,
       listingId: listing.id,
       buyerId: session.user.id,
-      sellerId: listing.sellerId
+      sellerId: listing.sellerId,
+      connectedAccountId: sellerPayoutState.connectedAccount.stripeAccountId
     },
     line_items: [
       {
@@ -82,7 +96,13 @@ export async function POST(request: Request) {
           }
         }
       }
-    ]
+    ],
+    payment_intent_data: {
+      application_fee_amount: applicationFeeAmount,
+      transfer_data: {
+        destination: sellerPayoutState.connectedAccount.stripeAccountId
+      }
+    }
   });
 
   await prisma.order.update({

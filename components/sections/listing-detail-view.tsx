@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MapPin, MessageCircle, ShieldCheck, Sparkles, Star, Trash2, WalletCards } from "lucide-react";
+import { MapPin, MessageCircle, ShieldCheck, Star, Trash2, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -16,7 +16,6 @@ import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ListingSaleManager } from "@/components/transactions/listing-sale-manager";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
@@ -26,7 +25,10 @@ type ListingDetailViewProps = {
   listing: ListingCardData;
   isOwner: boolean;
   similar: ListingCardData[];
-  canCheckout: boolean;
+  checkoutState: {
+    enabled: boolean;
+    issue: "payments_unavailable" | "seller_payouts_incomplete" | null;
+  };
   saleContext: {
     currentTransaction: {
       id: string;
@@ -69,7 +71,7 @@ type ListingDetailViewProps = {
   };
 };
 
-export function ListingDetailView({ listing, isOwner, similar, canCheckout, saleContext }: ListingDetailViewProps) {
+export function ListingDetailView({ listing, isOwner, similar, checkoutState, saleContext }: ListingDetailViewProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -77,6 +79,51 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
   const router = useRouter();
   const { status } = useSession();
   const listingIsLive = listing.status === "ACTIVE";
+  const sellerDisplayName = listing.seller.name || listing.seller.username;
+  const sellerTrustSummary = listing.sellerRating
+    ? `${listing.sellerRating.toFixed(1)} seller rating`
+    : listing.sellerCompletedSales > 0
+      ? `${listing.sellerCompletedSales} confirmed sales`
+      : "New seller";
+  const sellerTrustDetail = listing.sellerRating
+    ? `${listing.sellerReviewCount} buyer ratings${listing.sellerCompletedSales > 0 ? ` · ${listing.sellerCompletedSales} confirmed sales` : ""}`
+    : listing.sellerCompletedSales > 0
+      ? "Buyer reviews unlock after confirmed handoffs."
+      : "Buyer trust builds after the first confirmed pickup.";
+  const canBuyerAct = !isOwner && listingIsLive;
+  const showCheckoutCta = canBuyerAct && checkoutState.enabled;
+
+  function getCheckoutSupportCopy() {
+    if (showCheckoutCta) {
+      return "Check out now, or message the seller first if you need details.";
+    }
+
+    if (checkoutState.issue === "seller_payouts_incomplete") {
+      return isOwner
+        ? "Finish payout setup before buyers can check out and send earnings to your payout account."
+        : "This seller is still finishing payout setup, so checkout is paused for now. You can still message first.";
+    }
+
+    if (checkoutState.issue === "payments_unavailable") {
+      return "Checkout is temporarily unavailable, so use chat to sort out details first.";
+    }
+
+    return "Use chat to confirm sizing, wear, and pickup before you go.";
+  }
+
+  function getTrustCopy() {
+    if (showCheckoutCta) {
+      return "Stripe holds payment until pickup is confirmed. Meet in a public spot on Grounds.";
+    }
+
+    if (checkoutState.issue === "seller_payouts_incomplete") {
+      return isOwner
+        ? "Once payouts are enabled, HoosFinds can route checkout earnings to your connected payout account automatically."
+        : "Meet in a public spot on Grounds and use chat until this seller finishes payout setup.";
+    }
+
+    return "Meet in a public spot on Grounds and use chat to confirm the details first.";
+  }
 
   async function startConversation() {
     if (status !== "authenticated") {
@@ -210,109 +257,179 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
         <div className="space-y-5">
           <div className="space-y-3">
             <p className="editorial-eyebrow">Listed on Grounds</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{CATEGORY_LABELS[listing.category]}</Badge>
               <Badge variant="orange">{CONDITION_LABELS[listing.condition]}</Badge>
               {listing.status !== "ACTIVE" ? <ListingStatusBadge status={listing.status} /> : null}
+              <p className="text-xs text-muted-foreground sm:ml-auto">Posted {timeAgo(listing.createdAt)} ago</p>
             </div>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">{listing.title}</h1>
-            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border/80 pb-5">
-              <p className="font-display text-4xl font-extrabold text-uva-blue dark:text-white md:text-5xl">{formatCurrency(listing.priceCents / 100)}</p>
-              <p className="text-sm text-muted-foreground">Posted {timeAgo(listing.createdAt)} ago</p>
+            <div className="border-b border-border/80 pb-4">
+              <div className="space-y-2">
+                <p className="font-display text-4xl font-extrabold text-uva-blue dark:text-white md:text-5xl">
+                  {formatCurrency(listing.priceCents / 100)}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="blue"
+                    className="text-[0.82rem] normal-case tracking-[0.01em] dark:border-white/20 dark:bg-white/[0.13] dark:text-white"
+                  >
+                    {listing.favoriteCount} saves
+                  </Badge>
+                  {listing.status === "PENDING_CONFIRMATION" ? <Badge variant="blue">Waiting on buyer receipt</Badge> : null}
+                </div>
+              </div>
             </div>
           </div>
 
-          <Card className="surface-panel-strong">
-            <CardContent className="space-y-4 p-6">
-              <div className="space-y-2">
-                <p className="editorial-eyebrow">Why it stands out</p>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  <LinkedPlaceText text={listing.description} />
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="blue" className="text-[0.82rem] normal-case tracking-[0.01em]">
-                  {listing.favoriteCount} saves
-                </Badge>
-                <Badge variant="outline">Student-to-student only</Badge>
-                {listing.status === "PENDING_CONFIRMATION" ? <Badge variant="blue">Waiting on buyer receipt</Badge> : null}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="surface-panel-strong">
-              <CardContent className="space-y-4 p-6">
-                <div>
-                  <p className="editorial-eyebrow">Pickup on Grounds</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    <LinkedPlaceText
-                      text="Meet where it makes sense between classes, on The Corner, or near game day traffic."
-                      linkClassName="font-medium text-foreground/88 decoration-foreground/30 hover:text-foreground dark:text-white/92 dark:decoration-white/40 dark:hover:text-white"
-                    />
-                  </p>
+          {canBuyerAct ? (
+            <div className="space-y-4 border-y border-border/80 py-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="editorial-eyebrow">{showCheckoutCta ? "Buy now" : "Message first"}</p>
+                  <p className="max-w-xl text-sm leading-6 text-muted-foreground">{getCheckoutSupportCopy()}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {listing.pickupLocations.map((loc) => (
-                    <PlaceMapLink
-                      key={loc}
-                      place={loc}
-                      className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/14 dark:bg-background/90 dark:text-white/96 dark:hover:border-white/24 dark:hover:bg-background dark:hover:text-white dark:focus-visible:ring-white/30"
-                    >
-                      <MapPin className="h-3.5 w-3.5 text-foreground/40 dark:text-white/45" />
-                      <span>{loc}</span>
-                    </PlaceMapLink>
-                  ))}
-                </div>
-                {listing.meetupNotes ? (
-                  <p className="text-xs leading-6 text-muted-foreground">
-                    <LinkedPlaceText
-                      text={listing.meetupNotes}
-                      linkClassName="font-medium text-foreground/88 decoration-foreground/30 hover:text-foreground dark:text-white/92 dark:decoration-white/40 dark:hover:text-white"
-                    />
-                  </p>
+                {showCheckoutCta ? (
+                  <Badge
+                    variant="blue"
+                    className="text-[0.78rem] normal-case tracking-[0.01em] dark:border-white/20 dark:bg-white/[0.13] dark:text-white"
+                  >
+                    Secure checkout beta
+                  </Badge>
                 ) : null}
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card className="surface-panel-strong">
-              <CardContent className="space-y-4 p-6">
-                <div className="flex items-start gap-3">
-                  <UserAvatar
-                    name={listing.seller.name}
-                    username={listing.seller.username}
-                    imageUrl={listing.seller.profileImageUrl}
-                    className="h-12 w-12"
+              {showCheckoutCta ? (
+                <Button className="h-12 w-full" onClick={startCheckout} disabled={checkingOut}>
+                  <WalletCards className="mr-1.5 h-4 w-4" />
+                  {checkingOut ? "Redirecting to Stripe..." : "Checkout with Stripe"}
+                </Button>
+              ) : (
+                <Button className="h-12 w-full" onClick={startConversation}>
+                  <MessageCircle className="mr-1.5 h-4 w-4" />
+                  Message seller
+                </Button>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {showCheckoutCta ? (
+                  <Button variant="secondary" onClick={startConversation} className="w-full sm:w-auto">
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Ask a question first
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="flex items-start gap-2 border-t border-border/70 pt-3 text-sm leading-6 text-muted-foreground">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-uva-orange" />
+                <p>{getTrustCopy()}</p>
+              </div>
+            </div>
+          ) : isOwner && listingIsLive ? (
+            <div className="space-y-3 border-y border-border/80 py-4 text-sm leading-7 text-muted-foreground">
+              <p>
+                {checkoutState.enabled
+                  ? "Buyers can message first or check out with Stripe when they’re ready. Sale management stays just below once someone claims the piece."
+                  : checkoutState.issue === "seller_payouts_incomplete"
+                    ? "Finish payout setup before this listing can accept checkout. Buyers can still message you in the meantime."
+                    : "Checkout is temporarily unavailable right now. Buyers can still message you while HoosFinds finishes payment setup."}
+              </p>
+              {checkoutState.issue === "seller_payouts_incomplete" ? (
+                <Button asChild size="sm" className="w-full sm:w-auto">
+                  <Link href="/payments">Finish setup to get paid</Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="grid gap-5 md:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
+            <div className="space-y-4 md:border-r md:border-border/70 md:pr-6">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="editorial-eyebrow">Pickup on Grounds</p>
+                <p className="text-xs text-muted-foreground">Fast local handoff</p>
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Pick a spot that works for a class break, The Corner, or game day traffic.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {listing.pickupLocations.map((loc) => (
+                  <PlaceMapLink
+                    key={loc}
+                    place={loc}
+                    className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/14 dark:bg-background/90 dark:text-white/96 dark:hover:border-white/24 dark:hover:bg-background dark:hover:text-white dark:focus-visible:ring-white/30"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-foreground/40 dark:text-white/45" />
+                    <span>{loc}</span>
+                  </PlaceMapLink>
+                ))}
+              </div>
+              {listing.meetupNotes ? (
+                <p className="text-xs leading-6 text-muted-foreground">
+                  <LinkedPlaceText
+                    text={listing.meetupNotes}
+                    linkClassName="font-medium text-foreground/88 decoration-foreground/30 hover:text-foreground dark:text-white/92 dark:decoration-white/40 dark:hover:text-white"
                   />
-                  <div className="min-w-0 flex-1">
-                    <p className="editorial-eyebrow">Seller</p>
-                    <Link href={`/u/${listing.seller.username}`} className="mt-1 block font-display text-xl font-bold hover:text-uva-blue">
-                      {listing.seller.name || listing.seller.username}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
-                  </div>
-                  <div className="text-right text-xs">
-                    {listing.sellerRating ? (
-                      <>
-                        <p className="inline-flex items-center gap-1">
-                          <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
-                          {listing.sellerRating.toFixed(1)}
-                        </p>
-                        <p className="text-muted-foreground">{listing.sellerReviewCount} buyer ratings</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium text-foreground">New seller</p>
-                        <p className="text-muted-foreground">{listing.sellerCompletedSales} confirmed sales</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  Fellow Hoo with a fast response rhythm, {listing.sellerCompletedSales} completed sales, and buyer-verified ratings only after real pickups.
                 </p>
-              </CardContent>
-            </Card>
+              ) : null}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <UserAvatar
+                  name={listing.seller.name}
+                  username={listing.seller.username}
+                  imageUrl={listing.seller.profileImageUrl}
+                  className="h-12 w-12"
+                />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="editorial-eyebrow">Seller</p>
+                  <Link href={`/u/${listing.seller.username}`} className="block font-display text-xl font-bold hover:text-uva-orange">
+                    {sellerDisplayName}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 border-t border-border/70 pt-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="inline-flex items-center gap-1 text-foreground/88 dark:text-white/88">
+                    <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+                    {sellerTrustSummary}
+                  </span>
+                  <span className="text-muted-foreground">{sellerTrustDetail}</span>
+                </div>
+                <Link
+                  href={`/u/${listing.seller.username}`}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+                >
+                  View closet
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 px-1">
+            <p className="editorial-eyebrow">Details</p>
+            <p className="text-sm leading-7 text-muted-foreground">
+              <LinkedPlaceText text={listing.description} />
+            </p>
+            {!isOwner ? (
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <HeartButton
+                  className="h-11"
+                  listingId={listing.id}
+                  initialFavorited={listing.isFavorited}
+                  initialCount={listing.favoriteCount}
+                />
+                <Button
+                  variant="ghost"
+                  onClick={reportListing}
+                  className="h-auto px-0 py-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Report listing
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           {!listingIsLive ? (
@@ -323,46 +440,6 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
                   ? "This transaction has been fully completed and recorded on HoosFinds."
                   : "This listing is currently cancelled and off the feed until the seller relists it."}
             </div>
-          ) : null}
-
-          {canCheckout && listingIsLive ? (
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 260, damping: 22 }}
-              className="relative overflow-hidden rounded-[2rem] border border-uva-blue/10 bg-gradient-to-br from-white via-uva-blue/5 to-uva-orange/10 p-5 shadow-soft"
-            >
-              <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-uva-blue/10 blur-3xl" />
-              <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-uva-orange/10 blur-3xl" />
-              <div className="relative space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <Badge variant="blue" className="text-[0.78rem] normal-case tracking-[0.01em]">
-                    {isOwner ? "Seller preview" : "Secure checkout beta"}
-                  </Badge>
-                  <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80 shadow-soft dark:border-white/12 dark:bg-white/[0.08] dark:text-white/88">
-                    <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
-                    Stripe
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-                  <div className="space-y-2">
-                    <p className="editorial-eyebrow">Buy now</p>
-                    <p className="max-w-xl text-sm leading-7 text-muted-foreground">
-                      {isOwner
-                        ? "This is how checkout appears to buyers. Owners can’t pay for their own listings."
-                        : "Pay through HoosFinds, meet up on Grounds, then confirm receipt once the handoff is actually done."}
-                    </p>
-                  </div>
-                  <div className="space-y-2 text-right">
-                    <p className="font-display text-3xl font-extrabold text-uva-blue dark:text-white">{formatCurrency(listing.priceCents / 100)}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Card checkout · local pickup</p>
-                  </div>
-                </div>
-                <Button className="h-12 w-full" onClick={startCheckout} disabled={checkingOut || isOwner}>
-                  <WalletCards className="mr-1.5 h-4 w-4" />
-                  {isOwner ? "Unavailable on your listing" : checkingOut ? "Redirecting to Stripe..." : "Checkout with Stripe"}
-                </Button>
-              </div>
-            </motion.div>
           ) : null}
 
           {isOwner ? (
@@ -386,37 +463,11 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
                 </Button>
               </div>
             </div>
-          ) : listingIsLive ? (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={startConversation}>
-                <MessageCircle className="mr-1.5 h-4 w-4" />
-                Message seller
-              </Button>
-              <HeartButton
-                className="h-11"
-                listingId={listing.id}
-                initialFavorited={listing.isFavorited}
-                initialCount={listing.favoriteCount}
-              />
-              <Button variant="ghost" onClick={reportListing}>
-                Report
-              </Button>
-            </div>
           ) : null}
 
           {!isOwner && listing.status === "PENDING_CONFIRMATION" ? (
             <p className="text-xs leading-6 text-muted-foreground">
-              If you’re the selected buyer, you’ll see a confirmation CTA in your messages or purchases once it’s your turn to close the loop.
-            </p>
-          ) : null}
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-2 text-xs text-muted-foreground shadow-soft">
-            <ShieldCheck className="h-3.5 w-3.5 text-uva-orange" />
-            Meet in public spots on Grounds for safer exchanges.
-          </div>
-          {canCheckout && listingIsLive ? (
-            <p className="text-xs leading-6 text-muted-foreground">
-              Checkout is powered by Stripe. Payments go through HoosFinds while meetup coordination stays between buyer and seller in-app.
+              If you’re the selected buyer, you’ll see the confirmation step in your messages or purchases once it’s your turn to close the loop.
             </p>
           ) : null}
         </div>

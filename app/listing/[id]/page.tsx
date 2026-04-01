@@ -4,6 +4,7 @@ import { ListingDetailView } from "@/components/sections/listing-detail-view";
 import { getAuthSession } from "@/lib/auth";
 import { getListingDetail } from "@/lib/data";
 import { isStripeCheckoutEnabled } from "@/lib/stripe";
+import { getSellerPayoutState } from "@/lib/seller-payouts";
 
 type ListingDetailPageProps = {
   params: {
@@ -19,13 +20,25 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
     notFound();
   }
 
+  const sellerPayoutState = await getSellerPayoutState(detail.listing.seller.id);
+  const paymentsConfigured = isStripeCheckoutEnabled();
+  const checkoutEnabled = paymentsConfigured && detail.listing.status === "ACTIVE" && sellerPayoutState.readyToReceivePayments;
+  const checkoutIssue = !paymentsConfigured
+    ? "payments_unavailable"
+    : sellerPayoutState.readyToReceivePayments
+      ? null
+      : "seller_payouts_incomplete";
+
   return (
     <div className="container py-8">
       <ListingDetailView
         listing={detail.listing}
         isOwner={detail.isOwner}
         similar={detail.similarItems}
-        canCheckout={isStripeCheckoutEnabled() && detail.listing.status === "ACTIVE"}
+        checkoutState={{
+          enabled: checkoutEnabled,
+          issue: checkoutIssue
+        }}
         saleContext={detail.saleContext}
       />
     </div>

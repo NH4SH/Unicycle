@@ -4,6 +4,7 @@ import { ListingStatus } from "@prisma/client";
 
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { listingUpdateSchema } from "@/lib/validators";
 
 type Params = { params: { id: string } };
@@ -33,6 +34,20 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const safeData = parsed.data;
+  const nextStatus = safeData.status ?? listing.status;
+
+  if (nextStatus === ListingStatus.ACTIVE) {
+    const payoutState = await getSellerPayoutState(session.user.id);
+
+    if (!payoutState.readyToReceivePayments) {
+      return NextResponse.json(
+        {
+          message: "Finish payout setup before putting this listing live on HoosFinds."
+        },
+        { status: 409 }
+      );
+    }
+  }
 
   const updated = await prisma.listing.update({
     where: { id: params.id },

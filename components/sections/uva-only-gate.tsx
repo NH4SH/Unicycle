@@ -56,7 +56,7 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
           </div>
 
           {submitted ? (
-            <div className="rounded-[1.5rem] border border-uva-blue/15 bg-uva-blue/6 p-5 text-sm leading-7 text-uva-blue">
+            <div className="rounded-[1.5rem] border border-uva-blue/15 bg-uva-blue/6 p-5 text-sm leading-7 text-uva-blue dark:border-white/16 dark:bg-white/[0.08] dark:text-white/92">
               You&apos;re in. We&apos;ll send launch updates and early access invites when your campus is ready.
             </div>
           ) : (

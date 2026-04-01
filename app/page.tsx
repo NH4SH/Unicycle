@@ -104,7 +104,10 @@ export default async function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/24 to-transparent" />
                 <div className="absolute left-4 top-4">
-                  <Badge variant="outline" className="border-border/70 bg-card/86 backdrop-blur">
+                  <Badge
+                    variant="outline"
+                    className="border-white/16 bg-black/58 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.28)] backdrop-blur-md dark:border-white/18 dark:bg-black/62 dark:text-white"
+                  >
                     Featured on Grounds
                   </Badge>
                 </div>
@@ -153,7 +156,10 @@ export default async function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/16 to-transparent" />
                     <div className="absolute left-4 top-4">
-                      <Badge variant={index === 0 ? "orange" : "blue"} className="bg-card/88 text-foreground backdrop-blur">
+                      <Badge
+                        variant={index === 0 ? "orange" : "blue"}
+                        className="border-white/14 bg-black/56 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.26)] backdrop-blur-md dark:border-white/16 dark:bg-black/60 dark:text-white"
+                      >
                         {index === 0 ? "Game day lane" : "Campus favorite"}
                       </Badge>
                     </div>
@@ -175,7 +181,7 @@ export default async function HomePage() {
                     students actually need.
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 text-sm font-medium text-uva-blue">
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground/88 dark:text-white/92">
                   <Sparkles className="h-4 w-4 text-uva-orange" />
                   Editorial, local, and easy to trust
                 </div>
@@ -328,7 +334,10 @@ export default async function HomePage() {
             <p className="editorial-eyebrow">Fresh on HoosFinds</p>
             <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">New finds from across Grounds.</h2>
           </div>
-          <Link href="/market" className="inline-flex items-center gap-1 text-sm font-semibold text-uva-blue">
+          <Link
+            href="/market"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+          >
             Browse everything <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

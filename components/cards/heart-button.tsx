@@ -57,15 +57,15 @@ export function HeartButton({ listingId, initialFavorited, initialCount, classNa
       onClick={toggleFavorite}
       aria-label={favorited ? "Remove favorite" : "Save listing"}
       className={cn(
-        "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
+        "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-orange/55 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         favorited
-          ? "border-uva-orange/35 bg-uva-orange/10 text-uva-orange"
-          : "border-border bg-card/88 text-muted-foreground hover:border-uva-blue/30 hover:text-uva-blue",
+          ? "border-uva-orange/60 bg-uva-orange text-white shadow-[0_12px_28px_rgba(232,119,34,0.32)] hover:border-[#f29a49] hover:bg-[#f08a33] hover:text-white dark:border-uva-orange/70 dark:bg-uva-orange dark:text-white dark:hover:border-[#f29a49] dark:hover:bg-[#f08a33] dark:hover:text-white"
+          : "border-border/90 bg-card/96 text-foreground hover:border-uva-blue/35 hover:bg-card hover:text-uva-blue dark:border-white/18 dark:bg-background/92 dark:text-white/96 dark:hover:border-white/28 dark:hover:bg-background dark:hover:text-white",
         className
       )}
     >
       <motion.span animate={{ scale: favorited ? [1, 1.22, 1] : 1 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-        <Heart className={cn("h-4 w-4", favorited && "fill-current")} />
+        <Heart className={cn("h-4 w-4 shrink-0 stroke-[2.15]", favorited && "fill-current")} />
       </motion.span>
       {count}
     </motion.button>

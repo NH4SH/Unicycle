@@ -1,6 +1,8 @@
 import { Category, Condition, ListingStatus, PrismaClient, TransactionStatus } from "@prisma/client";
+import { hashSync } from "bcryptjs";
 
 const prisma = new PrismaClient();
+const seedPasswordHash = hashSync("hoosfinds123", 12);
 
 const users = [
   {
@@ -408,13 +410,21 @@ async function main() {
   await prisma.listing.deleteMany();
   await prisma.account.deleteMany();
   await prisma.session.deleteMany();
+  await prisma.emailVerificationToken.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
   await prisma.waitlistEntry.deleteMany();
   await prisma.user.deleteMany();
 
   const userMap = new Map<string, string>();
 
   for (const user of users) {
-    const created = await prisma.user.create({ data: user });
+    const created = await prisma.user.create({
+      data: {
+        ...user,
+        passwordHash: seedPasswordHash,
+        emailVerified: new Date()
+      }
+    });
     userMap.set(user.email, created.id);
   }
 

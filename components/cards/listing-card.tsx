@@ -9,7 +9,7 @@ import { HeartButton } from "@/components/cards/heart-button";
 import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
-import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
+import { CATEGORY_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
 
@@ -26,13 +26,14 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
   const sellerTrustLabel = listing.sellerRating
     ? `${listing.sellerRating.toFixed(1)} (${listing.sellerReviewCount})`
     : "New seller";
+  const sellerDisplayName = listing.seller.name || listing.seller.username;
   const isLead = layout === "lead";
   const isFeatured = layout === "featured";
   const hasElevatedTreatment = isLead || isFeatured;
   const metaLabel = isLead
     ? CATEGORY_LABELS[listing.category]
     : isFeatured
-      ? `${CATEGORY_LABELS[listing.category]} · ${CONDITION_LABELS[listing.condition]}`
+      ? CATEGORY_LABELS[listing.category]
       : null;
   const imageSizes = isLead
     ? "(max-width: 768px) 100vw, (max-width: 1280px) 66vw, 50vw"
@@ -49,7 +50,7 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
       <div className={cn("relative space-y-3", hasElevatedTreatment && "space-y-3.5")}>
         <div className="absolute right-3 top-3 z-10">
           <HeartButton
-            className="border-transparent bg-card/92 shadow-soft"
+            className="border-white/16 bg-black/42 text-white backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.28)] hover:border-white/24 hover:bg-black/52 hover:text-white dark:border-white/18 dark:bg-black/48 dark:text-white"
             listingId={listing.id}
             initialFavorited={listing.isFavorited}
             initialCount={listing.favoriteCount}
@@ -77,7 +78,7 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
               className="object-cover transition duration-700 group-hover:scale-[1.045]"
               sizes={imageSizes}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-black/0 to-transparent" />
+            {!hasElevatedTreatment ? <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-black/0 to-transparent" /> : null}
             {sticker ? (
               <div className="absolute left-3 top-3">
                 <Badge variant="outline" className="border-border/70 bg-card/92">
@@ -90,16 +91,13 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
                 <ListingStatusBadge status={listing.status} className="border-border/70 bg-card/92" />
               </div>
             ) : null}
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-end gap-3 p-3">
-              <div
-                className={cn(
-                  "rounded-full bg-card/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft",
-                  hasElevatedTreatment && "px-4 py-1.5 text-[0.98rem]"
-                )}
-              >
-                {formatCurrency(listing.priceCents / 100)}
+            {!hasElevatedTreatment ? (
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-end gap-3 p-3">
+                <div className="rounded-full bg-card/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft">
+                  {formatCurrency(listing.priceCents / 100)}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         </Link>
 
@@ -130,22 +128,62 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
               >
                 {listing.title}
               </Link>
+              {hasElevatedTreatment ? (
+                <p
+                  className={cn(
+                    "shrink-0 font-display font-extrabold tracking-tight text-foreground",
+                    isLead ? "text-[1.3rem] md:text-[1.6rem]" : "text-[1.05rem] md:text-[1.15rem]"
+                  )}
+                >
+                  {formatCurrency(listing.priceCents / 100)}
+                </p>
+              ) : null}
             </div>
           </div>
 
           {isLead ? (
-            <div className="space-y-1.5 text-sm">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <p className="font-medium text-foreground">@{listing.seller.username}</p>
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
-                  {sellerTrustLabel}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.84rem] text-muted-foreground">
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.82rem] text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 text-foreground/92">
                   <MapPin className="h-3.5 w-3.5 text-uva-orange" />
                   Pickup at {primaryPickup}
+                </span>
+                <span>{postedLabel}</span>
+              </div>
+              <div className="space-y-3 border-t border-border/70 pt-3.5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="truncate font-medium text-foreground">{sellerDisplayName}</p>
+                    <p className="text-xs text-muted-foreground">@{listing.seller.username}</p>
+                  </div>
+                  <p className="inline-flex items-center gap-1 text-xs text-foreground/88">
+                    <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+                    {sellerTrustLabel}
+                  </p>
+                </div>
+                <p className="text-xs leading-6 text-muted-foreground">
+                  {listing.sellerCompletedSales > 0
+                    ? `${listing.sellerCompletedSales} confirmed sales after real handoffs.`
+                    : "Buyer trust shows up after the first confirmed pickup."}
+                </p>
+              </div>
+            </div>
+          ) : isFeatured ? (
+            <div className="space-y-2 text-sm">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{sellerDisplayName}</span>
+                <span>@{listing.seller.username}</span>
+                {listing.sellerRating ? (
+                  <span className="inline-flex items-center gap-1 text-foreground/88">
+                    <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+                    {sellerTrustLabel}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/70 pt-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-foreground/88">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {primaryPickup}
                 </span>
                 <span>{postedLabel}</span>
               </div>
@@ -163,12 +201,6 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <p className="truncate font-medium text-foreground">@{listing.seller.username}</p>
-                  {isFeatured ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
-                      {sellerTrustLabel}
-                    </span>
-                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1">

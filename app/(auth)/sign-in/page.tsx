@@ -1,5 +1,5 @@
 import { SignInForm } from "@/components/sections/sign-in-form";
-import { authBypassRequiresCode, isDevAuthBypassEnabled } from "@/lib/auth";
+import { isDevAuthBypassEnabled } from "@/lib/auth";
 
 type SignInPageProps = {
   searchParams?: {
@@ -12,7 +12,6 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
     <SignInForm
       callbackUrl={searchParams?.callbackUrl || "/market"}
       enableDevBypass={isDevAuthBypassEnabled()}
-      requireBypassCode={authBypassRequiresCode()}
     />
   );
 }

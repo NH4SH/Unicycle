@@ -53,22 +53,47 @@ export const checkoutSessionSchema = z.object({
   listingId: z.string().min(1)
 });
 
-export const connectProductSchema = z.object({
-  name: z.string().min(3).max(120),
-  description: z.string().max(600).optional(),
-  imageUrl: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => value || undefined)
-    .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid image URL"),
-  priceInCents: z.number().int().min(100).max(500000),
-  currency: z.string().trim().toLowerCase().default("usd")
+export const signUpSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .max(80, "Keep your name under 80 characters.")
+      .optional()
+      .transform((value) => value || undefined),
+    email: z.string().email("Enter a valid UVA email."),
+    password: z.string().min(8, "Use at least 8 characters."),
+    confirmPassword: z.string().min(8, "Confirm your password.")
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"]
+  });
+
+export const credentialsSignInSchema = z.object({
+  email: z.string().email("Enter a valid UVA email."),
+  password: z.string().min(1, "Enter your password.")
 });
 
-export const connectCheckoutSchema = z.object({
-  productId: z.string().min(1)
+export const resendVerificationSchema = z.object({
+  email: z.string().email("Enter a valid UVA email.")
 });
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Enter a valid UVA email.")
+});
+
+export const resetPasswordSchema = z
+  .object({
+    email: z.string().email("Enter a valid UVA email."),
+    token: z.string().min(1, "Reset token is missing."),
+    password: z.string().min(8, "Use at least 8 characters."),
+    confirmPassword: z.string().min(8, "Confirm your password.")
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"]
+  });
 
 export const createTransactionSchema = z.object({
   conversationId: z.string().min(1),

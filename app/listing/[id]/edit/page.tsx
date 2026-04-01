@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { unpackListingDescription } from "@/lib/listing-draft";
 import { prisma } from "@/lib/prisma";
+import { getSellerPayoutState } from "@/lib/seller-payouts";
 
 type EditListingPageProps = {
   params: {
@@ -35,6 +36,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
 
   const structured = unpackListingDescription(listing.description);
   const locked = listing.status === ListingStatus.PENDING_CONFIRMATION || listing.status === ListingStatus.COMPLETED;
+  const payoutState = await getSellerPayoutState(session.user.id);
 
   return (
     <div className="container space-y-6 py-8 md:space-y-8 md:py-10">
@@ -67,10 +69,30 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
         </Card>
       ) : null}
 
+      {!locked && !payoutState.readyToReceivePayments ? (
+        <Card className="surface-panel-strong">
+          <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <p className="font-display text-2xl font-bold tracking-tight">{payoutState.headline}</p>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                This listing can stay paused while you update it, but finish payout setup before putting it live on HoosFinds again.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/payments">{payoutState.ctaLabel}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <SellWizard
         mode="edit"
         listingId={listing.id}
         locked={locked}
+        payoutsReady={payoutState.readyToReceivePayments}
+        payoutSetupHref="/payments"
+        payoutSetupLabel={payoutState.ctaLabel}
+        payoutSetupDetail={payoutState.detail}
         initialDraft={{
           images: Array.isArray(listing.images) ? listing.images.filter((entry): entry is string => typeof entry === "string") : [],
           title: listing.title,

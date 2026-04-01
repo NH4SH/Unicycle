@@ -60,9 +60,22 @@ type SellWizardProps = {
   listingId?: string;
   initialDraft?: Draft;
   locked?: boolean;
+  payoutsReady?: boolean;
+  payoutSetupHref?: string;
+  payoutSetupLabel?: string;
+  payoutSetupDetail?: string;
 };
 
-export function SellWizard({ mode = "create", listingId, initialDraft, locked = false }: SellWizardProps) {
+export function SellWizard({
+  mode = "create",
+  listingId,
+  initialDraft,
+  locked = false,
+  payoutsReady = true,
+  payoutSetupHref = "/payments",
+  payoutSetupLabel = "Connect payouts",
+  payoutSetupDetail = "Before your listing can go live, connect where you want HoosFinds to send your earnings."
+}: SellWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(initialDraft ?? defaultDraft);
@@ -92,6 +105,7 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
   }, [draft, storageKey]);
 
   const progress = useMemo(() => (step / 4) * 100, [step]);
+  const needsPayoutSetupToSubmit = !locked && !payoutsReady && (mode === "create" || draft.status === "ACTIVE");
 
   function validateCurrentStep() {
     if (step === 1 && draft.images.length < 1) return "Add at least one photo.";
@@ -496,6 +510,14 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
                 </div>
               ))}
             </div>
+
+            {!payoutsReady ? (
+              <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-4 text-sm leading-7 text-muted-foreground">
+                {needsPayoutSetupToSubmit
+                  ? payoutSetupDetail
+                  : "This listing can stay paused while you finish payout setup. Reconnect payouts before putting it live again."}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -507,6 +529,10 @@ export function SellWizard({ mode = "create", listingId, initialDraft, locked = 
             <Button type="button" onClick={goNext}>
               Next
               <GripHorizontal className="ml-1.5 h-4 w-4" />
+            </Button>
+          ) : needsPayoutSetupToSubmit ? (
+            <Button type="button" onClick={() => router.push(payoutSetupHref)}>
+              {payoutSetupLabel}
             </Button>
           ) : (
             <Button type="button" onClick={publish} disabled={publishing || locked}>

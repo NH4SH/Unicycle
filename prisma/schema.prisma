@@ -51,6 +51,7 @@ model User {
   name            String?
   email           String    @unique
   emailVerified   DateTime?
+  passwordHash    String?
   image           String?
   profileImageUrl String?
   uvaStudentId    String?
@@ -83,6 +84,8 @@ model User {
   writtenSellerReviews  SellerReview[]    @relation("WrittenSellerReviews")
   receivedSellerReviews SellerReview[]    @relation("ReceivedSellerReviews")
   connectedAccount      ConnectedAccount?
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
   connectProducts       ConnectProduct[]  @relation("ConnectProductOwner")
   connectBuyerOrders    ConnectOrder[]    @relation("ConnectBuyerOrders")
   connectSellerOrders   ConnectOrder[]    @relation("ConnectSellerOrders")
@@ -271,6 +274,8 @@ model ConnectedAccount {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  /// Stripe Connect sits underneath marketplace listings and only tracks where
+  /// HoosFinds should route seller payouts.
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   products ConnectProduct[]
   orders   ConnectOrder[]
@@ -278,6 +283,9 @@ model ConnectedAccount {
   @@index([createdAt])
 }
 
+/// Legacy Connect storefront inventory. HoosFinds now uses Listing as the only
+/// seller-facing inventory model and keeps this model only for migration
+/// compatibility while old data is retired.
 model ConnectProduct {
   id                 String   @id @default(cuid())
   ownerUserId        String
@@ -302,6 +310,8 @@ model ConnectProduct {
   @@index([active, createdAt])
 }
 
+/// Legacy Connect storefront orders retained temporarily so older records stay
+/// queryable during the migration to listing-backed checkout.
 model ConnectOrder {
   id                      String      @id @default(cuid())
   connectProductId        String
@@ -372,5 +382,37 @@ model VerificationToken {
   token      String   @unique
   expires    DateTime
 
+  /// Legacy NextAuth table kept because the Prisma adapter still expects the
+  /// model shape even though HoosFinds no longer uses magic-link login.
   @@unique([identifier, token])
+}
+
+model EmailVerificationToken {
+  id         String   @id @default(cuid())
+  userId     String
+  email      String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([email, expiresAt])
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  email      String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([email, expiresAt])
 }

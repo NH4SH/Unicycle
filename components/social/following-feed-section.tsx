@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, MapPin, Sparkles, Star } from "lucide-react";
 
 import { ListingCard } from "@/components/cards/listing-card";
 import { EmptyState } from "@/components/shared/empty-state";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { SellerNetworkCard } from "@/components/social/seller-network-card";
 import { SuggestedSellersSection } from "@/components/social/suggested-sellers-section";
 import { Button } from "@/components/ui/button";
 import { type FollowingFeedData, type ListingCardData } from "@/lib/data";
 import type { SellerNetworkProfile } from "@/lib/user-social";
+import { timeAgo } from "@/lib/utils";
 
 type FollowingFeedSectionProps = {
   viewerSignedIn: boolean;
@@ -19,18 +21,213 @@ type FollowingFeedSectionProps = {
   emptyDescription?: string;
   maxItems?: number;
   showSuggestedHeading?: boolean;
+  showViewFeedLink?: boolean;
 };
 
-function FeedGrid({ items }: { items: ListingCardData[] }) {
+type ClosetActivity = {
+  sellerId: string;
+  username: string;
+  name: string | null;
+  profileImageUrl: string | null;
+  primaryPickup: string;
+  latestDropAt: string;
+  dropCount: number;
+  sellerRating: number | null;
+  sellerReviewCount: number;
+  sellerCompletedSales: number;
+};
+
+function buildClosetActivity(items: ListingCardData[]) {
+  const activity = new Map<string, ClosetActivity>();
+
+  for (const item of items) {
+    const existing = activity.get(item.seller.id);
+
+    if (!existing) {
+      activity.set(item.seller.id, {
+        sellerId: item.seller.id,
+        username: item.seller.username,
+        name: item.seller.name,
+        profileImageUrl: item.seller.profileImageUrl,
+        primaryPickup: item.pickupLocations[0] || "Grounds",
+        latestDropAt: item.createdAt,
+        dropCount: 1,
+        sellerRating: item.sellerRating,
+        sellerReviewCount: item.sellerReviewCount,
+        sellerCompletedSales: item.sellerCompletedSales
+      });
+      continue;
+    }
+
+    existing.dropCount += 1;
+
+    if (new Date(item.createdAt) > new Date(existing.latestDropAt)) {
+      existing.latestDropAt = item.createdAt;
+      existing.primaryPickup = item.pickupLocations[0] || existing.primaryPickup;
+    }
+  }
+
+  return [...activity.values()].sort((left, right) => {
+    if (right.dropCount !== left.dropCount) {
+      return right.dropCount - left.dropCount;
+    }
+
+    return new Date(right.latestDropAt).getTime() - new Date(left.latestDropAt).getTime();
+  });
+}
+
+function getFeedSticker(listing: ListingCardData, index: number) {
+  if (index === 0) {
+    return "Just dropped";
+  }
+
+  if (listing.favoriteCount >= 6) {
+    return "Popular now";
+  }
+
+  return undefined;
+}
+
+function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
+  if (!closets.length) {
+    return null;
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-      {items.map((listing, idx) => (
-        <ListingCard
-          key={listing.id}
-          listing={listing}
-          sticker={idx === 0 ? "From people you follow" : idx % 5 === 0 ? "Fresh drop" : undefined}
-        />
-      ))}
+    <div className="space-y-3 border-t border-border/70 pt-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {closets.length} active closet{closets.length === 1 ? "" : "s"}
+      </p>
+
+      <div className="flex flex-wrap gap-2 md:hidden">
+        {closets.map((closet) => (
+          <Link
+            key={closet.sellerId}
+            href={`/u/${closet.username}`}
+            className="surface-chip inline-flex min-h-10 items-center gap-2 px-3.5 py-2 text-[0.8rem] font-medium text-foreground transition hover:border-uva-orange/35 hover:text-uva-orange"
+          >
+            <span>@{closet.username}</span>
+            <span className="text-muted-foreground">{closet.dropCount} live</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="hidden gap-3 md:grid md:grid-cols-3 xl:grid-cols-4">
+        {closets.map((closet) => (
+          <Link
+            key={closet.sellerId}
+            href={`/u/${closet.username}`}
+            className="surface-subtle flex items-start gap-3 p-3.5 transition hover:border-uva-orange/35 hover:-translate-y-0.5"
+          >
+            <UserAvatar
+              name={closet.name}
+              username={closet.username}
+              imageUrl={closet.profileImageUrl}
+              className="h-11 w-11 shrink-0"
+              fallbackClassName="text-sm"
+            />
+            <div className="min-w-0 space-y-1">
+              <div className="space-y-0.5">
+                <p className="truncate font-medium text-foreground">{closet.name || closet.username}</p>
+                <p className="text-xs text-muted-foreground">@{closet.username}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span>{closet.dropCount} live</span>
+                <span>{timeAgo(closet.latestDropAt)}</span>
+              </div>
+              <div className="inline-flex items-center gap-1 text-xs text-foreground/84 dark:text-white/84">
+                <MapPin className="h-3.5 w-3.5 text-uva-orange" />
+                {closet.primaryPickup}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeadDropPanel({ listing, closet }: { listing: ListingCardData; closet: ClosetActivity | undefined }) {
+  const sellerLabel = listing.seller.name || listing.seller.username;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-display text-[1.55rem] font-extrabold tracking-tight text-foreground sm:text-[1.85rem]">Newest from {sellerLabel}</h3>
+
+      <ListingCard listing={listing} layout="lead" sticker="Just dropped" />
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border/70 py-3 text-sm text-muted-foreground">
+        <Link href={`/u/${listing.seller.username}`} className="inline-flex items-center gap-2 text-foreground transition hover:text-uva-orange">
+          <UserAvatar
+            name={listing.seller.name}
+            username={listing.seller.username}
+            imageUrl={listing.seller.profileImageUrl}
+            className="h-9 w-9 shrink-0"
+          />
+          <span className="font-medium">{sellerLabel}</span>
+          <span className="text-xs text-muted-foreground">@{listing.seller.username}</span>
+        </Link>
+
+        <span className="inline-flex items-center gap-1.5 text-foreground/88 dark:text-white/88">
+          <MapPin className="h-4 w-4 text-uva-orange" />
+          {closet?.primaryPickup || listing.pickupLocations[0] || "Grounds"}
+        </span>
+
+        {closet?.dropCount && closet.dropCount > 1 ? <span>{closet.dropCount} live from this closet</span> : null}
+        <span>{timeAgo(listing.createdAt)}</span>
+
+        {listing.sellerRating ? (
+          <span className="inline-flex items-center gap-1 text-foreground/88 dark:text-white/88">
+            <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
+            {listing.sellerRating.toFixed(1)} seller rating
+          </span>
+        ) : listing.sellerCompletedSales > 0 ? (
+          <span>{listing.sellerCompletedSales} confirmed sales</span>
+        ) : null}
+
+        <Link
+          href={`/u/${listing.seller.username}`}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange sm:ml-auto"
+        >
+          Open closet <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function FeedGrid({ items }: { items: ListingCardData[] }) {
+  const leadItem = items[0];
+  const remainingItems = items.slice(1);
+  const closets = buildClosetActivity(items);
+  const featuredClosets = closets.slice(0, 4);
+  const leadCloset = closets.find((closet) => closet.sellerId === leadItem?.seller.id);
+
+  if (!leadItem) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-6">
+      <LeadDropPanel listing={leadItem} closet={leadCloset} />
+
+      {remainingItems.length ? (
+        <div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-6 xl:grid-cols-10">
+            {remainingItems.map((listing, index) => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                layout="default"
+                sticker={getFeedSticker(listing, index + 1)}
+                className="col-span-1 md:col-span-2 xl:col-span-3"
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {featuredClosets.length > 1 ? <ActiveClosetsRail closets={featuredClosets} /> : null}
     </div>
   );
 }
@@ -40,13 +237,15 @@ export function FollowingFeedSection({
   feed,
   suggested,
   title = "New drops from sellers you follow",
-  subtitle = "Keep tabs on the closets you trust and the style you want first shot at.",
+  subtitle = "Fresh drops from closets you follow, lined up for a faster read.",
   emptyTitle = "Follow a few closets to shape this feed",
   emptyDescription = "Once you follow sellers, their newest listings show up here so you can catch the good pieces before they disappear.",
   maxItems = 4,
-  showSuggestedHeading = true
+  showSuggestedHeading = true,
+  showViewFeedLink = true
 }: FollowingFeedSectionProps) {
   const items = feed?.items.slice(0, maxItems) ?? [];
+  const closetCount = new Set(items.map((item) => item.seller.id)).size;
 
   if (!viewerSignedIn) {
     return (
@@ -66,15 +265,23 @@ export function FollowingFeedSection({
           <p className="editorial-eyebrow">Your network</p>
           <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">{title}</h2>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{subtitle}</p>
+          {items.length ? (
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground/86 dark:text-white/88">
+              <Sparkles className="h-4 w-4 text-uva-orange" />
+              {items.length} drop{items.length === 1 ? "" : "s"} live from {closetCount} closet{closetCount === 1 ? "" : "s"} you follow.
+            </div>
+          ) : null}
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/following"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-uva-blue transition hover:gap-3"
-          >
-            View your feed <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        {showViewFeedLink ? (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/following"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 transition hover:gap-3 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+            >
+              View your feed <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       {items.length ? (
@@ -82,20 +289,16 @@ export function FollowingFeedSection({
           <FeedGrid items={items} />
 
           {suggested.length ? (
-            <div className="surface-panel-strong rounded-[1.85rem] p-5">
+            <div className="space-y-4 border-t border-border/70 pt-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="editorial-eyebrow">Keep building your feed</p>
-                  <h3 className="font-display text-2xl font-bold tracking-tight">More sellers to follow</h3>
-                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                    The stronger your network, the more useful your drop feed becomes.
-                  </p>
+                <div className="space-y-1">
+                  <h3 className="font-display text-xl font-bold tracking-tight">Add a few more closets</h3>
+                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">A few more follows will sharpen this feed.</p>
                 </div>
-                <Button variant="secondary" asChild>
+                <Button variant="ghost" asChild className="px-0 text-sm font-semibold text-foreground/88 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange">
                   <Link href="/market">Browse all finds</Link>
                 </Button>
               </div>
-
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
                 {suggested.slice(0, 3).map((seller) => (
                   <SellerNetworkCard key={seller.id} seller={seller} viewerSignedIn={viewerSignedIn} compact />

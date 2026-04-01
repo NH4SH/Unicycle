@@ -30,21 +30,26 @@ export default async function FollowingFeedPage() {
     getFollowingFeedListings(session.user.id, 1, 12),
     getSuggestedSellers(session.user.id, 6)
   ]);
+  const activeClosets = new Set(feed.items.map((item) => item.seller.id)).size;
 
   return (
     <div className="container space-y-8 py-8 md:py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
-          <p className="editorial-eyebrow">Campus style network</p>
+          <p className="editorial-eyebrow">Your closet network</p>
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
-            From people you follow
+            Keep up with the sellers you follow
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-            A cleaner HoosFinds feed built around the closets you trust, the sellers you follow, and the style lanes
-            you actually want to keep up with.
+            {feed.items.length
+              ? `${feed.items.length} live drops from ${activeClosets} closet${activeClosets === 1 ? "" : "s"} you follow.`
+              : "Once you follow a few sellers, their newest drops land here first."}
           </p>
         </div>
-        <Link href="/market" className="text-sm font-semibold text-uva-blue hover:text-uva-orange">
+        <Link
+          href="/market"
+          className="text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+        >
           Browse all finds
         </Link>
       </div>
@@ -54,10 +59,11 @@ export default async function FollowingFeedPage() {
         feed={feed}
         suggested={suggested}
         maxItems={12}
-        title="Recent drops from your network"
-        subtitle="These listings are pulled from the sellers you follow, newest first."
+        title="Fresh drops from your network"
+        subtitle="Newest drops from closets you follow."
         emptyTitle="Your following feed is ready for its first closets"
         emptyDescription="Follow a few active sellers and their latest listings will start showing up here automatically."
+        showViewFeedLink={false}
       />
     </div>
   );

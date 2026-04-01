@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
-import { getConnectedAccountStatusFromStripe } from "@/lib/connect";
+import { getConnectedAccountStatusFromStripe } from "@/lib/seller-payouts";
 import {
   getStripeClient,
   getStripeConnectWebhookSecret,

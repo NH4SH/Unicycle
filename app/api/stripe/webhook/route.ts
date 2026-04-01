@@ -28,25 +28,11 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const connectOrderId = session.metadata?.connectOrderId;
     const orderId = session.metadata?.orderId || session.client_reference_id;
 
-    if (connectOrderId && session.payment_status === "paid") {
-      await prisma.connectOrder.updateMany({
-        where: {
-          id: connectOrderId,
-          status: OrderStatus.CHECKOUT_CREATED
-        },
-        data: {
-          status: OrderStatus.PAID,
-          stripeCheckoutSessionId: session.id,
-          stripePaymentIntentId:
-            typeof session.payment_intent === "string" ? session.payment_intent : undefined
-        }
-      });
-    }
-
     if (orderId && session.payment_status === "paid") {
+      // Canonical checkout now runs entirely through marketplace listings, so
+      // the webhook only updates Order, Transaction, and Listing records.
       await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
           where: { id: orderId }
@@ -113,21 +99,7 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.expired") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const connectOrderId = session.metadata?.connectOrderId;
     const orderId = session.metadata?.orderId || session.client_reference_id;
-
-    if (connectOrderId) {
-      await prisma.connectOrder.updateMany({
-        where: {
-          id: connectOrderId,
-          status: OrderStatus.CHECKOUT_CREATED
-        },
-        data: {
-          status: OrderStatus.EXPIRED,
-          stripeCheckoutSessionId: session.id
-        }
-      });
-    }
 
     if (orderId) {
       await prisma.order.updateMany({

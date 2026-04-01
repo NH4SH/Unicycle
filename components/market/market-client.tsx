@@ -418,46 +418,46 @@ export function MarketClient({ initialItems, initialHasMore, initialTotal, initi
     <div className="space-y-4 pb-16 md:space-y-5">
       <section className="surface-floating overflow-hidden">
         <div className="space-y-3 px-4 py-3 md:px-5 md:py-4">
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(13rem,0.55fr)_auto] lg:items-end">
-            <label className="relative col-span-2 block min-w-0 lg:col-span-1">
-              <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
-                Search
-              </span>
-              <Search className="pointer-events-none absolute left-4 top-[calc(50%+0.65rem)] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={filters.q}
-                onChange={(event) => setFilters((prev) => ({ ...prev, q: event.target.value }))}
-                className="pl-10"
-                placeholder="Search jackets, vintage hoodies, sneakers, and more"
-                aria-label="Search listings"
-              />
-            </label>
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(13rem,0.55fr)_auto] lg:items-end">
+              <label className="relative col-span-2 block min-w-0 lg:col-span-1">
+                <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
+                  Search
+                </span>
+                <Search className="pointer-events-none absolute left-4 top-[calc(50%+0.65rem)] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={filters.q}
+                  onChange={(event) => setFilters((prev) => ({ ...prev, q: event.target.value }))}
+                  className="pl-10"
+                  placeholder="Search jackets, vintage hoodies, sneakers, and more"
+                  aria-label="Search listings"
+                />
+              </label>
 
-            <div className="min-w-0">
-              <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
-                Sort
-              </span>
-              <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
-                <SelectTrigger aria-label="Sort listings">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LISTING_SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="min-w-0">
+                <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
+                  Sort
+                </span>
+                <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
+                  <SelectTrigger aria-label="Sort listings">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LISTING_SORT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-1">
               <div className="flex items-end">
                 <Button
                   type="button"
                   variant="secondary"
                   className={cn(
-                    "h-11 w-full lg:w-auto",
+                    "h-11 w-full justify-center lg:w-auto",
                     (filtersOpen || quickFilterCount > 0) && "border-uva-orange/40 bg-card text-foreground"
                   )}
                   onClick={() => setFiltersOpen((open) => !open)}
@@ -468,10 +468,11 @@ export function MarketClient({ initialItems, initialHasMore, initialTotal, initi
                   {filtersOpen ? "Hide filters" : `Filters${quickFilterCount ? ` (${quickFilterCount})` : ""}`}
                 </Button>
               </div>
-              <p className="hidden text-[0.72rem] text-muted-foreground sm:block md:text-right">
-                Category, condition, pickup spot, and price
-              </p>
             </div>
+
+            <p className="hidden text-[0.72rem] text-muted-foreground sm:block lg:hidden">
+              Category, condition, pickup spot, and price
+            </p>
           </div>
 
           <div className="flex flex-col gap-2 border-t border-border/70 pt-3 md:flex-row md:items-center md:justify-between">

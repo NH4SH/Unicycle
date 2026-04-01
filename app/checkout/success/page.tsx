@@ -74,7 +74,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 </h1>
                 <p className="max-w-xl text-muted-foreground">
                   {paymentComplete
-                    ? "Stripe accepted your payment. HoosFinds recorded the order and moved the listing into buyer confirmation so you can confirm receipt after pickup."
+                    ? "Stripe accepted your payment. HoosFinds recorded the order, routed the seller payout underneath the listing, and moved the sale into buyer confirmation so you can confirm receipt after pickup."
                     : "Stripe is still finalizing the payment state. Refresh in a moment if this page stays in processing."}
                 </p>
               </div>
@@ -87,6 +87,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Order</p>
                 <p className="font-display text-2xl font-black">{order.listing.title}</p>
                 <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside HoosFinds.</p>
+                <p className="text-sm text-muted-foreground">Seller payouts are handled underneath the normal listing flow.</p>
               </div>
               <div className="rounded-2xl bg-card px-4 py-3 text-right shadow-soft">
                 <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70 dark:text-white/72">

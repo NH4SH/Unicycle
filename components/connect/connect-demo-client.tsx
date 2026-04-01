@@ -1,5 +1,9 @@
 "use client";
 
+// Legacy Connect storefront UI kept only so older migration work stays
+// inspectable in the repo. Sellers now use /payments for payout setup and /sell
+// for Listing-based inventory.
+
 import Image from "next/image";
 import Link from "next/link";
 import { type FormEvent, useMemo, useState } from "react";

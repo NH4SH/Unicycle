@@ -34,8 +34,8 @@ export function PickupChipSelector({ options, value, onChange }: PickupChipSelec
               className={cn(
                 "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
                 selected
-                  ? "border-uva-blue/25 bg-uva-blue/8 text-uva-blue"
-                  : "border-border bg-background text-muted-foreground hover:border-uva-orange/35 hover:text-uva-orange"
+                  ? "border-uva-blue/25 bg-uva-blue/8 text-uva-blue dark:border-white/16 dark:bg-white/[0.1] dark:text-white/95"
+                  : "border-border bg-background text-muted-foreground hover:border-uva-orange/35 hover:text-uva-orange dark:border-white/10 dark:bg-white/[0.04] dark:text-white/72 dark:hover:border-white/18 dark:hover:text-white"
               )}
               aria-pressed={selected}
             >

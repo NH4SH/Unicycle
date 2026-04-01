@@ -4,6 +4,7 @@ import { getAuthSession } from "@/lib/auth";
 import { getMarketListings } from "@/lib/data";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { listingSchema } from "@/lib/validators";
 
 export async function GET(request: Request) {
@@ -49,6 +50,17 @@ export async function POST(request: Request) {
   const parsed = listingSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json({ message: "Invalid listing", errors: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const payoutState = await getSellerPayoutState(session.user.id);
+
+  if (!payoutState.readyToReceivePayments) {
+    return NextResponse.json(
+      {
+        message: "Before your listing can go live, connect payouts so HoosFinds knows where to send your earnings."
+      },
+      { status: 409 }
+    );
   }
 
   const listing = await prisma.listing.create({
