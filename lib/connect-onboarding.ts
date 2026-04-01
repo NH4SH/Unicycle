@@ -1,31 +1,14 @@
 import { SITE_URL } from "@/lib/constants";
 
-const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
-
 export const STRIPE_SELLER_PRODUCT_DESCRIPTION =
   "Selling secondhand clothing and campus goods through HoosFinds, a UVA student marketplace.";
 
-function sanitizeBaseUrl(url: string) {
-  return url.trim().replace(/\/$/, "");
-}
-
 export function getPublicAppUrl() {
-  const configuredUrl = process.env.NEXTAUTH_URL?.trim();
-
-  if (!configuredUrl) {
-    return SITE_URL;
-  }
-
-  try {
-    const parsed = new URL(configuredUrl);
-    if (LOCAL_HOSTNAMES.has(parsed.hostname)) {
-      return SITE_URL;
-    }
-
-    return sanitizeBaseUrl(parsed.origin);
-  } catch {
-    return SITE_URL;
-  }
+  // Stripe should always see the canonical public HoosFinds URL instead of a
+  // preview host like Netlify or localhost. NEXTAUTH_URL can still differ for
+  // auth callbacks and preview deployments, but seller-facing business profile
+  // links should stay stable and branded.
+  return SITE_URL.replace(/\/$/, "");
 }
 
 export function getPublicProfileUrl(username?: string | null) {
@@ -46,4 +29,3 @@ export function getStripeSellerProfileDefaults(params: {
     product_description: STRIPE_SELLER_PRODUCT_DESCRIPTION
   };
 }
-
