@@ -2,6 +2,8 @@ import { Category, Condition, ListingStatus, TransactionStatus } from "@prisma/c
 
 export const SITE_NAME = "HoosFinds";
 export const SITE_URL = "https://hoosfinds.com";
+export const MARKET_PRICE_MIN_CENTS = 100;
+export const MARKET_PRICE_OPEN_MAX_CENTS = 50000;
 
 export const PICKUP_LOCATIONS = [
   "Newcomb",
@@ -60,8 +62,6 @@ export const LISTING_SORT_OPTIONS = [
   { label: "Price: High to Low", value: "price_desc" },
   { label: "Most Wanted", value: "trending" }
 ] as const;
-
-export const STICKER_TAGS = ["Hot on Grounds", "Game Day", "New Find", "Corner Pickup"];
 
 export const HOME_PRIMARY_LANES = [
   {
@@ -135,16 +135,6 @@ export const HOW_IT_WORKS_STEPS = [
     description: "Lock in the handoff at Newcomb, The Corner, JPJ, or another trusted UVA pickup spot.",
     note: "Local by default"
   }
-] as const;
-
-export const MARKET_STYLE_FILTERS = [
-  { label: "All finds", q: "", category: "all" },
-  { label: "Vintage", q: "vintage", category: "STREETWEAR" },
-  { label: "Outerwear", q: "jacket", category: "STREETWEAR" },
-  { label: "Sneakers", q: "sneakers", category: "STREETWEAR" },
-  { label: "Game day", q: "game day", category: "STREETWEAR" },
-  { label: "Accessories", q: "bag", category: "MISC" },
-  { label: "Dorm finds", q: "", category: "DORM" }
 ] as const;
 
 export const TRUST_MARKERS = [

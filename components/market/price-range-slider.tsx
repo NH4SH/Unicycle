@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
+import { Input } from "@/components/ui/input";
+import { MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 
 type PriceRangeSliderProps = {
@@ -12,6 +15,14 @@ type PriceRangeSliderProps = {
   onValueChange: (next: [number, number]) => void;
 };
 
+function dollarsFromCents(value: number) {
+  return Math.round(value / 100);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function PriceRangeSlider({
   min,
   max,
@@ -20,28 +31,46 @@ export function PriceRangeSlider({
   onValueChange
 }: PriceRangeSliderProps) {
   const [minValue, maxValue] = value;
+  const [minInput, setMinInput] = useState(String(dollarsFromCents(minValue)));
+  const [maxInput, setMaxInput] = useState(String(dollarsFromCents(maxValue)));
+
+  const maxDisplayLabel = useMemo(
+    () => (maxValue >= max ? `${formatCurrency(max / 100)}+` : formatCurrency(maxValue / 100)),
+    [maxValue, max]
+  );
+
+  useEffect(() => {
+    setMinInput(String(dollarsFromCents(minValue)));
+    setMaxInput(String(dollarsFromCents(maxValue)));
+  }, [minValue, maxValue]);
+
+  function commitMin(raw: string) {
+    const parsed = Number(raw.replace(/[^\d]/g, ""));
+    const nextDollars = Number.isFinite(parsed) && parsed > 0 ? parsed : dollarsFromCents(min);
+    const nextMin = clamp(nextDollars * 100, min, maxValue);
+    onValueChange([nextMin, maxValue]);
+    setMinInput(String(dollarsFromCents(nextMin)));
+  }
+
+  function commitMax(raw: string) {
+    const parsed = Number(raw.replace(/[^\d]/g, ""));
+    const nextDollars = Number.isFinite(parsed) && parsed > 0 ? parsed : dollarsFromCents(max);
+    const normalizedMax = nextDollars >= dollarsFromCents(max) ? max : nextDollars * 100;
+    const nextMax = clamp(normalizedMax, minValue, max);
+    onValueChange([minValue, nextMax]);
+    setMaxInput(String(dollarsFromCents(nextMax)));
+  }
 
   return (
-    <div className="surface-subtle rounded-[1.45rem] px-4 py-3.5 md:px-4 md:py-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Price range</p>
-          <p className="font-medium text-foreground">
-            {formatCurrency(minValue / 100)} - {formatCurrency(maxValue / 100)}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          <span className="rounded-full border border-border/80 bg-card/72 px-2.5 py-1">
-            Min {formatCurrency(minValue / 100)}
-          </span>
-          <span className="rounded-full border border-border/80 bg-card/72 px-2.5 py-1">
-            Max {formatCurrency(maxValue / 100)}
-          </span>
-        </div>
+    <div className="surface-subtle min-w-0 rounded-[1.45rem] px-4 py-3 md:px-4 md:py-3.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="text-[0.78rem] font-medium text-muted-foreground">Price</p>
+        <p className="text-sm font-medium text-foreground">
+          {formatCurrency(minValue / 100)} - {maxDisplayLabel}
+        </p>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3.5">
         <SliderPrimitive.Root
           min={min}
           max={max}
@@ -52,19 +81,67 @@ export function PriceRangeSlider({
           className="relative flex w-full touch-none select-none items-center py-2"
           aria-label="Price range"
         >
-          <SliderPrimitive.Track className="relative h-2.5 w-full grow overflow-hidden rounded-full bg-white/8 ring-1 ring-border/60">
-            <div className="absolute inset-y-[2px] left-1 right-1 rounded-full bg-black/10 dark:bg-black/20" />
-            <SliderPrimitive.Range className="absolute h-full rounded-full bg-gradient-to-r from-uva-orange/90 via-[#cc8750] to-uva-blue" />
+          <SliderPrimitive.Track className="relative h-2.5 w-full grow overflow-hidden rounded-full bg-muted/75 ring-1 ring-border/60">
+            <SliderPrimitive.Range className="absolute h-full rounded-full bg-uva-orange/90" />
           </SliderPrimitive.Track>
-          <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border border-uva-orange/70 bg-card shadow-[0_0_0_5px_rgba(229,114,0,0.12)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-orange focus-visible:ring-offset-2" />
-          <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border border-uva-blue/70 bg-card shadow-[0_0_0_5px_rgba(78,107,149,0.16)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue focus-visible:ring-offset-2" />
+          <SliderPrimitive.Thumb
+            aria-label="Minimum price"
+            className="block h-5 w-5 rounded-full border border-uva-orange/70 bg-card shadow-[0_0_0_5px_rgba(229,114,0,0.12)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-orange focus-visible:ring-offset-2"
+          />
+          <SliderPrimitive.Thumb
+            aria-label="Maximum price"
+            className="block h-5 w-5 rounded-full border border-uva-orange/70 bg-card shadow-[0_0_0_5px_rgba(229,114,0,0.12)] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-orange focus-visible:ring-offset-2"
+          />
         </SliderPrimitive.Root>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-        <span>{formatCurrency(min / 100)}</span>
-        <span>Drag both ends</span>
-        <span>{formatCurrency(max / 100)}</span>
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
+        <label className="space-y-1.5">
+          <span className="block text-[0.78rem] font-medium text-muted-foreground">Min</span>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+            <Input
+              inputMode="numeric"
+              value={minInput}
+              onChange={(event) => setMinInput(event.target.value.replace(/[^\d]/g, ""))}
+              onBlur={() => commitMin(minInput)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  commitMin(minInput);
+                  event.currentTarget.blur();
+                }
+              }}
+              className="h-10 rounded-full pl-7 pr-3 text-sm"
+              aria-label="Minimum price in dollars"
+            />
+          </div>
+        </label>
+
+        <label className="space-y-1.5">
+          <span className="block text-[0.78rem] font-medium text-muted-foreground">Max</span>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+            <Input
+              inputMode="numeric"
+              value={maxInput}
+              onChange={(event) => setMaxInput(event.target.value.replace(/[^\d]/g, ""))}
+              onBlur={() => commitMax(maxInput)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  commitMax(maxInput);
+                  event.currentTarget.blur();
+                }
+              }}
+              className="h-10 rounded-full pl-7 pr-3 text-sm"
+              aria-label="Maximum price in dollars"
+            />
+          </div>
+        </label>
+      </div>
+
+      <div className="mt-2.5 space-y-1 text-[0.72rem] text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3 sm:gap-y-1 sm:space-y-0">
+        <span>Type a number or drag both handles.</span>
+        <span>{formatCurrency(MARKET_PRICE_OPEN_MAX_CENTS / 100)} and up shows as {formatCurrency(MARKET_PRICE_OPEN_MAX_CENTS / 100)}+.</span>
       </div>
     </div>
   );

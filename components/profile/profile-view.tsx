@@ -126,15 +126,24 @@ export function ProfileView({
                 {user.favoritePickup ? (
                   <Badge variant="blue">
                     Usually meets at{" "}
-                    <PlaceMapLink place={user.favoritePickup} className="font-medium underline decoration-white/40 underline-offset-4 hover:text-white">
+                    <PlaceMapLink
+                      place={user.favoritePickup}
+                      className="font-medium text-current underline decoration-current/40 underline-offset-4 hover:text-foreground dark:hover:text-white"
+                    >
                       {user.favoritePickup}
                     </PlaceMapLink>
                   </Badge>
                 ) : null}
-                <Link href={`/u/${user.username}/connections?tab=followers`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                <Link
+                  href={`/u/${user.username}/connections?tab=followers`}
+                  className="surface-chip touch-chip inline-flex items-center text-sm font-medium text-foreground/86 hover:border-uva-orange/35 hover:text-uva-orange dark:text-white/88"
+                >
                   {followState.followerCount} followers
                 </Link>
-                <Link href={`/u/${user.username}/connections?tab=following`} className="surface-chip touch-chip inline-flex items-center text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                <Link
+                  href={`/u/${user.username}/connections?tab=following`}
+                  className="surface-chip touch-chip inline-flex items-center text-sm font-medium text-foreground/86 hover:border-uva-orange/35 hover:text-uva-orange dark:text-white/88"
+                >
                   {followState.followingCount} following
                 </Link>
                 {followState.recentDropAt ? (

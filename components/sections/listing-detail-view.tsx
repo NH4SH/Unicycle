@@ -217,7 +217,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
             </div>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">{listing.title}</h1>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border/80 pb-5">
-              <p className="font-display text-4xl font-extrabold text-uva-blue md:text-5xl">{formatCurrency(listing.priceCents / 100)}</p>
+              <p className="font-display text-4xl font-extrabold text-uva-blue dark:text-white md:text-5xl">{formatCurrency(listing.priceCents / 100)}</p>
               <p className="text-sm text-muted-foreground">Posted {timeAgo(listing.createdAt)} ago</p>
             </div>
           </div>
@@ -231,7 +231,9 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="blue">{listing.favoriteCount} saves</Badge>
+                <Badge variant="blue" className="text-[0.82rem] normal-case tracking-[0.01em]">
+                  {listing.favoriteCount} saves
+                </Badge>
                 <Badge variant="outline">Student-to-student only</Badge>
                 {listing.status === "PENDING_CONFIRMATION" ? <Badge variant="blue">Waiting on buyer receipt</Badge> : null}
               </div>
@@ -244,22 +246,30 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
                 <div>
                   <p className="editorial-eyebrow">Pickup on Grounds</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    <LinkedPlaceText text="Meet where it makes sense between classes, on The Corner, or near game day traffic." />
+                    <LinkedPlaceText
+                      text="Meet where it makes sense between classes, on The Corner, or near game day traffic."
+                      linkClassName="font-medium text-foreground/88 decoration-foreground/30 hover:text-foreground dark:text-white/92 dark:decoration-white/40 dark:hover:text-white"
+                    />
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {listing.pickupLocations.map((loc) => (
-                    <Badge key={loc} variant="blue">
-                      <MapPin className="mr-1 h-3 w-3" />
-                      <PlaceMapLink place={loc} className="font-medium underline decoration-white/40 underline-offset-4 hover:text-white">
-                        {loc}
-                      </PlaceMapLink>
-                    </Badge>
+                    <PlaceMapLink
+                      key={loc}
+                      place={loc}
+                      className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/14 dark:bg-background/90 dark:text-white/96 dark:hover:border-white/24 dark:hover:bg-background dark:hover:text-white dark:focus-visible:ring-white/30"
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-foreground/40 dark:text-white/45" />
+                      <span>{loc}</span>
+                    </PlaceMapLink>
                   ))}
                 </div>
                 {listing.meetupNotes ? (
                   <p className="text-xs leading-6 text-muted-foreground">
-                    <LinkedPlaceText text={listing.meetupNotes} />
+                    <LinkedPlaceText
+                      text={listing.meetupNotes}
+                      linkClassName="font-medium text-foreground/88 decoration-foreground/30 hover:text-foreground dark:text-white/92 dark:decoration-white/40 dark:hover:text-white"
+                    />
                   </p>
                 ) : null}
               </CardContent>
@@ -325,8 +335,10 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
               <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-uva-orange/10 blur-3xl" />
               <div className="relative space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <Badge variant="blue">{isOwner ? "Seller preview" : "Secure checkout beta"}</Badge>
-                  <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                  <Badge variant="blue" className="text-[0.78rem] normal-case tracking-[0.01em]">
+                    {isOwner ? "Seller preview" : "Secure checkout beta"}
+                  </Badge>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80 shadow-soft dark:border-white/12 dark:bg-white/[0.08] dark:text-white/88">
                     <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
                     Stripe
                   </div>
@@ -341,7 +353,7 @@ export function ListingDetailView({ listing, isOwner, similar, canCheckout, sale
                     </p>
                   </div>
                   <div className="space-y-2 text-right">
-                    <p className="font-display text-3xl font-extrabold text-uva-blue">{formatCurrency(listing.priceCents / 100)}</p>
+                    <p className="font-display text-3xl font-extrabold text-uva-blue dark:text-white">{formatCurrency(listing.priceCents / 100)}</p>
                     <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Card checkout · local pickup</p>
                   </div>
                 </div>

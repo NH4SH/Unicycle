@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
 import { getMarketListings } from "@/lib/data";
+import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { listingSchema } from "@/lib/validators";
 
@@ -15,8 +16,13 @@ export async function GET(request: Request) {
   const location = searchParams.get("location") ?? undefined;
   const sort = searchParams.get("sort") ?? "newest";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const min = Math.max(100, Number(searchParams.get("min") ?? "100") || 100);
-  const max = Math.max(min, Number(searchParams.get("max") ?? "250000") || 250000);
+  const minParam = searchParams.get("min");
+  const maxParam = searchParams.get("max");
+  const min = minParam ? Math.max(MARKET_PRICE_MIN_CENTS, Number(minParam) || MARKET_PRICE_MIN_CENTS) : undefined;
+  const normalizedMin = min ?? MARKET_PRICE_MIN_CENTS;
+  const max = maxParam
+    ? Math.max(normalizedMin, Math.min(MARKET_PRICE_OPEN_MAX_CENTS, Number(maxParam) || MARKET_PRICE_OPEN_MAX_CENTS))
+    : undefined;
 
   const result = await getMarketListings({
     q,

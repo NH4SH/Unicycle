@@ -9,6 +9,7 @@ import {
   toPublicUserSummary
 } from "@/lib/public-user";
 import { deriveStyleTagsFromListings } from "@/lib/style-network";
+import { MARKET_PRICE_MIN_CENTS } from "@/lib/constants";
 
 type MarketQuery = {
   q?: string;
@@ -185,6 +186,13 @@ export type FollowingFeedData = {
   hasMore: boolean;
 };
 
+export type MarketListingsData = {
+  items: ListingCardData[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+};
+
 function fromJsonArray(value: Prisma.JsonValue) {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");
@@ -241,8 +249,8 @@ function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
 function normalizeMarketQuery(query: MarketQuery) {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(Math.max(query.limit ?? 16, 1), 32);
-  const min = typeof query.min === "number" ? Math.max(100, query.min) : 100;
-  const max = typeof query.max === "number" ? Math.max(min, query.max) : 250000;
+  const min = typeof query.min === "number" ? Math.max(MARKET_PRICE_MIN_CENTS, query.min) : MARKET_PRICE_MIN_CENTS;
+  const max = typeof query.max === "number" ? Math.max(min, query.max) : undefined;
 
   return {
     ...query,
@@ -315,7 +323,7 @@ function mapPurchaseSummary(transaction: TransactionSummaryRecord, viewerId: str
   };
 }
 
-export async function getMarketListings(query: MarketQuery) {
+export async function getMarketListings(query: MarketQuery): Promise<MarketListingsData> {
   noStore();
 
   const normalized = normalizeMarketQuery(query);
@@ -363,6 +371,7 @@ export async function getMarketListings(query: MarketQuery) {
     if (!sortedIds.length) {
       return {
         items: [],
+        total: filteredListings.length,
         hasMore: false,
         page
       };
@@ -381,6 +390,7 @@ export async function getMarketListings(query: MarketQuery) {
 
     return {
       items: orderedListings.map((listing) => mapListing(listing, normalized.userId)),
+      total: filteredListings.length,
       hasMore: start + limit < filteredListings.length,
       page
     };
@@ -406,6 +416,7 @@ export async function getMarketListings(query: MarketQuery) {
 
   return {
     items: listings.map((listing) => mapListing(listing, normalized.userId)),
+    total,
     hasMore: start + limit < total,
     page
   };

@@ -56,7 +56,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <Badge variant={paymentComplete ? "orange" : "blue"} className="w-fit">
                   {paymentComplete ? "Payment confirmed" : "Payment processing"}
                 </Badge>
-                <div className="inline-flex items-center gap-1 rounded-full bg-card/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+                <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80 shadow-soft dark:border-white/12 dark:bg-white/[0.08] dark:text-white/88">
                   <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
                   Stripe
                 </div>
@@ -89,11 +89,11 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <p className="text-sm text-muted-foreground">Paid securely with Stripe and tracked inside HoosFinds.</p>
               </div>
               <div className="rounded-2xl bg-card px-4 py-3 text-right shadow-soft">
-                <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/70 dark:text-white/72">
                   <WalletCards className="h-3.5 w-3.5 text-electric" />
                   Total
                 </div>
-                <p className="font-display text-2xl font-black text-uva-blue">${(order.amountCents / 100).toFixed(2)}</p>
+                <p className="font-display text-2xl font-black text-uva-blue dark:text-white">${(order.amountCents / 100).toFixed(2)}</p>
               </div>
             </div>
           ) : null}

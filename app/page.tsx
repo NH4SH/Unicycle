@@ -160,7 +160,7 @@ export default async function HomePage() {
                     <div className="absolute inset-x-0 bottom-0 p-4">
                       <div className="rounded-[1.15rem] bg-black/42 px-3 py-3 text-white backdrop-blur-sm">
                         <p className="font-display text-xl font-bold leading-tight [text-wrap:balance]">{listing.title}</p>
-                        <p className="mt-2 text-sm text-white/85">{formatCurrency(listing.priceCents / 100)}</p>
+                        <p className="mt-2 text-sm text-white/92">{formatCurrency(listing.priceCents / 100)}</p>
                       </div>
                     </div>
                   </div>
@@ -227,7 +227,11 @@ export default async function HomePage() {
             <p className="editorial-eyebrow">Still useful beyond clothes</p>
             <div className="flex flex-wrap gap-2">
               {HOME_SECONDARY_LANES.map((item) => (
-                <Link key={item.label} href={item.href} className="surface-chip touch-chip text-sm font-medium hover:border-uva-orange/35 hover:text-uva-orange">
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="surface-chip touch-chip text-sm font-medium text-foreground/86 hover:border-uva-orange/35 hover:text-uva-orange dark:text-white/88"
+                >
                   {item.label}
                 </Link>
               ))}
@@ -257,7 +261,7 @@ export default async function HomePage() {
                     Hoodies, jackets, worn-in denim, vintage sweats, and the pieces people screenshot before class ends.
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-uva-blue">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 dark:text-white/92">
                   Browse lane <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </div>
               </div>
