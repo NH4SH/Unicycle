@@ -4,7 +4,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { getServerSession } from "next-auth";
 
 import { AUTH_ERROR_CODES } from "@/lib/auth-errors";
-import { isDevAuthBypassEnabled as getDevAuthBypassEnabled } from "@/lib/auth-config";
+import {
+  assertAuthRuntimeConfiguration,
+  isDevAuthBypassEnabled as getDevAuthBypassEnabled
+} from "@/lib/auth-config";
 import { verifyPassword } from "@/lib/auth-passwords";
 import { findOrCreateBypassedUser, findUserByNormalizedEmail } from "@/lib/auth-users";
 import { isUvaEmail, normalizeUvaEmail } from "@/lib/domain";
@@ -12,6 +15,7 @@ import { prisma } from "@/lib/prisma";
 
 // Development bypass is intentionally impossible in production. It exists only
 // so local work can proceed when SMTP is unavailable.
+assertAuthRuntimeConfiguration();
 const devAuthBypassEnabled = getDevAuthBypassEnabled();
 
 export const authOptions: NextAuthOptions = {

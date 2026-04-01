@@ -28,7 +28,7 @@ Important product decisions:
 - Prisma ORM + PostgreSQL
 - NextAuth credentials auth with JWT sessions
 - `bcryptjs` password hashing
-- Nodemailer SMTP email delivery for verification and password reset
+- Nodemailer SMTP email delivery for verification and password reset, with Resend SMTP as the recommended provider
 - UploadThing uploads
 - Stripe Checkout for listing purchases
 - Stripe Connect for seller onboarding and payout routing
@@ -95,6 +95,10 @@ Email is now used for:
 - reset password
 
 It is no longer used as the primary login method.
+
+Recommended production provider:
+
+- Resend SMTP on a verified sending subdomain such as `mail.hoosfinds.com`
 
 ### Local development auth ergonomics
 
@@ -198,10 +202,58 @@ Required environment variables:
 
 Notes:
 
-- `NEXTAUTH_URL` is required for verification and reset links
-- `EMAIL_FROM` is required before the app can send auth emails
-- `DEV_AUTH_BYPASS` should only be enabled locally
+- `NEXTAUTH_SECRET` must be present and at least 32 characters long
+- `NEXTAUTH_URL` must be the canonical app origin used in verification and reset links
+- `EMAIL_SERVER_PORT` must be a valid TCP port
+- `EMAIL_SERVER_SECURE` must be exactly `"true"` or `"false"`
+- `EMAIL_FROM` must be a verified sender identity
+- `DEV_AUTH_BYPASS` should only be enabled locally, and should be turned off before real email QA
 - Stripe payout onboarding depends on `STRIPE_SECRET_KEY`
+
+### Set up email delivery
+
+HoosFinds keeps auth email delivery SMTP-based. The recommended production path is Resend SMTP.
+
+1. Verify a sending subdomain such as `mail.hoosfinds.com` with your email provider.
+2. Add the provider DNS records for that subdomain.
+   For Resend, this usually includes the provider's required domain verification records plus SPF/DKIM.
+3. Create a provider API key / SMTP credential after the domain is verified.
+4. Map those SMTP credentials into HoosFinds env vars.
+
+Example split SMTP envs for Resend:
+
+```bash
+EMAIL_SERVER_HOST="smtp.resend.com"
+EMAIL_SERVER_PORT="465"
+EMAIL_SERVER_SECURE="true"
+EMAIL_SERVER_USER="resend"
+EMAIL_SERVER_PASSWORD="re_xxxxxxxxx"
+EMAIL_FROM="HoosFinds <auth@mail.hoosfinds.com>"
+```
+
+Optional single-string SMTP URL:
+
+```bash
+EMAIL_SERVER="smtps://resend:re_xxxxxxxxx@smtp.resend.com:465"
+```
+
+Before testing real emails:
+
+1. set `NEXTAUTH_URL` to the actual app origin for the environment
+2. set a strong `NEXTAUTH_SECRET`
+3. disable `DEV_AUTH_BYPASS`
+4. run:
+
+```bash
+npm run auth:email:verify
+```
+
+Then test the real auth flows:
+
+1. sign up with a UVA email and confirm the verification email arrives
+2. click the verification link and confirm sign-in works
+3. trigger `/forgot-password` and confirm the reset email arrives
+4. reset the password and sign in with the new password
 
 ## Local Setup
 
@@ -221,6 +273,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - the shared seeded password is `hoosfinds123`
 - if SMTP is not ready locally, set `DEV_AUTH_BYPASS="true"`
 - with bypass enabled, auth routes can return preview verification/reset links instead of requiring live email delivery
+- before testing real auth emails locally, set `DEV_AUTH_BYPASS="false"` and run `npm run auth:email:verify`
 
 ## Seed Data
 
@@ -368,6 +421,13 @@ Set these env vars in Netlify for both builds and runtime functions:
 
 Keep `DEV_AUTH_BYPASS` disabled in production.
 
+Recommended production email setup:
+
+1. verify `mail.hoosfinds.com` with Resend
+2. add the Resend DNS records
+3. store the Resend SMTP credentials in the `EMAIL_SERVER_*` vars or `EMAIL_SERVER`
+4. set `EMAIL_FROM` to a verified sender on that subdomain, such as `HoosFinds <auth@mail.hoosfinds.com>`
+
 This repo includes `netlify.toml` with:
 
 ```bash
@@ -386,7 +446,8 @@ Deployment steps:
 
 ### Auth
 
-- If verification or reset email sending fails, check `NEXTAUTH_URL`, `EMAIL_FROM`, and SMTP vars
+- If `npm run auth:email:verify` fails, fix the reported env var or SMTP credential issue before testing signup/reset
+- If verification or reset email sending fails, check `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `EMAIL_FROM`, and SMTP vars
 - If local SMTP is not ready yet, enable `DEV_AUTH_BYPASS="true"` and use preview links
 - If an older account exists without a password, use `/forgot-password` to create the first password
 - If a non-UVA user tries to sign up, they should be routed to the UVA-only waitlist flow

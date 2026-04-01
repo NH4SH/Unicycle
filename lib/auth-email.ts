@@ -3,6 +3,8 @@ import nodemailer from "nodemailer";
 import {
   canPreviewAuthEmailsInDev,
   getAuthEmailConfigurationError,
+  getAuthEmailProviderLabel,
+  getAuthEmailTransportConfig,
   getRequiredAppUrl,
   getRequiredEmailFrom,
   isAuthEmailConfigured
@@ -12,20 +14,14 @@ type SentAuthEmailResult = {
   previewUrl: string | null;
 };
 
-function createTransport() {
-  if (process.env.EMAIL_SERVER?.trim()) {
-    return nodemailer.createTransport(process.env.EMAIL_SERVER.trim());
+let authEmailTransport: nodemailer.Transporter | null = null;
+
+function getTransport() {
+  if (!authEmailTransport) {
+    authEmailTransport = nodemailer.createTransport(getAuthEmailTransportConfig());
   }
 
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_SERVER_HOST,
-    port: Number(process.env.EMAIL_SERVER_PORT || "587"),
-    secure: process.env.EMAIL_SERVER_SECURE === "true",
-    auth: {
-      user: process.env.EMAIL_SERVER_USER,
-      pass: process.env.EMAIL_SERVER_PASSWORD
-    }
-  });
+  return authEmailTransport;
 }
 
 function buildAuthUrl(pathname: string, params: Record<string, string>) {
@@ -62,7 +58,7 @@ async function sendOrPreviewEmail({
     throw new Error(getAuthEmailConfigurationError());
   }
 
-  const transport = createTransport();
+  const transport = getTransport();
 
   await transport.sendMail({
     from: getRequiredEmailFrom(),
@@ -75,6 +71,20 @@ async function sendOrPreviewEmail({
   return {
     previewUrl: null
   } satisfies SentAuthEmailResult;
+}
+
+export async function verifyAuthEmailTransport() {
+  if (!isAuthEmailConfigured()) {
+    throw new Error(getAuthEmailConfigurationError());
+  }
+
+  await getTransport().verify();
+
+  return {
+    provider: getAuthEmailProviderLabel(),
+    from: getRequiredEmailFrom(),
+    appUrl: getRequiredAppUrl()
+  };
 }
 
 export async function sendVerificationEmail({
