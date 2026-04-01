@@ -28,7 +28,7 @@ Important product decisions:
 - Prisma ORM + PostgreSQL
 - NextAuth credentials auth with JWT sessions
 - `bcryptjs` password hashing
-- Nodemailer SMTP email delivery for verification and password reset, with Resend SMTP as the recommended provider
+- Nodemailer SMTP email delivery for verification and password reset
 - UploadThing uploads
 - Stripe Checkout for listing purchases
 - Stripe Connect for seller onboarding and payout routing
@@ -96,9 +96,9 @@ Email is now used for:
 
 It is no longer used as the primary login method.
 
-Recommended production provider:
+Recommended production email setup:
 
-- Resend SMTP on a verified sending subdomain such as `mail.hoosfinds.com`
+- use a verified sending domain or subdomain with your SMTP provider
 
 ### Local development auth ergonomics
 
@@ -212,29 +212,29 @@ Notes:
 
 ### Set up email delivery
 
-HoosFinds keeps auth email delivery SMTP-based. The recommended production path is Resend SMTP.
+HoosFinds keeps auth email delivery SMTP-based.
 
-1. Verify a sending subdomain such as `mail.hoosfinds.com` with your email provider.
+1. Verify a sending domain or subdomain such as `mail.your-domain.com` with your email provider.
 2. Add the provider DNS records for that subdomain.
-   For Resend, this usually includes the provider's required domain verification records plus SPF/DKIM.
+   This usually includes the provider's required verification records plus SPF/DKIM.
 3. Create a provider API key / SMTP credential after the domain is verified.
 4. Map those SMTP credentials into HoosFinds env vars.
 
-Example split SMTP envs for Resend:
+Example split SMTP envs:
 
 ```bash
-EMAIL_SERVER_HOST="smtp.resend.com"
+EMAIL_SERVER_HOST="YOUR_SMTP_HOST"
 EMAIL_SERVER_PORT="465"
 EMAIL_SERVER_SECURE="true"
-EMAIL_SERVER_USER="resend"
-EMAIL_SERVER_PASSWORD="re_xxxxxxxxx"
-EMAIL_FROM="HoosFinds <auth@mail.hoosfinds.com>"
+EMAIL_SERVER_USER="YOUR_SMTP_USERNAME"
+EMAIL_SERVER_PASSWORD="YOUR_SMTP_PASSWORD"
+EMAIL_FROM="HoosFinds <auth@your-verified-mail-domain.com>"
 ```
 
 Optional single-string SMTP URL:
 
 ```bash
-EMAIL_SERVER="smtps://resend:re_xxxxxxxxx@smtp.resend.com:465"
+EMAIL_SERVER="smtps://YOUR_SMTP_USERNAME:YOUR_SMTP_PASSWORD@YOUR_SMTP_HOST:465"
 ```
 
 Before testing real emails:
@@ -423,10 +423,10 @@ Keep `DEV_AUTH_BYPASS` disabled in production.
 
 Recommended production email setup:
 
-1. verify `mail.hoosfinds.com` with Resend
-2. add the Resend DNS records
-3. store the Resend SMTP credentials in the `EMAIL_SERVER_*` vars or `EMAIL_SERVER`
-4. set `EMAIL_FROM` to a verified sender on that subdomain, such as `HoosFinds <auth@mail.hoosfinds.com>`
+1. verify a sending domain or subdomain with your SMTP provider
+2. add the provider DNS records
+3. store the provider SMTP credentials in the `EMAIL_SERVER_*` vars or `EMAIL_SERVER`
+4. set `EMAIL_FROM` to a verified sender on that domain, such as `HoosFinds <auth@your-verified-mail-domain.com>`
 
 This repo includes `netlify.toml` with:
 
