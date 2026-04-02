@@ -13,13 +13,17 @@ export function isAdminUser(user: Pick<AccessAwareUser, "role"> | null | undefin
   return user?.role === "ADMIN";
 }
 
+export function isVerifiedShopRole(user: Pick<AccessAwareUser, "role"> | null | undefined) {
+  return user?.role === "VERIFIED_SHOP";
+}
+
 export function isApprovedVerifiedShop(user: Pick<AccessAwareUser, "sellerKind" | "verifiedShopApprovedAt"> | null | undefined) {
   return user?.sellerKind === "VERIFIED_SHOP" && Boolean(user.verifiedShopApprovedAt);
 }
 
 export function canUserSignIn(user: AccessAwareUser | null | undefined) {
   if (!user) return false;
-  return isUvaEmail(user.email) || isApprovedVerifiedShop(user) || isAdminUser(user);
+  return isUvaEmail(user.email) || isApprovedVerifiedShop(user) || isVerifiedShopRole(user) || isAdminUser(user);
 }
 
 export function canUserBuy(user: Pick<AccessAwareUser, "email"> | null | undefined) {
@@ -29,7 +33,7 @@ export function canUserBuy(user: Pick<AccessAwareUser, "email"> | null | undefin
 
 export function canUserSell(user: AccessAwareUser | null | undefined) {
   if (!user) return false;
-  return isUvaEmail(user.email) || isApprovedVerifiedShop(user);
+  return isUvaEmail(user.email) || isApprovedVerifiedShop(user) || isVerifiedShopRole(user);
 }
 
 export function getSellerKindLabel(

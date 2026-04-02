@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { ListingStatus } from "@prisma/client";
 
 import { getAuthSession } from "@/lib/auth";
+import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { listingUpdateSchema } from "@/lib/validators";
@@ -17,6 +18,15 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!listing) return NextResponse.json({ message: "Listing not found" }, { status: 404 });
   if (listing.sellerId !== session.user.id) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    await assertUserCanAccessMarketplace(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Your account cannot edit listings right now." },
+      { status: 403 }
+    );
   }
 
   if (listing.status === ListingStatus.PENDING_CONFIRMATION || listing.status === ListingStatus.COMPLETED) {

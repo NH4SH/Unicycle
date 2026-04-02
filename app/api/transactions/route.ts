@@ -2,6 +2,7 @@ import { ListingStatus, TransactionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { createTransactionSchema } from "@/lib/validators";
 
@@ -9,6 +10,15 @@ export async function POST(request: Request) {
   const session = await getAuthSession();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await assertUserCanAccessMarketplace(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Your account cannot manage sale handoffs right now." },
+      { status: 403 }
+    );
   }
 
   const payload = await request.json();

@@ -47,7 +47,8 @@ enum TransactionStatus {
 }
 
 enum UserRole {
-  MEMBER
+  USER
+  VERIFIED_SHOP
   ADMIN
 }
 
@@ -61,6 +62,23 @@ enum VerifiedSellerApplicationStatus {
   APPROVED
   REJECTED
   REVOKED
+}
+
+enum ListingModerationStatus {
+  VISIBLE
+  HIDDEN
+  REMOVED
+}
+
+enum AdminAuditActionType {
+  VERIFIED_SELLER_APPROVED
+  VERIFIED_SELLER_REJECTED
+  VERIFIED_SELLER_REVOKED
+  USER_BANNED
+  USER_UNBANNED
+  LISTING_HIDDEN
+  LISTING_REMOVED
+  LISTING_RESTORED
 }
 
 model User {
@@ -79,11 +97,12 @@ model User {
   bio             String?
   gradYear        Int?
   favoritePickup  String?
-  role            UserRole  @default(MEMBER)
+  role            UserRole   @default(USER)
   sellerKind      SellerKind @default(STUDENT)
   verifiedShopName String?
   verifiedShopApprovedAt DateTime?
-  verifiedShopLocation String?
+  verifiedShopNeighborhood String?
+  verifiedShopAddress String?
   verifiedShopInstagram String?
   verifiedShopWebsite String?
   createdAt       DateTime  @default(now())
@@ -118,6 +137,14 @@ model User {
   connectSellerOrders   ConnectOrder[]    @relation("ConnectSellerOrders")
   reviewedVerifiedSellerApplications VerifiedSellerApplication[] @relation("VerifiedSellerApplicationReviewedBy")
   approvedVerifiedSellerApplication VerifiedSellerApplication? @relation("VerifiedSellerApplicationApprovedUser")
+  bans                 UserBan[]          @relation("BannedUser")
+  issuedUserBans       UserBan[]          @relation("UserBanIssuedBy")
+  revokedUserBans      UserBan[]          @relation("UserBanRevokedBy")
+  moderatedListings    Listing[]          @relation("ListingModeratedBy")
+  adminAuditLogs       AdminAuditLog[]    @relation("AdminActionActor")
+  adminTargetUserLogs  AdminAuditLog[]    @relation("AdminActionUserTarget")
+  adminTargetApplicationLogs AdminAuditLog[] @relation("AdminActionVerifiedSellerTarget")
+  adminTargetListingLogs AdminAuditLog[]  @relation("AdminActionListingTarget")
 
   @@index([username])
   @@index([createdAt])
@@ -136,6 +163,9 @@ model Listing {
   pickupLocations Json
   meetupNotes     String?
   status          ListingStatus @default(ACTIVE)
+  moderationStatus ListingModerationStatus @default(VISIBLE)
+  moderationReason String?
+  moderatedAt     DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -143,17 +173,21 @@ model Listing {
   seller       User    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   soldToUserId String?
   soldToUser   User?   @relation("ListingSoldTo", fields: [soldToUserId], references: [id], onDelete: SetNull)
+  moderatedById String?
+  moderatedBy  User?   @relation("ListingModeratedBy", fields: [moderatedById], references: [id], onDelete: SetNull)
 
   favorites     Favorite[]
   conversations Conversation[]
   reports       Report[]
   orders        Order[]
   transactions  Transaction[]
+  adminAuditLogs AdminAuditLog[] @relation("AdminActionListingTarget")
 
   @@index([createdAt])
   @@index([category])
   @@index([status])
   @@index([sellerId])
+  @@index([moderationStatus])
 }
 
 model Favorite {
@@ -415,7 +449,8 @@ model VerifiedSellerApplication {
   phone            String
   instagram        String
   website          String?
-  location         String
+  neighborhood     String
+  address          String
   whatTheySell     String
   description      String
   whyJoin          String
@@ -430,9 +465,54 @@ model VerifiedSellerApplication {
 
   reviewedBy User? @relation("VerifiedSellerApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
   approvedUser User? @relation("VerifiedSellerApplicationApprovedUser", fields: [approvedUserId], references: [id], onDelete: SetNull)
+  adminAuditLogs AdminAuditLog[] @relation("AdminActionVerifiedSellerTarget")
 
   @@index([status, createdAt])
   @@index([reviewedById, reviewedAt])
+}
+
+model UserBan {
+  id            String   @id @default(cuid())
+  userId        String
+  reason        String
+  internalNotes String?
+  startsAt      DateTime @default(now())
+  endsAt        DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdById   String
+  revokedById   String?
+
+  user      User  @relation("BannedUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("UserBanIssuedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  revokedBy User? @relation("UserBanRevokedBy", fields: [revokedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt, endsAt])
+  @@index([createdAt])
+}
+
+model AdminAuditLog {
+  id                             String               @id @default(cuid())
+  action                         AdminAuditActionType
+  reason                         String?
+  notes                          String?
+  metadata                       Json?
+  createdAt                      DateTime             @default(now())
+  actorId                        String
+  targetUserId                   String?
+  targetListingId                String?
+  targetVerifiedSellerApplicationId String?
+
+  actor                   User                       @relation("AdminActionActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser              User?                      @relation("AdminActionUserTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetListing           Listing?                   @relation("AdminActionListingTarget", fields: [targetListingId], references: [id], onDelete: SetNull)
+  targetVerifiedSellerApplication VerifiedSellerApplication? @relation("AdminActionVerifiedSellerTarget", fields: [targetVerifiedSellerApplicationId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetListingId, createdAt])
 }
 
 model Account {

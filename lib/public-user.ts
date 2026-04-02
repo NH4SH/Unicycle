@@ -20,7 +20,8 @@ export const publicUserProfileSelect = Prisma.validator<Prisma.UserSelect>()({
   bio: true,
   gradYear: true,
   favoritePickup: true,
-  verifiedShopLocation: true,
+  verifiedShopNeighborhood: true,
+  verifiedShopAddress: true,
   verifiedShopInstagram: true,
   verifiedShopWebsite: true
 });
@@ -50,7 +51,8 @@ export type PublicUserProfile = PublicUserSummary & {
   bio: string | null;
   gradYear: number | null;
   favoritePickup: string | null;
-  verifiedShopLocation: string | null;
+  verifiedShopNeighborhood: string | null;
+  verifiedShopAddress: string | null;
   verifiedShopInstagram: string | null;
   verifiedShopWebsite: string | null;
 };
@@ -102,7 +104,8 @@ export function toPublicUserProfile(user: PublicUserProfileRecord): PublicUserPr
     bio: user.bio,
     gradYear: user.gradYear,
     favoritePickup: user.favoritePickup,
-    verifiedShopLocation: user.verifiedShopLocation,
+    verifiedShopNeighborhood: user.verifiedShopNeighborhood,
+    verifiedShopAddress: user.verifiedShopAddress,
     verifiedShopInstagram: user.verifiedShopInstagram,
     verifiedShopWebsite: user.verifiedShopWebsite
   };

@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { messageSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
   const session = await getAuthSession();
   if (!session?.user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  try {
+    await assertUserCanAccessMarketplace(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Your account cannot send messages right now." },
+      { status: 403 }
+    );
+  }
 
   const payload = await request.json();
   const parsed = messageSchema.safeParse(payload);

@@ -41,7 +41,8 @@ export async function PATCH(request: Request) {
       bio: parsed.data.bio,
       gradYear: parsed.data.gradYear,
       favoritePickup: parsed.data.favoritePickup,
-      verifiedShopLocation: parsed.data.verifiedShopLocation,
+      verifiedShopNeighborhood: parsed.data.verifiedShopNeighborhood,
+      verifiedShopAddress: parsed.data.verifiedShopAddress,
       verifiedShopInstagram: parsed.data.verifiedShopInstagram,
       verifiedShopWebsite: parsed.data.verifiedShopWebsite === undefined ? undefined : parsed.data.verifiedShopWebsite || null,
       profileImageUrl: parsed.data.profileImageUrl === undefined ? undefined : parsed.data.profileImageUrl || null
@@ -59,7 +60,8 @@ export async function PATCH(request: Request) {
       sellerKind: true,
       verifiedShopName: true,
       verifiedShopApprovedAt: true,
-      verifiedShopLocation: true,
+      verifiedShopNeighborhood: true,
+      verifiedShopAddress: true,
       verifiedShopInstagram: true,
       verifiedShopWebsite: true
     }

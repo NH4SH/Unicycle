@@ -1,4 +1,4 @@
-import { Category, Condition, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
+import { Category, Condition, ListingModerationStatus, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
 import { prisma } from "@/lib/prisma";
@@ -214,7 +214,8 @@ function calcResponse(seed: string) {
 
 function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
   const where: Prisma.ListingWhereInput = {
-    status: ListingStatus.ACTIVE
+    status: ListingStatus.ACTIVE,
+    moderationStatus: ListingModerationStatus.VISIBLE
   };
 
   if (query.q) {
@@ -428,7 +429,7 @@ export async function getLandingDrops(userId?: string) {
   noStore();
 
   const todaysDrops = await prisma.listing.findMany({
-    where: { status: ListingStatus.ACTIVE },
+    where: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
     orderBy: { createdAt: "desc" },
     take: 8,
     include: listingCardInclude
@@ -440,7 +441,7 @@ export async function getLandingDrops(userId?: string) {
     by: ["listingId"],
     where: {
       createdAt: { gte: since },
-      listing: { status: ListingStatus.ACTIVE }
+      listing: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE }
     },
     _count: {
       listingId: true
@@ -458,7 +459,7 @@ export async function getLandingDrops(userId?: string) {
   if (group.length > 0) {
     const listingIds = group.map((item) => item.listingId);
     const fetched = await prisma.listing.findMany({
-      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE },
+      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
       include: listingCardInclude
     });
 
@@ -471,6 +472,7 @@ export async function getLandingDrops(userId?: string) {
     const fallback = await prisma.listing.findMany({
       where: {
         status: ListingStatus.ACTIVE,
+        moderationStatus: ListingModerationStatus.VISIBLE,
         id: { notIn: hotListings.map((listing) => listing.id) }
       },
       orderBy: { createdAt: "desc" },
@@ -493,6 +495,7 @@ export async function getFollowingFeedListings(userId: string, page = 1, limit =
   const pagination = normalizePage(page, limit, 20);
   const where = {
     status: ListingStatus.ACTIVE,
+    moderationStatus: ListingModerationStatus.VISIBLE,
     seller: {
       followers: {
         some: {
@@ -584,6 +587,10 @@ export async function getListingDetail(listingId: string, userId?: string) {
     return null;
   }
 
+  if (listing.moderationStatus !== ListingModerationStatus.VISIBLE) {
+    return null;
+  }
+
   const lowerBand = Math.max(listing.priceCents - 4000, 100);
   const upperBand = listing.priceCents + 4000;
 
@@ -591,6 +598,7 @@ export async function getListingDetail(listingId: string, userId?: string) {
     where: {
       id: { not: listing.id },
       status: ListingStatus.ACTIVE,
+      moderationStatus: ListingModerationStatus.VISIBLE,
       category: listing.category,
       priceCents: {
         gte: lowerBand,
@@ -660,6 +668,9 @@ export async function getUserProfile(username: string, viewerId?: string) {
       select: {
         ...publicUserProfileSelect,
         listings: {
+          where: {
+            moderationStatus: ListingModerationStatus.VISIBLE
+          },
           include: listingCardInclude,
           orderBy: { createdAt: "desc" }
         },
@@ -774,7 +785,10 @@ export async function getUserProfile(username: string, viewerId?: string) {
     activeListings: active.map((listing) => mapListing(listing, viewerId)),
     pastListings: pastListings.map((listing) => mapListing(listing, viewerId)),
     favorites: user.favorites
-      .filter((entry) => entry.listing.status === ListingStatus.ACTIVE)
+      .filter(
+        (entry) =>
+          entry.listing.status === ListingStatus.ACTIVE && entry.listing.moderationStatus === ListingModerationStatus.VISIBLE
+      )
       .map((entry) => mapListing(entry.listing, viewerId)),
     recentReviews: recentReviews.map((review) => ({
       id: review.id,
@@ -794,7 +808,7 @@ export async function getUserProfile(username: string, viewerId?: string) {
 
 export async function getUserFavorites(userId: string) {
   const favorites = await prisma.favorite.findMany({
-    where: { userId, listing: { status: ListingStatus.ACTIVE } },
+    where: { userId, listing: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE } },
     include: {
       listing: {
         include: listingCardInclude

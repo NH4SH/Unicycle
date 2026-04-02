@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeEmail } from "@/lib/domain";
 import { getUsernameCandidates, normalizeDisplayName } from "@/lib/user-identity";
+import { getSystemAssignedRoleForEmail } from "@/lib/system-users";
 
 async function reserveUniqueUsername(base: string) {
   let attempt = base;
@@ -78,7 +79,8 @@ export async function createPasswordUser({
       username: reservedUsername,
       usernameConfirmed: true,
       passwordHash: passwordHash ?? null,
-      emailVerified: emailVerified ?? null
+      emailVerified: emailVerified ?? null,
+      role: getSystemAssignedRoleForEmail(normalizedEmail) ?? "USER"
     }
   });
 }
@@ -87,14 +89,16 @@ export async function createVerifiedShopUser({
   email,
   businessName,
   description,
-  location,
+  neighborhood,
+  address,
   instagram,
   website
 }: {
   email: string;
   businessName: string;
   description?: string | null;
-  location?: string | null;
+  neighborhood?: string | null;
+  address?: string | null;
   instagram?: string | null;
   website?: string | null;
 }) {
@@ -112,10 +116,12 @@ export async function createVerifiedShopUser({
       username: reservedUsername,
       usernameConfirmed: true,
       bio: description?.trim() || null,
+      role: getSystemAssignedRoleForEmail(normalizedEmail) ?? "VERIFIED_SHOP",
       sellerKind: "VERIFIED_SHOP",
       verifiedShopName: displayName,
       verifiedShopApprovedAt: null,
-      verifiedShopLocation: location?.trim() || null,
+      verifiedShopNeighborhood: neighborhood?.trim() || null,
+      verifiedShopAddress: address?.trim() || null,
       verifiedShopInstagram: instagram?.trim() || null,
       verifiedShopWebsite: website?.trim() || null
     }

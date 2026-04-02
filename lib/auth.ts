@@ -16,11 +16,29 @@ import { normalizeEmail } from "@/lib/domain";
 import { prisma } from "@/lib/prisma";
 import { getPublicDisplayName, getPublicUsername } from "@/lib/user-identity";
 import { canUserBuy, canUserSignIn } from "@/lib/user-access";
+import { getSystemAssignedRoleForEmail } from "@/lib/system-users";
 
 // Development bypass is intentionally impossible in production. It exists only
 // so local work can proceed when SMTP is unavailable.
 assertAuthRuntimeConfiguration();
 const devAuthBypassEnabled = getDevAuthBypassEnabled();
+
+async function syncSystemRole(user: { id: string; email: string; role: string }) {
+  const systemRole = getSystemAssignedRoleForEmail(user.email);
+
+  if (!systemRole || systemRole === user.role) {
+    return null;
+  }
+
+  return prisma.user.update({
+    where: {
+      id: user.id
+    },
+    data: {
+      role: systemRole
+    }
+  });
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -47,9 +65,18 @@ export const authOptions: NextAuthOptions = {
         const email = normalizeEmail(credentials?.email || "");
         const password = credentials?.password || "";
 
-        const user = await findUserByNormalizedEmail(email);
+        let user = await findUserByNormalizedEmail(email);
         if (!user) {
           throw new Error(AUTH_ERROR_CODES.USER_NOT_FOUND);
+        }
+
+        const syncedUser = await syncSystemRole({
+          id: user.id,
+          email: user.email,
+          role: user.role
+        });
+        if (syncedUser) {
+          user = syncedUser;
         }
 
         if (!canUserSignIn(user)) {
@@ -107,7 +134,15 @@ export const authOptions: NextAuthOptions = {
                 return null;
               }
 
-              const user = await findOrCreateBypassedUser(email);
+              let user = await findOrCreateBypassedUser(email);
+              const syncedUser = await syncSystemRole({
+                id: user.id,
+                email: user.email,
+                role: user.role
+              });
+              if (syncedUser) {
+                user = syncedUser;
+              }
               return {
                 id: user.id,
                 email: user.email,
@@ -151,8 +186,17 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (!token.email) return token;
-      const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
+      let dbUser = await prisma.user.findUnique({ where: { email: token.email } });
       if (!dbUser) return token;
+
+      const syncedUser = await syncSystemRole({
+        id: dbUser.id,
+        email: dbUser.email,
+        role: dbUser.role
+      });
+      if (syncedUser) {
+        dbUser = syncedUser;
+      }
 
       token.id = dbUser.id;
       token.username = dbUser.username;

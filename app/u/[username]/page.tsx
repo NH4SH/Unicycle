@@ -35,7 +35,8 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           sellerKind: profile.user.sellerKind,
           verifiedShopName: profile.user.verifiedShopName,
           verifiedShopApprovedAt: profile.user.verifiedShopApprovedAt,
-          verifiedShopLocation: profile.user.verifiedShopLocation,
+          verifiedShopNeighborhood: profile.user.verifiedShopNeighborhood,
+          verifiedShopAddress: profile.user.verifiedShopAddress,
           verifiedShopInstagram: profile.user.verifiedShopInstagram,
           verifiedShopWebsite: profile.user.verifiedShopWebsite
         }}

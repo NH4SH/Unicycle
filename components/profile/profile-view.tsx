@@ -39,7 +39,8 @@ type ProfileViewProps = {
     sellerKind: "STUDENT" | "VERIFIED_SHOP";
     verifiedShopName: string | null;
     verifiedShopApprovedAt: string | null;
-    verifiedShopLocation: string | null;
+    verifiedShopNeighborhood: string | null;
+    verifiedShopAddress: string | null;
     verifiedShopInstagram: string | null;
     verifiedShopWebsite: string | null;
   };
@@ -92,7 +93,8 @@ export function ProfileView({
     bio: user.bio ?? "",
     gradYear: user.gradYear?.toString() ?? "",
     favoritePickup: user.favoritePickup ?? "",
-    verifiedShopLocation: user.verifiedShopLocation ?? "",
+    verifiedShopNeighborhood: user.verifiedShopNeighborhood ?? "",
+    verifiedShopAddress: user.verifiedShopAddress ?? "",
     verifiedShopInstagram: user.verifiedShopInstagram ?? "",
     verifiedShopWebsite: user.verifiedShopWebsite ?? ""
   });
@@ -163,7 +165,7 @@ export function ProfileView({
                     </PlaceMapLink>
                   </Badge>
                 ) : null}
-                {isVerifiedShop && user.verifiedShopLocation ? <Badge variant="outline">{user.verifiedShopLocation}</Badge> : null}
+                {isVerifiedShop && user.verifiedShopNeighborhood ? <Badge variant="outline">{user.verifiedShopNeighborhood}</Badge> : null}
                 {isVerifiedShop && user.verifiedShopInstagram ? <Badge variant="outline">{user.verifiedShopInstagram}</Badge> : null}
                 {isVerifiedShop && user.verifiedShopWebsite ? (
                   <Badge variant="outline">
@@ -341,10 +343,17 @@ export function ProfileView({
                   {isVerifiedShop ? (
                     <>
                       <div className="space-y-2">
-                        <Label>Location</Label>
+                        <Label>Neighborhood</Label>
                         <Input
-                          value={form.verifiedShopLocation}
-                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopLocation: event.target.value }))}
+                          value={form.verifiedShopNeighborhood}
+                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopNeighborhood: event.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Exact address</Label>
+                        <Input
+                          value={form.verifiedShopAddress}
+                          onChange={(event) => setForm((prev) => ({ ...prev, verifiedShopAddress: event.target.value }))}
                         />
                       </div>
                       <div className="space-y-2">

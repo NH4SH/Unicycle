@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { getMarketListings } from "@/lib/data";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
+import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { canUserSell } from "@/lib/user-access";
@@ -56,6 +57,15 @@ export async function POST(request: Request) {
     })
   ) {
     return NextResponse.json({ message: "Only UVA students and approved Verified Shops can publish listings." }, { status: 403 });
+  }
+
+  try {
+    await assertUserCanAccessMarketplace(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Your account cannot publish listings right now." },
+      { status: 403 }
+    );
   }
 
   const payload = await request.json();

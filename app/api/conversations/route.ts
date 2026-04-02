@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
 import { getConversationsForUser, markConversationAsRead } from "@/lib/data";
+import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
@@ -23,6 +24,15 @@ export async function POST(request: Request) {
   if (!session?.user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   if (!session.user.canBuy) {
     return NextResponse.json({ message: "Buying on HoosFinds stays exclusive to UVA students." }, { status: 403 });
+  }
+
+  try {
+    await assertUserCanAccessMarketplace(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Your account cannot start new conversations right now." },
+      { status: 403 }
+    );
   }
 
   const payload = await request.json();

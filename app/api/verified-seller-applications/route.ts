@@ -8,10 +8,16 @@ export async function POST(request: Request) {
   const parsed = verifiedSellerApplicationSchema.safeParse(payload);
 
   if (!parsed.success) {
+    const flattened = parsed.error.flatten();
+    const firstFieldError =
+      Object.values(flattened.fieldErrors).flat().find(Boolean) ??
+      flattened.formErrors.find(Boolean) ??
+      "Please fix the highlighted fields and try again.";
+
     return NextResponse.json(
       {
-        message: "Invalid verified shop application.",
-        errors: parsed.error.flatten()
+        message: firstFieldError,
+        errors: flattened
       },
       { status: 400 }
     );

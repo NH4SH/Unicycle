@@ -49,7 +49,8 @@ export const profileSchema = z.object({
     .transform((v) => (v ? Number(v) : undefined))
     .pipe(z.number().int().min(2024).max(2035).optional()),
   favoritePickup: z.string().max(80).optional(),
-  verifiedShopLocation: z.string().max(120).optional(),
+  verifiedShopNeighborhood: z.string().max(120).optional(),
+  verifiedShopAddress: z.string().max(180).optional(),
   verifiedShopInstagram: z.string().max(120).optional(),
   verifiedShopWebsite: z
     .string()
@@ -165,21 +166,22 @@ export const followingFeedQuerySchema = z.object({
 });
 
 export const verifiedSellerApplicationSchema = z.object({
-  businessName: z.string().trim().min(2).max(80),
-  contactName: z.string().trim().min(2).max(80),
+  businessName: z.string().trim().min(2, "Add your business or shop name.").max(80, "Keep the shop name under 80 characters."),
+  contactName: z.string().trim().min(2, "Add the best contact person for your shop.").max(80, "Keep the contact name under 80 characters."),
   email: z.string().email("Enter a valid contact email."),
-  phone: z.string().trim().min(7).max(32),
-  instagram: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(7, "Add a phone number we can use to reach your shop.").max(32, "Keep the phone number under 32 characters."),
+  instagram: z.string().trim().min(2, "Add your Instagram handle or profile link.").max(120, "Keep Instagram under 120 characters."),
   website: z
     .string()
     .trim()
     .optional()
     .transform((value) => value || undefined)
     .refine((value) => !value || z.string().url().safeParse(value).success, "Use a valid website URL"),
-  location: z.string().trim().min(2).max(120),
-  whatTheySell: z.string().trim().min(10).max(160),
-  description: z.string().trim().min(20).max(280),
-  whyJoin: z.string().trim().min(20).max(500)
+  neighborhood: z.string().trim().min(2, "Add the neighborhood or area your shop is in.").max(120, "Keep the neighborhood under 120 characters."),
+  address: z.string().trim().min(8, "Add the shop's exact address.").max(180, "Keep the address under 180 characters."),
+  whatTheySell: z.string().trim().min(10, "Tell us what kinds of pieces you sell.").max(160, "Keep this under 160 characters."),
+  description: z.string().trim().min(20, "Add a short description of your shop.").max(280, "Keep the shop description under 280 characters."),
+  whyJoin: z.string().trim().min(20, "Tell us why HoosFinds is a fit for your shop.").max(500, "Keep this under 500 characters.")
 });
 
 export const verifiedSellerReviewSchema = z.object({
@@ -191,3 +193,69 @@ export const verifiedSellerReviewSchema = z.object({
     .optional()
     .transform((value) => value || undefined)
 });
+
+export const adminUserModerationSchema = z
+  .object({
+    action: z.enum(["ban", "unban"]),
+    reason: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => value || undefined),
+    internalNotes: z
+      .string()
+      .trim()
+      .max(1000)
+      .optional()
+      .transform((value) => value || undefined),
+    endsAt: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => value || undefined)
+  })
+  .superRefine((value, ctx) => {
+    if (value.action === "ban" && !value.reason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add a ban reason.",
+        path: ["reason"]
+      });
+    }
+
+    if (value.endsAt) {
+      const parsedDate = new Date(value.endsAt);
+      if (Number.isNaN(parsedDate.getTime())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Use a valid ban end date.",
+          path: ["endsAt"]
+        });
+      }
+    }
+  });
+
+export const adminListingModerationSchema = z
+  .object({
+    action: z.enum(["hide", "remove", "restore"]),
+    reason: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => value || undefined),
+    internalNotes: z
+      .string()
+      .trim()
+      .max(1000)
+      .optional()
+      .transform((value) => value || undefined)
+  })
+  .superRefine((value, ctx) => {
+    if (value.action !== "restore" && !value.reason) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add a moderation reason.",
+        path: ["reason"]
+      });
+    }
+  });

@@ -16,22 +16,27 @@ const defaultForm = {
   phone: "",
   instagram: "",
   website: "",
-  location: "",
+  neighborhood: "",
+  address: "",
   whatTheySell: "",
   description: "",
   whyJoin: ""
 };
+
+type FieldErrors = Partial<Record<keyof typeof defaultForm, string[]>>;
 
 export function VerifiedSellerApplicationForm() {
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setFieldErrors({});
 
     const response = await fetch("/api/verified-seller-applications", {
       method: "POST",
@@ -41,16 +46,20 @@ export function VerifiedSellerApplicationForm() {
       body: JSON.stringify(form)
     });
 
-    const data = (await response.json().catch(() => null)) as { message?: string } | null;
+    const data = (await response.json().catch(() => null)) as
+      | { message?: string; errors?: { fieldErrors?: FieldErrors } }
+      | null;
     setLoading(false);
 
     if (!response.ok) {
+      setFieldErrors(data?.errors?.fieldErrors ?? {});
       setError(data?.message || "Could not submit your application right now.");
       return;
     }
 
     setSubmitted(data?.message || "Your application is in. We'll reach out after review.");
     setForm(defaultForm);
+    setFieldErrors({});
   }
 
   return (
@@ -123,6 +132,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="Blue Ridge Vintage"
                   required
                 />
+                {fieldErrors.businessName?.[0] ? <p className="text-sm text-destructive">{fieldErrors.businessName[0]}</p> : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contactName">Contact person</Label>
@@ -133,6 +143,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="Jamie Carter"
                   required
                 />
+                {fieldErrors.contactName?.[0] ? <p className="text-sm text-destructive">{fieldErrors.contactName[0]}</p> : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -144,6 +155,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="shop@example.com"
                   required
                 />
+                {fieldErrors.email?.[0] ? <p className="text-sm text-destructive">{fieldErrors.email[0]}</p> : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
@@ -154,6 +166,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="(434) 555-0123"
                   required
                 />
+                {fieldErrors.phone?.[0] ? <p className="text-sm text-destructive">{fieldErrors.phone[0]}</p> : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram</Label>
@@ -164,6 +177,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="@blueridgevintage"
                   required
                 />
+                {fieldErrors.instagram?.[0] ? <p className="text-sm text-destructive">{fieldErrors.instagram[0]}</p> : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="website">Website (optional)</Label>
@@ -173,16 +187,31 @@ export function VerifiedSellerApplicationForm() {
                   onChange={(event) => setForm((prev) => ({ ...prev, website: event.target.value }))}
                   placeholder="https://example.com"
                 />
+                {fieldErrors.website?.[0] ? <p className="text-sm text-destructive">{fieldErrors.website[0]}</p> : null}
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="location">Location / neighborhood</Label>
+                <Label htmlFor="neighborhood">Neighborhood</Label>
                 <Input
-                  id="location"
-                  value={form.location}
-                  onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))}
+                  id="neighborhood"
+                  value={form.neighborhood}
+                  onChange={(event) => setForm((prev) => ({ ...prev, neighborhood: event.target.value }))}
                   placeholder="Downtown Charlottesville"
                   required
                 />
+                {fieldErrors.neighborhood?.[0] ? (
+                  <p className="text-sm text-destructive">{fieldErrors.neighborhood[0]}</p>
+                ) : null}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="address">Exact shop address</Label>
+                <Input
+                  id="address"
+                  value={form.address}
+                  onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
+                  placeholder="123 W Main St, Charlottesville, VA 22902"
+                  required
+                />
+                {fieldErrors.address?.[0] ? <p className="text-sm text-destructive">{fieldErrors.address[0]}</p> : null}
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="whatTheySell">What do you sell?</Label>
@@ -193,6 +222,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="Vintage denim, collegiate sweats, curated accessories"
                   required
                 />
+                {fieldErrors.whatTheySell?.[0] ? <p className="text-sm text-destructive">{fieldErrors.whatTheySell[0]}</p> : null}
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="description">Short shop description</Label>
@@ -203,6 +233,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="Tell us the point of view behind your shop."
                   required
                 />
+                {fieldErrors.description?.[0] ? <p className="text-sm text-destructive">{fieldErrors.description[0]}</p> : null}
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="whyJoin">Why do you want to join HoosFinds?</Label>
@@ -213,6 +244,7 @@ export function VerifiedSellerApplicationForm() {
                   placeholder="Why is HoosFinds the right fit for your shop and the UVA audience?"
                   required
                 />
+                {fieldErrors.whyJoin?.[0] ? <p className="text-sm text-destructive">{fieldErrors.whyJoin[0]}</p> : null}
               </div>
             </div>
 

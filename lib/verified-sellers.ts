@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SellerKind, VerifiedSellerApplicationStatus } from "@prisma/client";
+import { AdminAuditActionType, SellerKind, UserRole, VerifiedSellerApplicationStatus } from "@prisma/client";
 
 import { sendVerifiedShopApprovalEmail } from "@/lib/auth-email";
 import { createPasswordResetToken } from "@/lib/auth-tokens";
@@ -15,7 +15,8 @@ export type VerifiedSellerApplicationInput = {
   phone: string;
   instagram: string;
   website?: string | null;
-  location: string;
+  neighborhood: string;
+  address: string;
   whatTheySell: string;
   description: string;
   whyJoin: string;
@@ -42,7 +43,8 @@ export async function submitVerifiedSellerApplication(input: VerifiedSellerAppli
     phone: input.phone.trim(),
     instagram: input.instagram.trim(),
     website: input.website?.trim() || null,
-    location: input.location.trim(),
+    neighborhood: input.neighborhood.trim(),
+    address: input.address.trim(),
     whatTheySell: input.whatTheySell.trim(),
     description: input.description.trim(),
     whyJoin: input.whyJoin.trim(),
@@ -83,6 +85,7 @@ export async function getVerifiedSellerApplicationsForAdmin() {
           id: true,
           email: true,
           username: true,
+          role: true,
           sellerKind: true,
           verifiedShopApprovedAt: true
         }
@@ -123,44 +126,85 @@ export async function reviewVerifiedSellerApplication(params: {
   const internalNotes = params.internalNotes?.trim() || null;
 
   if (params.action === "reject") {
-    return prisma.verifiedSellerApplication.update({
-      where: { id: application.id },
-      data: {
-        status: VerifiedSellerApplicationStatus.REJECTED,
-        reviewedAt,
-        approvedAt: null,
-        reviewedById: params.reviewerId,
-        internalNotes
-      }
+    return prisma.$transaction(async (tx) => {
+      const updatedApplication = await tx.verifiedSellerApplication.update({
+        where: { id: application.id },
+        data: {
+          status: VerifiedSellerApplicationStatus.REJECTED,
+          reviewedAt,
+          approvedAt: null,
+          reviewedById: params.reviewerId,
+          internalNotes
+        }
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorId: params.reviewerId,
+          action: AdminAuditActionType.VERIFIED_SELLER_REJECTED,
+          reason: `${application.businessName} application rejected.`,
+          notes: internalNotes,
+          targetVerifiedSellerApplicationId: application.id
+        }
+      });
+
+      return updatedApplication;
     });
   }
 
   if (params.action === "revoke") {
     if (application.approvedUserId) {
+      const approvedUser = await prisma.user.findUnique({
+        where: {
+          id: application.approvedUserId
+        },
+        select: {
+          id: true,
+          role: true
+        }
+      });
+
       await prisma.user.update({
         where: {
           id: application.approvedUserId
         },
         data: {
           sellerKind: SellerKind.STUDENT,
+          role: approvedUser?.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.USER,
           verifiedShopName: null,
           verifiedShopApprovedAt: null,
-          verifiedShopLocation: null,
+          verifiedShopNeighborhood: null,
+          verifiedShopAddress: null,
           verifiedShopInstagram: null,
           verifiedShopWebsite: null
         }
       });
     }
 
-    return prisma.verifiedSellerApplication.update({
-      where: { id: application.id },
-      data: {
-        status: VerifiedSellerApplicationStatus.REVOKED,
-        reviewedAt,
-        approvedAt: null,
-        reviewedById: params.reviewerId,
-        internalNotes
-      }
+    return prisma.$transaction(async (tx) => {
+      const updatedApplication = await tx.verifiedSellerApplication.update({
+        where: { id: application.id },
+        data: {
+          status: VerifiedSellerApplicationStatus.REVOKED,
+          reviewedAt,
+          approvedAt: null,
+          reviewedById: params.reviewerId,
+          internalNotes
+        }
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorId: params.reviewerId,
+          action: AdminAuditActionType.VERIFIED_SELLER_REVOKED,
+          reason: `${application.businessName} verified seller access revoked.`,
+          notes: internalNotes,
+          targetUserId: application.approvedUserId ?? null,
+          targetVerifiedSellerApplicationId: application.id
+        }
+      });
+
+      return updatedApplication;
     });
   }
 
@@ -171,7 +215,8 @@ export async function reviewVerifiedSellerApplication(params: {
       email: application.email,
       businessName: application.businessName,
       description: application.description,
-      location: application.location,
+      neighborhood: application.neighborhood,
+      address: application.address,
       instagram: application.instagram,
       website: application.website
     });
@@ -183,10 +228,12 @@ export async function reviewVerifiedSellerApplication(params: {
       data: {
         name: application.businessName,
         bio: application.description,
+        role: user.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.VERIFIED_SHOP,
         sellerKind: SellerKind.VERIFIED_SHOP,
         verifiedShopName: application.businessName,
         verifiedShopApprovedAt: reviewedAt,
-        verifiedShopLocation: application.location,
+        verifiedShopNeighborhood: application.neighborhood,
+        verifiedShopAddress: application.address,
         verifiedShopInstagram: application.instagram,
         verifiedShopWebsite: application.website
       }
@@ -199,10 +246,12 @@ export async function reviewVerifiedSellerApplication(params: {
         id: user.id
       },
       data: {
+        role: user.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.VERIFIED_SHOP,
         sellerKind: SellerKind.VERIFIED_SHOP,
         verifiedShopApprovedAt: reviewedAt,
         verifiedShopName: application.businessName,
-        verifiedShopLocation: application.location,
+        verifiedShopNeighborhood: application.neighborhood,
+        verifiedShopAddress: application.address,
         verifiedShopInstagram: application.instagram,
         verifiedShopWebsite: application.website
       }
@@ -216,17 +265,36 @@ export async function reviewVerifiedSellerApplication(params: {
     token: rawToken
   });
 
-  return prisma.verifiedSellerApplication.update({
-    where: {
-      id: application.id
-    },
-    data: {
-      status: VerifiedSellerApplicationStatus.APPROVED,
-      reviewedAt,
-      approvedAt: reviewedAt,
-      reviewedById: params.reviewerId,
-      internalNotes,
-      approvedUserId: user.id
-    }
+  return prisma.$transaction(async (tx) => {
+    const updatedApplication = await tx.verifiedSellerApplication.update({
+      where: {
+        id: application.id
+      },
+      data: {
+        status: VerifiedSellerApplicationStatus.APPROVED,
+        reviewedAt,
+        approvedAt: reviewedAt,
+        reviewedById: params.reviewerId,
+        internalNotes,
+        approvedUserId: user.id
+      }
+    });
+
+    await tx.adminAuditLog.create({
+      data: {
+        actorId: params.reviewerId,
+        action: AdminAuditActionType.VERIFIED_SELLER_APPROVED,
+        reason: `${application.businessName} approved as a Verified Shop.`,
+        notes: internalNotes,
+        targetUserId: user.id,
+        targetVerifiedSellerApplicationId: application.id,
+        metadata: {
+          businessName: application.businessName,
+          email: application.email
+        }
+      }
+    });
+
+    return updatedApplication;
   });
 }

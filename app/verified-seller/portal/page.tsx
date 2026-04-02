@@ -85,7 +85,7 @@ export default async function VerifiedSellerPortalPage() {
               <div>
                 <p className="font-display text-2xl font-extrabold tracking-tight">{profile.user.verifiedShopName || profile.user.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {profile.user.verifiedShopLocation || application?.location || "Charlottesville"}
+                  {profile.user.verifiedShopNeighborhood || application?.neighborhood || "Charlottesville"}
                 </p>
               </div>
             </div>
@@ -100,6 +100,10 @@ export default async function VerifiedSellerPortalPage() {
                 <div className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-3">
                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Website</p>
                   <p className="mt-1 font-medium text-foreground">{profile.user.verifiedShopWebsite || application?.website || "Not set"}</p>
+                </div>
+                <div className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-3 sm:col-span-2">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Address</p>
+                  <p className="mt-1 font-medium text-foreground">{profile.user.verifiedShopAddress || application?.address || "Not set"}</p>
                 </div>
               </div>
             </div>
