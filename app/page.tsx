@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { getAuthSession } from "@/lib/auth";
 import { HOME_PRIMARY_LANES, HOME_SECONDARY_LANES, HOW_IT_WORKS_STEPS, TRUST_MARKERS } from "@/lib/constants";
 import { getFollowingFeedListings, getLandingDrops } from "@/lib/data";
+import { isFashionBrowseListing } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import { getSuggestedSellers } from "@/lib/user-social";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -42,9 +43,14 @@ export default async function HomePage() {
 
   const heroLead = todaysDrops[0] ?? hotOnGrounds[0] ?? null;
   const heroSide = [...todaysDrops.slice(1, 3), ...hotOnGrounds.slice(0, 2)].slice(0, 2);
-  const freshFinds = todaysDrops.slice(0, 8);
-  const hotFinds = hotOnGrounds.slice(0, 8);
-  const [vintageLane, gameDayLane, outerwearLane, accessoriesLane, shoesLane, mensLane, womensLane] =
+  const freshFinds = todaysDrops.filter((listing) => isFashionBrowseListing(listing)).slice(0, 8);
+  const trendingBrandFinds = hotOnGrounds.filter((listing) => isFashionBrowseListing(listing) && Boolean(listing.brand)).slice(0, 8);
+  const hotFinds = (trendingBrandFinds.length ? trendingBrandFinds : hotOnGrounds.filter((listing) => isFashionBrowseListing(listing))).slice(0, 8);
+  const underThirtyFinds = [...todaysDrops, ...hotOnGrounds]
+    .filter((listing, index, array) => array.findIndex((entry) => entry.id === listing.id) === index)
+    .filter((listing) => isFashionBrowseListing(listing) && listing.priceCents <= 3000)
+    .slice(0, 8);
+  const [vintageLane, gameDayLane, streetwearLane, accessoriesLane, shoesLane, mensLane, womensLane] =
     HOME_PRIMARY_LANES;
 
   return (
@@ -262,7 +268,7 @@ export default async function HomePage() {
           </Link>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            {[gameDayLane, outerwearLane].map((item) => (
+            {[gameDayLane, streetwearLane].map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
@@ -318,7 +324,7 @@ export default async function HomePage() {
       <section className="space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="editorial-eyebrow">Fresh on HoosFinds</p>
+            <p className="editorial-eyebrow">Fresh on Grounds</p>
             <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">New finds from across Grounds.</h2>
           </div>
           <Link
@@ -349,8 +355,8 @@ export default async function HomePage() {
       <section className="space-y-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="editorial-eyebrow">Hot on Grounds</p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">The listings fellow Hoos are saving fastest.</h2>
+            <p className="editorial-eyebrow">Trending Brands</p>
+            <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">The labels fellow Hoos are saving fastest.</h2>
           </div>
           <div className="surface-pill inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.18em]">
             <MapPin className="h-3.5 w-3.5 text-uva-orange" />
@@ -359,10 +365,32 @@ export default async function HomePage() {
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
           {hotFinds.map((listing, index) => (
-            <ListingCard key={listing.id} listing={listing} sticker={index < 2 ? "Hot on Grounds" : undefined} />
+            <ListingCard key={listing.id} listing={listing} sticker={index < 2 ? "Trending brand" : undefined} />
           ))}
         </div>
       </section>
+
+      {underThirtyFinds.length ? (
+        <section className="space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="editorial-eyebrow">Under $30</p>
+              <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">Good style still shows up on a student budget.</h2>
+            </div>
+            <Link
+              href="/market?max=3000"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+            >
+              Shop the lane <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {underThirtyFinds.map((listing, index) => (
+              <ListingCard key={listing.id} listing={listing} sticker={index === 0 ? "Budget pick" : undefined} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid gap-10 border-t border-border/80 pt-10 lg:grid-cols-[0.88fr_1.12fr]">
         <div className="space-y-4">

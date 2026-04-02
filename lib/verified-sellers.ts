@@ -4,7 +4,7 @@ import { AdminAuditActionType, SellerKind, UserRole, VerifiedSellerApplicationSt
 
 import { sendVerifiedShopApprovalEmail } from "@/lib/auth-email";
 import { createPasswordResetToken } from "@/lib/auth-tokens";
-import { createVerifiedShopUser, findUserByNormalizedEmail } from "@/lib/auth-users";
+import { findUserByNormalizedEmail, reserveUsername } from "@/lib/auth-users";
 import { normalizeEmail } from "@/lib/domain";
 import { prisma } from "@/lib/prisma";
 
@@ -153,35 +153,35 @@ export async function reviewVerifiedSellerApplication(params: {
   }
 
   if (params.action === "revoke") {
-    if (application.approvedUserId) {
-      const approvedUser = await prisma.user.findUnique({
-        where: {
-          id: application.approvedUserId
-        },
-        select: {
-          id: true,
-          role: true
-        }
-      });
-
-      await prisma.user.update({
-        where: {
-          id: application.approvedUserId
-        },
-        data: {
-          sellerKind: SellerKind.STUDENT,
-          role: approvedUser?.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.USER,
-          verifiedShopName: null,
-          verifiedShopApprovedAt: null,
-          verifiedShopNeighborhood: null,
-          verifiedShopAddress: null,
-          verifiedShopInstagram: null,
-          verifiedShopWebsite: null
-        }
-      });
-    }
-
     return prisma.$transaction(async (tx) => {
+      if (application.approvedUserId) {
+        const approvedUser = await tx.user.findUnique({
+          where: {
+            id: application.approvedUserId
+          },
+          select: {
+            id: true,
+            role: true
+          }
+        });
+
+        await tx.user.update({
+          where: {
+            id: application.approvedUserId
+          },
+          data: {
+            sellerKind: SellerKind.STUDENT,
+            role: approvedUser?.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.USER,
+            verifiedShopName: null,
+            verifiedShopApprovedAt: null,
+            verifiedShopNeighborhood: null,
+            verifiedShopAddress: null,
+            verifiedShopInstagram: null,
+            verifiedShopWebsite: null
+          }
+        });
+      }
+
       const updatedApplication = await tx.verifiedSellerApplication.update({
         where: { id: application.id },
         data: {
@@ -208,64 +208,51 @@ export async function reviewVerifiedSellerApplication(params: {
     });
   }
 
-  let user = await findUserByNormalizedEmail(application.email);
+  const existingUser = await findUserByNormalizedEmail(application.email);
+  const reservedUsername = existingUser
+    ? existingUser.username
+    : await reserveUsername({
+        displayName: application.businessName,
+        fallbackPrefix: "shop"
+      });
 
-  if (!user) {
-    user = await createVerifiedShopUser({
-      email: application.email,
-      businessName: application.businessName,
-      description: application.description,
-      neighborhood: application.neighborhood,
-      address: application.address,
-      instagram: application.instagram,
-      website: application.website
-    });
-  } else {
-    user = await prisma.user.update({
-      where: {
-        id: user.id
-      },
-      data: {
-        name: application.businessName,
-        bio: application.description,
-        role: user.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.VERIFIED_SHOP,
-        sellerKind: SellerKind.VERIFIED_SHOP,
-        verifiedShopName: application.businessName,
-        verifiedShopApprovedAt: reviewedAt,
-        verifiedShopNeighborhood: application.neighborhood,
-        verifiedShopAddress: application.address,
-        verifiedShopInstagram: application.instagram,
-        verifiedShopWebsite: application.website
-      }
-    });
-  }
+  const { user } = await prisma.$transaction(async (tx) => {
+    const approvedUser = existingUser
+      ? await tx.user.update({
+          where: {
+            id: existingUser.id
+          },
+          data: {
+            name: application.businessName,
+            bio: application.description,
+            role: existingUser.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.VERIFIED_SHOP,
+            sellerKind: SellerKind.VERIFIED_SHOP,
+            verifiedShopName: application.businessName,
+            verifiedShopApprovedAt: reviewedAt,
+            verifiedShopNeighborhood: application.neighborhood,
+            verifiedShopAddress: application.address,
+            verifiedShopInstagram: application.instagram,
+            verifiedShopWebsite: application.website
+          }
+        })
+      : await tx.user.create({
+          data: {
+            email: application.email,
+            name: application.businessName,
+            username: reservedUsername,
+            usernameConfirmed: true,
+            bio: application.description,
+            role: UserRole.VERIFIED_SHOP,
+            sellerKind: SellerKind.VERIFIED_SHOP,
+            verifiedShopName: application.businessName,
+            verifiedShopApprovedAt: reviewedAt,
+            verifiedShopNeighborhood: application.neighborhood,
+            verifiedShopAddress: application.address,
+            verifiedShopInstagram: application.instagram,
+            verifiedShopWebsite: application.website
+          }
+        });
 
-  if (!user.verifiedShopApprovedAt) {
-    await prisma.user.update({
-      where: {
-        id: user.id
-      },
-      data: {
-        role: user.role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.VERIFIED_SHOP,
-        sellerKind: SellerKind.VERIFIED_SHOP,
-        verifiedShopApprovedAt: reviewedAt,
-        verifiedShopName: application.businessName,
-        verifiedShopNeighborhood: application.neighborhood,
-        verifiedShopAddress: application.address,
-        verifiedShopInstagram: application.instagram,
-        verifiedShopWebsite: application.website
-      }
-    });
-  }
-
-  const { rawToken } = await createPasswordResetToken(user.id, user.email);
-  await sendVerifiedShopApprovalEmail({
-    email: user.email,
-    businessName: application.businessName,
-    token: rawToken
-  });
-
-  return prisma.$transaction(async (tx) => {
     const updatedApplication = await tx.verifiedSellerApplication.update({
       where: {
         id: application.id
@@ -276,7 +263,7 @@ export async function reviewVerifiedSellerApplication(params: {
         approvedAt: reviewedAt,
         reviewedById: params.reviewerId,
         internalNotes,
-        approvedUserId: user.id
+        approvedUserId: approvedUser.id
       }
     });
 
@@ -286,7 +273,7 @@ export async function reviewVerifiedSellerApplication(params: {
         action: AdminAuditActionType.VERIFIED_SELLER_APPROVED,
         reason: `${application.businessName} approved as a Verified Shop.`,
         notes: internalNotes,
-        targetUserId: user.id,
+        targetUserId: approvedUser.id,
         targetVerifiedSellerApplicationId: application.id,
         metadata: {
           businessName: application.businessName,
@@ -295,6 +282,22 @@ export async function reviewVerifiedSellerApplication(params: {
       }
     });
 
-    return updatedApplication;
+    return {
+      updatedApplication,
+      user: approvedUser
+    };
+  });
+
+  const { rawToken } = await createPasswordResetToken(user.id, user.email);
+  await sendVerifiedShopApprovalEmail({
+    email: user.email,
+    businessName: application.businessName,
+    token: rawToken
+  });
+
+  return prisma.verifiedSellerApplication.findUniqueOrThrow({
+    where: {
+      id: application.id
+    }
   });
 }

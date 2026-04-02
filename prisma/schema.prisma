@@ -143,8 +143,6 @@ model User {
   moderatedListings    Listing[]          @relation("ListingModeratedBy")
   adminAuditLogs       AdminAuditLog[]    @relation("AdminActionActor")
   adminTargetUserLogs  AdminAuditLog[]    @relation("AdminActionUserTarget")
-  adminTargetApplicationLogs AdminAuditLog[] @relation("AdminActionVerifiedSellerTarget")
-  adminTargetListingLogs AdminAuditLog[]  @relation("AdminActionListingTarget")
 
   @@index([username])
   @@index([createdAt])

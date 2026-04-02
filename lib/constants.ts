@@ -17,12 +17,12 @@ export const PICKUP_LOCATIONS = [
 ] as const;
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  DORM: "Dorm / Home",
+  DORM: "Dorm",
   TEXTBOOKS: "Textbooks",
   STREETWEAR: "Vintage / Streetwear",
   TECH: "Tech",
   TICKETS: "Tickets",
-  MISC: "Accessories / Misc"
+  MISC: "Accessories / Extras"
 };
 
 export const CONDITION_LABELS: Record<Condition, string> = {
@@ -65,55 +65,56 @@ export const LISTING_SORT_OPTIONS = [
 
 export const HOME_PRIMARY_LANES = [
   {
-    label: "Vintage / Streetwear",
-    href: "/market?category=STREETWEAR",
+    label: "Vintage",
+    href: "/market?lane=vintage",
     eyebrow: "Lead lane",
-    description: "Streetwear, hoodies, jackets, and the thrift-energy finds people check first."
+    description: "Thrifted sweats, worn-in layers, and the campus pieces with real history."
   },
   {
-    label: "Game Day Fits",
-    href: "/market?category=STREETWEAR&q=game+day",
+    label: "Game Day",
+    href: "/market?lane=game-day",
     eyebrow: "Saturday lane",
     description: "Orange-and-blue layers, last-minute pieces, and pregame-ready looks."
   },
   {
-    label: "Outerwear",
-    href: "/market?category=STREETWEAR&q=jacket",
-    eyebrow: "Layer up",
-    description: "Fleeces, rain jackets, puffers, and easy campus throw-ons."
+    label: "Streetwear",
+    href: "/market?lane=streetwear",
+    eyebrow: "Daily rotation",
+    description: "Graphic crews, hoodies, jackets, and the fits people notice between classes."
   },
   {
     label: "Accessories",
-    href: "/market?category=MISC&q=bag",
+    href: "/market?lane=accessories",
     eyebrow: "Finish the look",
     description: "Bags, jewelry, hats, and the smaller pieces that carry the outfit."
   },
   {
     label: "Shoes",
-    href: "/market?category=STREETWEAR&q=sneakers",
+    href: "/market?lane=shoes",
     eyebrow: "Underfoot",
     description: "Sneakers, boots, and daily pairs worth crossing Grounds for."
   },
   {
     label: "Men's Clothing",
-    href: "/market?category=STREETWEAR&q=mens",
+    href: "/market?lane=mens",
     eyebrow: "Men's",
     description: "Vintage sweats, everyday campus fits, and closet cleanout standouts."
   },
   {
     label: "Women's Clothing",
-    href: "/market?category=STREETWEAR&q=womens",
+    href: "/market?lane=womens",
     eyebrow: "Women's",
     description: "Going-out pieces, denim, layered staples, and quick pickup finds."
   }
 ] as const;
 
 export const HOME_SECONDARY_LANES = [
-  { label: "Dorm", href: "/market?category=DORM" },
-  { label: "Tech", href: "/market?category=TECH" },
-  { label: "Textbooks", href: "/market?category=TEXTBOOKS" },
-  { label: "Tickets", href: "/market?category=TICKETS" },
-  { label: "Misc", href: "/market?category=MISC" }
+  { label: "Dorm", href: "/market?lane=dorm" },
+  { label: "Tech", href: "/market?lane=tech" },
+  { label: "Textbooks", href: "/market?lane=textbooks" },
+  { label: "Furniture", href: "/market?lane=furniture" },
+  { label: "Tickets", href: "/market?lane=tickets" },
+  { label: "Extras", href: "/market?lane=extras" }
 ] as const;
 
 export const HOW_IT_WORKS_STEPS = [

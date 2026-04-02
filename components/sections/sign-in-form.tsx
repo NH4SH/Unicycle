@@ -31,9 +31,10 @@ function getErrorMessage(errorCode?: string | null) {
 type SignInFormProps = {
   callbackUrl: string;
   enableDevBypass: boolean;
+  mode?: "student" | "verified-shop";
 };
 
-export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
+export function SignInForm({ callbackUrl, enableDevBypass, mode = "student" }: SignInFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -99,20 +100,24 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
 
   return (
     <AuthShell
-      title="Welcome back to HoosFinds."
-      description="Sign in with your UVA email, or use your approved verified shop account to manage listings and payouts."
+      title={mode === "verified-shop" ? "Verified Shop portal sign-in." : "Welcome back to HoosFinds."}
+      description={
+        mode === "verified-shop"
+          ? "Approved local resale partners can sign in here to manage listings, payouts, and storefront activity."
+          : "Sign in with your UVA email to buy, save, message, and sell on HoosFinds."
+      }
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label htmlFor="sign-in-email" className="text-sm font-semibold text-foreground">
-            UVA or verified shop email
+            {mode === "verified-shop" ? "Verified Shop email" : "UVA email"}
           </Label>
           <Input
             id="sign-in-email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@virginia.edu or shop@example.com"
+            placeholder={mode === "verified-shop" ? "shop@example.com" : "you@virginia.edu"}
             autoComplete="email"
             required
           />
@@ -123,9 +128,14 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
             <Label htmlFor="sign-in-password" className="text-sm font-semibold text-foreground">
               Password
             </Label>
-            <Link href="/forgot-password" className="text-xs font-semibold text-foreground/80 transition hover:text-uva-orange">
-              Forgot password?
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/forgot-password" className="text-xs font-semibold text-foreground/80 transition hover:text-uva-orange">
+                Forgot password?
+              </Link>
+              <Link href="/verified-seller" className="text-xs font-semibold text-foreground/80 transition hover:text-uva-orange">
+                Verified seller portal
+              </Link>
+            </div>
           </div>
           <Input
             id="sign-in-password"
@@ -177,12 +187,14 @@ export function SignInForm({ callbackUrl, enableDevBypass }: SignInFormProps) {
             Create your account
           </Link>
         </p>
-        <p>
-          Local thrift or vintage shop?{" "}
-          <Link href="/verified-seller/apply" className="font-semibold text-foreground transition hover:text-uva-orange">
-            Apply to become a Verified Shop
-          </Link>
-        </p>
+        {mode === "verified-shop" ? (
+          <p>
+            New local shop partner?{" "}
+            <Link href="/verified-seller/apply" className="font-semibold text-foreground transition hover:text-uva-orange">
+              Apply to become a Verified Shop
+            </Link>
+          </p>
+        ) : null}
         {enableDevBypass ? <p className="text-uva-orange">Dev bypass is enabled locally. It still requires a UVA email format.</p> : null}
       </div>
     </AuthShell>

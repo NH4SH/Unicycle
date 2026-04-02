@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ListingModerationStatus, OrderStatus, Prisma, TransactionStatus, UserRole, VerifiedSellerApplicationStatus } from "@prisma/client";
+import { ListingModerationStatus, OrderStatus, Prisma, TransactionStatus, VerifiedSellerApplicationStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -217,7 +217,7 @@ export async function getAdminDashboardData() {
     }),
     prisma.user.count({
       where: {
-        role: UserRole.VERIFIED_SHOP,
+        sellerKind: "VERIFIED_SHOP",
         verifiedShopApprovedAt: {
           not: null
         }

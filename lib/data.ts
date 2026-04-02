@@ -1,6 +1,13 @@
 import { Category, Condition, ListingModerationStatus, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
+import {
+  type MarketBrowseLaneId,
+  getListingBrowseMeta,
+  isFashionBrowseListing,
+  matchesBrowseLane,
+  matchesFacetValue
+} from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import {
   type PublicUserSummary,
@@ -14,9 +21,13 @@ import { MARKET_PRICE_MIN_CENTS } from "@/lib/constants";
 
 type MarketQuery = {
   q?: string;
+  lane?: string;
   category?: string;
   condition?: string;
   location?: string;
+  brand?: string;
+  size?: string;
+  color?: string;
   min?: number;
   max?: number;
   sort?: string;
@@ -116,6 +127,9 @@ export type ListingCardData = {
   id: string;
   title: string;
   description: string;
+  brand: string;
+  size: string;
+  color: string;
   priceCents: number;
   category: Category;
   condition: Condition;
@@ -195,6 +209,20 @@ export type MarketListingsData = {
   hasMore: boolean;
 };
 
+export type MarketCuratedSection = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  tone: "primary" | "secondary";
+  items: ListingCardData[];
+};
+
+export type MarketCuratedSections = {
+  primary: MarketCuratedSection[];
+  secondary: MarketCuratedSection[];
+};
+
 function fromJsonArray(value: Prisma.JsonValue) {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");
@@ -212,10 +240,80 @@ function calcResponse(seed: string) {
   return buckets[total % buckets.length];
 }
 
+function hasDerivedBrowseFilters(query: MarketQuery) {
+  return Boolean(query.lane && query.lane !== "all") || Boolean(query.brand && query.brand !== "all") || Boolean(query.size && query.size !== "all") || Boolean(query.color && query.color !== "all");
+}
+
+function matchesDerivedBrowseFilters(listing: Pick<ListingLike, "title" | "description" | "category">, query: MarketQuery) {
+  if (query.lane && query.lane !== "all" && !matchesBrowseLane(listing, query.lane as MarketBrowseLaneId)) {
+    return false;
+  }
+
+  if (query.brand && query.brand !== "all" && !matchesFacetValue(listing, "brand", query.brand)) {
+    return false;
+  }
+
+  if (query.size && query.size !== "all" && !matchesFacetValue(listing, "size", query.size)) {
+    return false;
+  }
+
+  if (query.color && query.color !== "all" && !matchesFacetValue(listing, "color", query.color)) {
+    return false;
+  }
+
+  return true;
+}
+
+function countRecentFavorites(listing: Pick<ListingCardRecord, "favorites">, since: Date) {
+  return listing.favorites.filter((favorite) => favorite.createdAt >= since).length;
+}
+
+function sortListingsForMarket(listings: ListingCardRecord[], sort: string) {
+  if (sort === "price_asc") {
+    return [...listings].sort((a, b) => {
+      if (a.priceCents === b.priceCents) {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+
+      return a.priceCents - b.priceCents;
+    });
+  }
+
+  if (sort === "price_desc") {
+    return [...listings].sort((a, b) => {
+      if (b.priceCents === a.priceCents) {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+
+      return b.priceCents - a.priceCents;
+    });
+  }
+
+  if (sort === "trending") {
+    const since = new Date(Date.now() - 72 * 60 * 60 * 1000);
+
+    return [...listings].sort((a, b) => {
+      const bRecent = countRecentFavorites(b, since);
+      const aRecent = countRecentFavorites(a, since);
+
+      if (bRecent === aRecent) {
+        if (b.favorites.length === a.favorites.length) {
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        }
+
+        return b.favorites.length - a.favorites.length;
+      }
+
+      return bRecent - aRecent;
+    });
+  }
+
+  return [...listings].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
 function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
   const where: Prisma.ListingWhereInput = {
-    status: ListingStatus.ACTIVE,
-    moderationStatus: ListingModerationStatus.VISIBLE
+    status: ListingStatus.ACTIVE
   };
 
   if (query.q) {
@@ -276,10 +374,19 @@ function normalizePage(page = 1, limit = 12, maxLimit = 24) {
 }
 
 function mapListing(listing: ListingLike, userId?: string): ListingCardData {
+  const browseMeta = getListingBrowseMeta({
+    title: listing.title,
+    description: listing.description,
+    category: listing.category
+  });
+
   return {
     id: listing.id,
     title: listing.title,
     description: listing.description,
+    brand: browseMeta.brand,
+    size: browseMeta.size,
+    color: browseMeta.color,
     priceCents: listing.priceCents,
     category: listing.category,
     condition: listing.condition,
@@ -334,6 +441,37 @@ export async function getMarketListings(query: MarketQuery): Promise<MarketListi
   const limit = normalized.limit;
   const start = (page - 1) * limit;
   const where = listingWhere(normalized);
+
+  if (hasDerivedBrowseFilters(normalized)) {
+    const listings = await prisma.listing.findMany({
+      where,
+      include: listingCardInclude
+    });
+
+    const filteredListings = sortListingsForMarket(
+      listings.filter((listing) =>
+        matchesDerivedBrowseFilters(
+          {
+            title: listing.title,
+            description: listing.description,
+            category: listing.category
+          },
+          normalized
+        )
+      ),
+      normalized.sort ?? "newest"
+    );
+
+    const total = filteredListings.length;
+    const pagedListings = filteredListings.slice(start, start + limit);
+
+    return {
+      items: pagedListings.map((listing) => mapListing(listing, normalized.userId)),
+      total,
+      hasMore: start + limit < total,
+      page
+    };
+  }
 
   if (normalized.sort === "trending") {
     const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
@@ -429,7 +567,7 @@ export async function getLandingDrops(userId?: string) {
   noStore();
 
   const todaysDrops = await prisma.listing.findMany({
-    where: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
+    where: { status: ListingStatus.ACTIVE },
     orderBy: { createdAt: "desc" },
     take: 8,
     include: listingCardInclude
@@ -441,7 +579,7 @@ export async function getLandingDrops(userId?: string) {
     by: ["listingId"],
     where: {
       createdAt: { gte: since },
-      listing: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE }
+      listing: { status: ListingStatus.ACTIVE }
     },
     _count: {
       listingId: true
@@ -459,7 +597,7 @@ export async function getLandingDrops(userId?: string) {
   if (group.length > 0) {
     const listingIds = group.map((item) => item.listingId);
     const fetched = await prisma.listing.findMany({
-      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
+      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE },
       include: listingCardInclude
     });
 
@@ -472,7 +610,6 @@ export async function getLandingDrops(userId?: string) {
     const fallback = await prisma.listing.findMany({
       where: {
         status: ListingStatus.ACTIVE,
-        moderationStatus: ListingModerationStatus.VISIBLE,
         id: { notIn: hotListings.map((listing) => listing.id) }
       },
       orderBy: { createdAt: "desc" },
@@ -489,13 +626,160 @@ export async function getLandingDrops(userId?: string) {
   };
 }
 
+function pickCuratedListings(pool: ListingCardRecord[], limit: number, usedIds: Set<string>) {
+  const available = pool.filter((listing) => !usedIds.has(listing.id));
+  const picked = available.slice(0, limit);
+
+  if (picked.length < Math.min(limit, pool.length)) {
+    picked.push(...pool.filter((listing) => !picked.some((entry) => entry.id === listing.id)).slice(0, limit - picked.length));
+  }
+
+  for (const listing of picked) {
+    usedIds.add(listing.id);
+  }
+
+  return picked;
+}
+
+export async function getMarketCuratedSections(userId?: string): Promise<MarketCuratedSections> {
+  noStore();
+
+  const listings = await prisma.listing.findMany({
+    where: {
+      status: ListingStatus.ACTIVE
+    },
+    include: listingCardInclude
+  });
+
+  const newestListings = sortListingsForMarket(listings, "newest");
+  const fashionListings = newestListings.filter((listing) =>
+    isFashionBrowseListing({
+      title: listing.title,
+      description: listing.description,
+      category: listing.category
+    })
+  );
+  const trendingBrands = sortListingsForMarket(
+    fashionListings.filter((listing) =>
+      Boolean(
+        getListingBrowseMeta({
+          title: listing.title,
+          description: listing.description,
+          category: listing.category
+        }).brand
+      )
+    ),
+    "trending"
+  );
+  const affordableFashion = fashionListings.filter((listing) => listing.priceCents <= 3000);
+  const dormFinds = newestListings.filter((listing) => listing.category === "DORM");
+  const techAndStudy = newestListings.filter((listing) => listing.category === "TECH" || listing.category === "TEXTBOOKS");
+  const roomRefresh = newestListings.filter((listing) =>
+    matchesBrowseLane(
+      {
+        title: listing.title,
+        description: listing.description,
+        category: listing.category
+      },
+      "furniture"
+    )
+  );
+  const ticketsAndExtras = newestListings.filter(
+    (listing) =>
+      listing.category === "TICKETS" ||
+      matchesBrowseLane(
+        {
+          title: listing.title,
+          description: listing.description,
+          category: listing.category
+        },
+        "extras"
+      )
+  );
+
+  const primaryUsedIds = new Set<string>();
+  const secondaryUsedIds = new Set<string>();
+
+  const primary: MarketCuratedSection[] = [
+    {
+      id: "fresh",
+      title: "Fresh on Grounds",
+      description: "New style drops, game day layers, and campus fits posted lately.",
+      href: "/market?sort=newest",
+      tone: "primary" as const,
+      items: pickCuratedListings(fashionListings, 4, primaryUsedIds).map((listing) => mapListing(listing, userId))
+    },
+    {
+      id: "brands",
+      title: "Trending Brands",
+      description: "The labels getting saved fastest around Grounds right now.",
+      href: "/market?sort=trending",
+      tone: "primary" as const,
+      items: pickCuratedListings(trendingBrands.length ? trendingBrands : fashionListings, 4, primaryUsedIds).map((listing) =>
+        mapListing(listing, userId)
+      )
+    },
+    {
+      id: "under-30",
+      title: "Under $30",
+      description: "Easy pickups that still feel like a find, not an afterthought.",
+      href: "/market?max=3000",
+      tone: "primary" as const,
+      items: pickCuratedListings(affordableFashion.length ? affordableFashion : fashionListings, 4, primaryUsedIds).map((listing) =>
+        mapListing(listing, userId)
+      )
+    }
+  ].filter((section) => section.items.length > 0);
+
+  const secondary: MarketCuratedSection[] = [
+    {
+      id: "dorm-finds",
+      title: "Dorm Finds",
+      description: "Move-in helpers, decor, and room staples that still belong here.",
+      href: "/market?lane=dorm",
+      tone: "secondary" as const,
+      items: pickCuratedListings(dormFinds, 3, secondaryUsedIds).map((listing) => mapListing(listing, userId))
+    },
+    {
+      id: "tech-study",
+      title: "Tech & Study",
+      description: "Monitors, headphones, calculators, and class-day essentials.",
+      href: "/market?lane=tech",
+      tone: "secondary" as const,
+      items: pickCuratedListings(techAndStudy, 3, secondaryUsedIds).map((listing) => mapListing(listing, userId))
+    },
+    {
+      id: "room-refresh",
+      title: "Room Refresh",
+      description: "Mirrors, chairs, shelves, and dorm upgrades worth carrying home.",
+      href: "/market?lane=furniture",
+      tone: "secondary" as const,
+      items: pickCuratedListings(roomRefresh.length ? roomRefresh : dormFinds, 3, secondaryUsedIds).map((listing) =>
+        mapListing(listing, userId)
+      )
+    },
+    {
+      id: "tickets-extras",
+      title: "Tickets & Extras",
+      description: "Last-minute passes and the off-duty marketplace finds beyond clothes.",
+      href: "/market?lane=tickets",
+      tone: "secondary" as const,
+      items: pickCuratedListings(ticketsAndExtras, 3, secondaryUsedIds).map((listing) => mapListing(listing, userId))
+    }
+  ].filter((section) => section.items.length > 0);
+
+  return {
+    primary,
+    secondary
+  };
+}
+
 export async function getFollowingFeedListings(userId: string, page = 1, limit = 8): Promise<FollowingFeedData> {
   noStore();
 
   const pagination = normalizePage(page, limit, 20);
   const where = {
     status: ListingStatus.ACTIVE,
-    moderationStatus: ListingModerationStatus.VISIBLE,
     seller: {
       followers: {
         some: {

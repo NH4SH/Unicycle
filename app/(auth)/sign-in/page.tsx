@@ -4,6 +4,7 @@ import { isDevAuthBypassEnabled } from "@/lib/auth";
 type SignInPageProps = {
   searchParams?: {
     callbackUrl?: string;
+    mode?: string;
   };
 };
 
@@ -12,6 +13,7 @@ export default function SignInPage({ searchParams }: SignInPageProps) {
     <SignInForm
       callbackUrl={searchParams?.callbackUrl || "/market"}
       enableDevBypass={isDevAuthBypassEnabled()}
+      mode={searchParams?.mode === "verified-shop" ? "verified-shop" : "student"}
     />
   );
 }

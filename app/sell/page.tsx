@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
+import { getActiveUserBan } from "@/lib/moderation";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { isStripeConnectConfigured } from "@/lib/stripe";
 import { canUserSell } from "@/lib/user-access";
@@ -14,6 +15,7 @@ import { canUserSell } from "@/lib/user-access";
 export default async function SellPage() {
   const session = await getAuthSession();
   const payoutState = await getSellerPayoutState(session?.user.id);
+  const activeBan = await getActiveUserBan(session?.user.id);
   const payoutsConfigured = isStripeConnectConfigured();
   const viewerCanSell = session?.user
     ? canUserSell({
@@ -110,7 +112,19 @@ export default async function SellPage() {
         </Card>
       )}
 
-      {session?.user.id && viewerCanSell ? (
+      {session?.user.id && activeBan ? (
+        <Card className="surface-panel-strong">
+          <CardContent className="space-y-3 p-6">
+            <p className="font-semibold text-foreground">Your account is temporarily blocked from new marketplace actions.</p>
+            <p className="text-sm leading-7 text-muted-foreground">
+              {activeBan.endsAt
+                ? `This restriction lasts until ${activeBan.endsAt.toLocaleString()}.`
+                : "This restriction stays in place until the HoosFinds team reviews it."}{" "}
+              Reason: {activeBan.reason}
+            </p>
+          </CardContent>
+        </Card>
+      ) : session?.user.id && viewerCanSell ? (
         <SellWizard
           payoutsReady={payoutState.readyToReceivePayments}
           payoutsConfigured={payoutsConfigured}

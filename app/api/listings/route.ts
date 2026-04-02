@@ -14,9 +14,13 @@ export async function GET(request: Request) {
   const session = await getAuthSession();
 
   const q = searchParams.get("q") ?? undefined;
+  const lane = searchParams.get("lane") ?? undefined;
   const category = searchParams.get("category") ?? undefined;
   const condition = searchParams.get("condition") ?? undefined;
   const location = searchParams.get("location") ?? undefined;
+  const brand = searchParams.get("brand") ?? undefined;
+  const size = searchParams.get("size") ?? undefined;
+  const color = searchParams.get("color") ?? undefined;
   const sort = searchParams.get("sort") ?? "newest";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const minParam = searchParams.get("min");
@@ -29,9 +33,13 @@ export async function GET(request: Request) {
 
   const result = await getMarketListings({
     q,
+    lane,
     category,
     condition,
     location,
+    brand,
+    size,
+    color,
     sort,
     page,
     min,

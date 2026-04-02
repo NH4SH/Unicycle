@@ -19,7 +19,8 @@ type AdminApplication = {
   phone: string;
   instagram: string;
   website: string | null;
-  location: string;
+  neighborhood: string;
+  address: string;
   whatTheySell: string;
   description: string;
   whyJoin: string;
@@ -37,6 +38,7 @@ type AdminApplication = {
     id: string;
     email: string;
     username: string;
+    role: "USER" | "VERIFIED_SHOP" | "ADMIN";
     sellerKind: "STUDENT" | "VERIFIED_SHOP";
     verifiedShopApprovedAt: string | null;
   } | null;
@@ -136,8 +138,14 @@ export function VerifiedSellerAdminDashboard({ applications }: { applications: A
                 <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                   <p><span className="font-medium text-foreground">Instagram:</span> {application.instagram}</p>
                   <p><span className="font-medium text-foreground">Website:</span> {application.website || "Not provided"}</p>
-                  <p><span className="font-medium text-foreground">Location:</span> {application.location}</p>
+                  <p><span className="font-medium text-foreground">Neighborhood:</span> {application.neighborhood}</p>
+                  <p><span className="font-medium text-foreground">Address:</span> {application.address}</p>
                   <p><span className="font-medium text-foreground">What they sell:</span> {application.whatTheySell}</p>
+                  {application.approvedUser ? (
+                    <p>
+                      <span className="font-medium text-foreground">Approved account:</span> @{application.approvedUser.username} · {application.approvedUser.role.toLowerCase()}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="rounded-[1.4rem] border border-border bg-background/70 p-4">
