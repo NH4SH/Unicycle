@@ -24,7 +24,7 @@ export function NavBar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background md:bg-background/88 md:backdrop-blur-xl">
       <div className="container flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-3">
         <Logo />
         <nav className="hidden items-center gap-1 md:flex">
