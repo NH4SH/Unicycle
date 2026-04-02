@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { MapPin, MessageCircle, ShieldCheck, Star, Trash2, WalletCards } from "lucide-react";
+import { MapPin, MessageCircle, ShieldCheck, ShoppingCart, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { ListingCard } from "@/components/cards/listing-card";
@@ -333,8 +333,8 @@ export function ListingDetailView({
 
               {showCheckoutCta ? (
                 <Button className="h-12 w-full" onClick={startCheckout} disabled={checkingOut}>
-                  <WalletCards className="mr-1.5 h-4 w-4" />
-                  {checkingOut ? "Opening review..." : "Review total"}
+                  <ShoppingCart className="mr-1.5 h-4 w-4" />
+                  {checkingOut ? "Opening checkout..." : "Checkout"}
                 </Button>
               ) : (
                 <Button className="h-12 w-full" onClick={startConversation}>

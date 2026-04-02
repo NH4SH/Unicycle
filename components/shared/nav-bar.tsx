@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Heart, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
+import { Heart, LogOut, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
 
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -25,7 +25,7 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/88 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between gap-3">
+      <div className="container flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-3">
         <Logo />
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
@@ -46,8 +46,8 @@ export function NavBar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <ThemeToggle className="origin-right scale-[0.92] sm:scale-100" />
           {status === "authenticated" ? (
             <>
               <Link
@@ -59,21 +59,33 @@ export function NavBar() {
                   name={session.user.publicDisplayName ?? session.user.name}
                   username={session.user.publicUsername ?? session.user.username}
                   imageUrl={session.user.image}
-                  className="h-8 w-8"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
                 />
               </Link>
-              <Button size="sm" variant="secondary" onClick={() => signOut({ callbackUrl: "/" })}>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="w-11 px-0 sm:hidden"
+                onClick={() => signOut({ callbackUrl: "/" })}
+                aria-label="Log out"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="secondary" className="hidden sm:inline-flex" onClick={() => signOut({ callbackUrl: "/" })}>
                 Log out
               </Button>
             </>
           ) : (
             <Button size="sm" asChild>
-              <Link href="/sign-in?callbackUrl=%2Fmarket">Join with UVA email</Link>
+              <Link href="/sign-in?callbackUrl=%2Fmarket">
+                <span className="sm:hidden">Join</span>
+                <span className="hidden sm:inline">Join with UVA email</span>
+              </Link>
             </Button>
           )}
         </div>
       </div>
-      <nav className="container grid grid-cols-5 gap-2 pb-3 md:hidden">
+      <nav className="container grid grid-cols-5 gap-1.5 pb-2 pt-0.5 md:hidden">
         {navItems.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
@@ -81,7 +93,7 @@ export function NavBar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex min-h-12 flex-col items-center justify-center gap-1 rounded-[1.1rem] px-2 py-2 text-[11px] font-semibold transition",
+                "inline-flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-[1rem] px-1.5 py-1.5 text-[10.5px] font-semibold transition",
                 active ? "surface-subtle bg-card text-foreground shadow-soft" : "text-muted-foreground hover:bg-card/60"
               )}
             >

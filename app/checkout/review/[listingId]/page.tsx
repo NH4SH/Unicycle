@@ -105,8 +105,8 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
           Back to listing
         </Link>
 
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <Card className="surface-panel-strong overflow-hidden">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <Card className="order-2 surface-panel-strong overflow-hidden lg:order-1">
             <CardContent className="space-y-6 p-6 md:p-7">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -115,7 +115,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                 </div>
                 <div className="space-y-2">
                   <p className="editorial-eyebrow">Review before you pay</p>
-                  <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
+                  <h1 className="font-display text-[2.35rem] font-extrabold tracking-tight leading-[0.98] md:text-5xl">
                     Make sure the total looks right before Stripe.
                   </h1>
                   <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
@@ -154,7 +154,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                     </div>
                   </div>
 
-                  <p className="text-sm leading-7 text-muted-foreground">
+                  <p className="line-clamp-4 text-sm leading-7 text-muted-foreground sm:line-clamp-none">
                     {listing.description}
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
             </CardContent>
           </Card>
 
-          <Card className="surface-panel-strong">
+          <Card className="order-1 surface-panel-strong lg:order-2">
             <CardContent className="space-y-6 p-6 md:p-7">
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Order summary</p>
@@ -221,13 +221,6 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                 </div>
               </div>
 
-              <p className="text-xs leading-6 text-muted-foreground">
-                Sales tax is shown separately so HoosFinds can keep tax logic configurable. The current review flow uses a {(
-                  DEFAULT_SALES_TAX_BPS / 100
-                ).toFixed(1)}
-                % Virginia-style example rate.
-              </p>
-
               {isBlocked ? (
                 <Button asChild size="lg" className="w-full">
                   <Link href={`/listing/${listing.id}`}>Return to listing</Link>
@@ -235,6 +228,13 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
               ) : (
                 <ContinueCheckoutButton listingId={listing.id} />
               )}
+
+              <p className="text-xs leading-6 text-muted-foreground">
+                Sales tax is shown separately so HoosFinds can keep tax logic configurable. The current review flow uses a {(
+                  DEFAULT_SALES_TAX_BPS / 100
+                ).toFixed(1)}
+                % Virginia-style example rate.
+              </p>
 
               <Button asChild variant="secondary" size="lg" className="w-full">
                 <Link href={`/listing/${listing.id}`}>

@@ -40,7 +40,17 @@ export function ContinueCheckoutButton({ listingId }: { listingId: string }) {
   return (
     <Button size="lg" className="w-full" onClick={continueToStripe} disabled={loading}>
       {loading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <WalletCards className="mr-1.5 h-4 w-4" />}
-      {loading ? "Redirecting to Stripe..." : "Continue to secure checkout"}
+      {loading ? (
+        <>
+          <span className="sm:hidden">To Stripe...</span>
+          <span className="hidden sm:inline">Redirecting to Stripe...</span>
+        </>
+      ) : (
+        <>
+          <span className="sm:hidden">Continue to Stripe</span>
+          <span className="hidden sm:inline">Continue to secure checkout</span>
+        </>
+      )}
     </Button>
   );
 }

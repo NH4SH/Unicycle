@@ -418,12 +418,12 @@ export function MarketClient({ initialItems, initialHasMore, initialTotal, initi
     <div className="space-y-4 pb-16 md:space-y-5">
       <section className="surface-floating overflow-hidden">
         <div className="space-y-3 px-4 py-3 md:px-5 md:py-4">
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-[minmax(0,1.6fr)_minmax(13rem,0.55fr)_auto] lg:items-end">
-              <label className="relative col-span-2 block min-w-0 lg:col-span-1">
-                <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
-                  Search
-                </span>
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(13rem,0.55fr)_auto] lg:items-end">
+                <label className="relative block min-w-0 sm:col-span-2 lg:col-span-1">
+                  <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
+                    Search
+                  </span>
                 <Search className="pointer-events-none absolute left-4 top-[calc(50%+0.65rem)] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={filters.q}
@@ -434,10 +434,10 @@ export function MarketClient({ initialItems, initialHasMore, initialTotal, initi
                 />
               </label>
 
-              <div className="min-w-0">
-                <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
-                  Sort
-                </span>
+                <div className="hidden min-w-0 sm:block">
+                  <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">
+                    Sort
+                  </span>
                 <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
                   <SelectTrigger aria-label="Sort listings">
                     <SelectValue placeholder="Sort" />
@@ -491,17 +491,33 @@ export function MarketClient({ initialItems, initialHasMore, initialTotal, initi
             ) : null}
           </div>
 
-          <div
-            id={filtersPanelId}
-            className={cn(
-              "space-y-3 border-t border-border/70 pt-3",
-              filtersOpen ? "block" : "hidden"
-            )}
-          >
-            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(17rem,1fr)]">
-              <div className="space-y-2">
-                <p className="text-[0.78rem] font-medium text-muted-foreground">Category</p>
-                <Select value={filters.category} onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
+              <div
+                id={filtersPanelId}
+                className={cn(
+                  "space-y-3 border-t border-border/70 pt-3",
+                  filtersOpen ? "block" : "hidden"
+                )}
+              >
+                <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(17rem,1fr)]">
+                  <div className="space-y-2 sm:hidden">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Sort</p>
+                    <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
+                      <SelectTrigger aria-label="Sort listings">
+                        <SelectValue placeholder="Sort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LISTING_SORT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Category</p>
+                    <Select value={filters.category} onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
                   <SelectTrigger aria-label="Filter by category">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>

@@ -48,15 +48,15 @@ export default async function HomePage() {
     HOME_PRIMARY_LANES;
 
   return (
-    <div className="container space-y-20 py-8 md:space-y-24 md:py-12">
-      <section className="grid gap-10 xl:grid-cols-[1.02fr_0.98fr] xl:items-end">
-        <div className="space-y-7">
-          <div className="space-y-4">
+    <div className="container space-y-16 py-6 md:space-y-24 md:py-12">
+      <section className="grid gap-6 sm:gap-8 xl:grid-cols-[1.02fr_0.98fr] xl:items-end xl:gap-10">
+        <div className="space-y-5 sm:space-y-7">
+          <div className="space-y-3 sm:space-y-4">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
-            <h1 className="max-w-4xl font-display text-5xl font-extrabold tracking-[-0.04em] md:text-7xl md:leading-[0.92]">
+            <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
               The best fits on <span className="font-editorial italic font-semibold text-uva-orange">Grounds</span>.
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+            <p className="max-w-2xl text-[0.98rem] leading-7 text-muted-foreground md:text-lg">
               HoosFinds is UVA&apos;s fashion-first resale marketplace for vintage layers, game day pieces, outerwear,
               sneakers, accessories, and the campus finds worth grabbing before someone else does.
             </p>
@@ -71,16 +71,16 @@ export default async function HomePage() {
             </Button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
             {TRUST_MARKERS.map((item) => (
-              <span key={item} className="surface-pill px-4 py-2 text-sm">
+              <span key={item} className="surface-pill shrink-0 px-4 py-2 text-sm">
                 {item}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-[1.08fr_0.92fr]">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr]">
           {heroLead ? (
             <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
               <div className="relative aspect-[4/5] overflow-hidden">
@@ -123,7 +123,7 @@ export default async function HomePage() {
             </div>
           )}
 
-          <div className="grid gap-4">
+          <div className="hidden gap-4 sm:grid">
             {heroSide.length ? (
               heroSide.map((listing, index) => (
                 <Link

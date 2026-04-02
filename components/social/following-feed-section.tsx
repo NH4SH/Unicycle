@@ -97,14 +97,17 @@ function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
     return null;
   }
 
+  const mobileClosets = closets.slice(0, 3);
+  const hiddenClosetCount = Math.max(closets.length - mobileClosets.length, 0);
+
   return (
     <div className="space-y-3 border-t border-border/70 pt-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground md:block">
         {closets.length} active closet{closets.length === 1 ? "" : "s"}
       </p>
 
-      <div className="flex flex-wrap gap-2 md:hidden">
-        {closets.map((closet) => (
+      <div className="flex flex-wrap items-center gap-2 md:hidden">
+        {mobileClosets.map((closet) => (
           <Link
             key={closet.sellerId}
             href={`/u/${closet.username}`}
@@ -114,6 +117,9 @@ function ActiveClosetsRail({ closets }: { closets: ClosetActivity[] }) {
             <span className="text-muted-foreground">{closet.dropCount} live</span>
           </Link>
         ))}
+        {hiddenClosetCount ? (
+          <span className="text-xs font-medium text-muted-foreground">+{hiddenClosetCount} more active</span>
+        ) : null}
       </div>
 
       <div className="hidden gap-3 md:grid md:grid-cols-3 xl:grid-cols-4">
