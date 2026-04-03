@@ -53,8 +53,8 @@ export default async function HomePage() {
 
   return (
     <div className="container space-y-12 py-5 md:space-y-16 md:py-8">
-      <section className="grid gap-5 sm:gap-6 xl:grid-cols-[1.02fr_0.98fr] xl:items-start xl:gap-8">
-        <div className="space-y-5 sm:space-y-6 xl:max-w-[40rem] xl:pt-1">
+      <section className="space-y-10 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(20rem,35rem)] xl:items-start xl:gap-x-8 xl:gap-y-8 xl:space-y-0">
+        <div className="space-y-5 sm:space-y-6 xl:max-w-[40rem]">
           <div className="space-y-2.5 sm:space-y-3.5">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
             <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
@@ -84,10 +84,10 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr] xl:pt-0.5">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr] xl:row-span-2 xl:row-start-1 xl:max-w-[35rem] xl:justify-self-end xl:self-start">
           {heroLead ? (
             <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
-              <div className="relative aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-[4/5] overflow-hidden xl:aspect-[4/4.7]">
                 <Image
                   src={heroLead.images[0] || FALLBACK_IMAGE}
                   alt={heroLead.title}
@@ -135,7 +135,7 @@ export default async function HomePage() {
                   href={`/listing/${listing.id}`}
                   className="group relative block overflow-hidden rounded-[1.9rem] border border-border/80 bg-card shadow-soft"
                 >
-                  <div className="relative aspect-[4/4.5] overflow-hidden">
+                  <div className="relative aspect-[4/4.5] overflow-hidden xl:aspect-[4/4.05]">
                     <Image
                       src={listing.images[0] || FALLBACK_IMAGE}
                       alt={listing.title}
@@ -189,21 +189,23 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
-      </section>
 
-      <FollowingFeedSection
-        viewerSignedIn={Boolean(session?.user.id)}
-        feed={followingFeed}
-        suggested={suggestedSellers}
-        title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
-        subtitle={
-          session?.user.id
-            ? "Follow closets you trust and HoosFinds turns that into a cleaner feed of future listings."
-            : "The fastest way to understand HoosFinds is to start with the closets already putting up sharp campus finds."
-        }
-        emptyTitle="Follow a few closets and your feed starts here"
-        emptyDescription="When you follow sellers whose style you like, their newest listings land in one place instead of getting lost in the full marketplace."
-      />
+        <div className="xl:min-w-0 xl:max-w-[42rem] xl:pt-1">
+          <FollowingFeedSection
+            viewerSignedIn={Boolean(session?.user.id)}
+            feed={followingFeed}
+            suggested={suggestedSellers}
+            title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
+            subtitle={
+              session?.user.id
+                ? "Follow closets you trust and HoosFinds turns that into a cleaner feed of future listings."
+                : "The fastest way to understand HoosFinds is to start with the closets already putting up sharp campus finds."
+            }
+            emptyTitle="Follow a few closets and your feed starts here"
+            emptyDescription="When you follow sellers whose style you like, their newest listings land in one place instead of getting lost in the full marketplace."
+          />
+        </div>
+      </section>
 
       <section className="space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
