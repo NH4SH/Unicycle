@@ -20,7 +20,7 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?auto=format&fit=crop&w=900&q=80";
 
 const HERO_CARD_PILL_CLASS =
-  "border-white/14 bg-black/56 font-medium text-white shadow-[0_8px_24px_rgba(0,0,0,0.26)] backdrop-blur-md dark:border-white/16 dark:bg-black/60 dark:text-white";
+  "border-white/18 bg-black/58 font-medium text-white shadow-[0_10px_26px_rgba(0,0,0,0.3)] backdrop-blur-md dark:border-white/22 dark:bg-slate-950/72 dark:text-white";
 
 export default async function HomePage() {
   const session = await getAuthSession();
@@ -107,7 +107,7 @@ export default async function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <div className="rounded-full bg-card/88 px-4 py-2 text-sm font-semibold text-foreground shadow-soft">
+                  <div className="rounded-full border border-border/70 bg-card/90 px-4 py-2 text-sm font-semibold text-foreground shadow-soft dark:border-white/14 dark:bg-slate-950/82 dark:text-white/96">
                     {formatCurrency(heroLead.priceCents / 100)}
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default async function HomePage() {
                   Every listing, save, and message stays inside the UVA student community.
                 </p>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-uva-orange/10 text-uva-orange">
+              <div className="surface-pill flex h-12 w-12 items-center justify-center text-uva-orange dark:text-orange-50">
                 <ShieldCheck className="h-5 w-5" />
               </div>
             </div>

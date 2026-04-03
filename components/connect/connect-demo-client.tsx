@@ -32,6 +32,8 @@ import { formatCurrency, timeAgo } from "@/lib/utils";
 
 const FALLBACK_PRODUCT_IMAGE =
   "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=1200&q=80";
+const PRODUCT_OVERLAY_BADGE_CLASS =
+  "border-white/18 bg-slate-950/74 text-white shadow-soft backdrop-blur-md dark:border-white/22 dark:bg-slate-950/82 dark:text-white";
 
 type Viewer = {
   id: string;
@@ -628,9 +630,11 @@ export function ConnectDemoClient({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <Badge variant="outline" className="border-border/80 bg-card/88 backdrop-blur">Platform product</Badge>
-                      <Badge variant={productReady ? "orange" : "blue"} className="bg-card/88 text-foreground backdrop-blur">
-                      {productReady ? "Ready for checkout" : "Needs onboarding"}
+                      <Badge variant="outline" className={PRODUCT_OVERLAY_BADGE_CLASS}>
+                        Platform product
+                      </Badge>
+                      <Badge variant={productReady ? "orange" : "blue"} className={PRODUCT_OVERLAY_BADGE_CLASS}>
+                        {productReady ? "Ready for checkout" : "Needs onboarding"}
                       </Badge>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-4 text-white">

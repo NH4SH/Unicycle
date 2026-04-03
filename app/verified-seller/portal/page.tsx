@@ -79,7 +79,7 @@ export default async function VerifiedSellerPortalPage() {
         <Card className="surface-panel-strong">
           <CardContent className="space-y-4 p-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-uva-blue/[0.08] text-uva-blue dark:bg-white/[0.08] dark:text-white">
+              <div className="surface-pill flex h-12 w-12 items-center justify-center text-uva-blue dark:text-white">
                 <Store className="h-5 w-5" />
               </div>
               <div>

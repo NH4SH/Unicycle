@@ -58,13 +58,13 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 <Badge variant={paymentComplete ? "orange" : "blue"} className="w-fit">
                   {paymentComplete ? "Payment confirmed" : "Payment processing"}
                 </Badge>
-                <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80 shadow-soft dark:border-white/12 dark:bg-white/[0.08] dark:text-white/88">
+                <div className="surface-pill inline-flex items-center gap-1 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground dark:text-white">
                   <Sparkles className="h-3.5 w-3.5 text-uva-orange" />
                   Stripe
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="inline-flex rounded-full bg-card/90 p-3 shadow-soft">
+                <div className="surface-pill inline-flex items-center justify-center p-3 text-uva-orange dark:text-orange-50">
                   {paymentComplete ? (
                     <CheckCircle2 className="h-8 w-8 text-uva-orange" />
                   ) : (

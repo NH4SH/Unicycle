@@ -100,7 +100,7 @@ export function SellerNetworkCard({
             {seller.bio || "Fresh closet, local pickup, and a sharp eye for what moves on Grounds."}
           </p>
           {showReason && seller.reason ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange">
+            <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange dark:border-uva-orange/30 dark:bg-uva-orange/[0.16] dark:text-orange-50">
               <Sparkles className="h-3.5 w-3.5" />
               {seller.reason}
             </div>
@@ -110,7 +110,7 @@ export function SellerNetworkCard({
         <div className="flex flex-wrap items-center gap-2">
           {styleTags.length ? (
             styleTags.map((tag) => (
-              <Badge key={tag} variant="outline" className="bg-card/70 text-foreground/90">
+              <Badge key={tag} variant="outline" className="bg-card/78 text-foreground/90 dark:bg-white/[0.09] dark:text-white/94">
                 {tag}
               </Badge>
             ))

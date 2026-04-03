@@ -146,7 +146,7 @@ export function ProfileView({
               </div>
               {user.bio ? <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{user.bio}</p> : null}
               {!isOwner && followState.mutualCount > 0 ? (
-                <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange">
+                <div className="inline-flex items-center gap-2 rounded-full border border-uva-orange/20 bg-uva-orange/7 px-3 py-1.5 text-xs font-medium text-uva-orange dark:border-uva-orange/30 dark:bg-uva-orange/[0.16] dark:text-orange-50">
                   <Sparkles className="h-3.5 w-3.5" />
                   {followState.mutualCount} people you follow also follow this {isVerifiedShop ? "shop" : "closet"}
                 </div>
@@ -246,7 +246,7 @@ export function ProfileView({
                   <p className="font-display text-xl font-bold">Buyer-verified ratings</p>
                   <p className="text-sm text-muted-foreground">Only buyers from completed HoosFinds transactions can rate a seller here.</p>
                 </div>
-                <div className="inline-flex items-center gap-1 rounded-full bg-card/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="surface-pill inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground dark:text-white">
                   <Star className="h-3.5 w-3.5 fill-uva-orange text-uva-orange" />
                   {stats.averageRating ? `${stats.averageRating.toFixed(1)} avg` : "New seller"}
                 </div>

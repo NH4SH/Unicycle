@@ -39,7 +39,9 @@ export function NavBar() {
                 href={item.href}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
-                  active ? "surface-pill bg-card text-foreground" : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
+                  active
+                    ? "surface-pill text-foreground dark:text-white"
+                    : "text-muted-foreground hover:bg-card/70 hover:text-foreground dark:hover:bg-white/[0.08] dark:hover:text-white"
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -82,7 +84,9 @@ export function NavBar() {
                 href={item.href}
                 className={cn(
                   "inline-flex min-h-10 flex-col items-center justify-center gap-0.5 rounded-[0.95rem] px-1 py-1 text-[10px] font-semibold transition",
-                  active ? "surface-subtle bg-card text-foreground shadow-soft" : "text-muted-foreground hover:bg-card/60"
+                  active
+                    ? "surface-subtle text-foreground shadow-soft dark:text-white"
+                    : "text-muted-foreground hover:bg-card/60 dark:hover:bg-white/[0.08]"
                 )}
               >
                 <item.icon className="h-[0.95rem] w-[0.95rem]" />

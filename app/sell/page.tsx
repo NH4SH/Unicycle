@@ -38,7 +38,7 @@ export default async function SellPage() {
             Create the listing here, keep pickup simple, and let HoosFinds handle payout routing underneath the sale.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="surface-pill px-4 py-2 text-xs uppercase tracking-[0.18em]">
           Pickup on Grounds
         </div>
       </div>

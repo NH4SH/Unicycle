@@ -13,9 +13,9 @@ type VerifiedShopBadgeProps = {
 export function VerifiedShopBadge({ label = "Verified Shop", className }: VerifiedShopBadgeProps) {
   return (
     <Badge
-      variant="outline"
+      variant="blue"
       className={cn(
-        "inline-flex items-center gap-1.5 border-uva-blue/20 bg-uva-blue/[0.07] text-uva-blue dark:border-white/16 dark:bg-white/[0.08] dark:text-white",
+        "inline-flex items-center gap-1.5",
         className
       )}
     >

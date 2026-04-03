@@ -13,7 +13,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, description, ctaHref, ctaLabel }: EmptyStateProps) {
   return (
     <div className="surface-panel-dashed p-10 text-center">
-      <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-full bg-uva-orange/10 text-uva-orange">
+      <div className="surface-pill mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center text-uva-orange dark:text-orange-50">
         <Sparkles className="h-5 w-5" />
       </div>
       <p className="editorial-eyebrow">HoosFinds</p>

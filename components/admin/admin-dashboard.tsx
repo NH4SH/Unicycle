@@ -363,13 +363,13 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
             This dashboard keeps verified seller approvals, user restrictions, listing moderation, sales history, and platform metrics in one place so the marketplace stays clean and easy to run.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="surface-pill px-4 py-2 text-xs uppercase tracking-[0.18em]">
           {data.overview.pendingApplications} applications pending
         </div>
       </section>
 
       <Tabs defaultValue="overview" className="space-y-5">
-        <TabsList className="w-full flex-wrap justify-start rounded-[1.25rem] bg-card/70 p-1.5 md:w-auto">
+        <TabsList className="w-full flex-wrap justify-start rounded-[1.25rem] p-1.5 md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="verified-sellers">Verified sellers</TabsTrigger>
           <TabsTrigger value="users">User moderation</TabsTrigger>

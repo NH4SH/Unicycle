@@ -577,7 +577,7 @@ export function MarketClient({
                       className={cn(
                         "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
                         active
-                          ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft"
+                          ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
                           : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
                       )}
                     >
@@ -594,7 +594,7 @@ export function MarketClient({
                   className={cn(
                     "touch-chip inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition",
                     moreOpen || SECONDARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === filters.lane)
-                      ? "border-uva-blue/30 bg-uva-blue/[0.08] text-foreground shadow-soft"
+                      ? "border-uva-blue/30 bg-uva-blue/[0.08] text-foreground shadow-soft dark:border-uva-blue/34 dark:bg-uva-blue/[0.18] dark:text-blue-50"
                       : "surface-chip text-foreground/82 hover:border-uva-blue/28 hover:text-uva-blue"
                   )}
                 >
@@ -626,7 +626,7 @@ export function MarketClient({
                           className={cn(
                             "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
                             active
-                              ? "border-uva-orange/40 bg-card text-foreground shadow-soft"
+                              ? "border-uva-orange/40 bg-card text-foreground shadow-soft dark:border-uva-orange/30 dark:bg-uva-orange/[0.16] dark:text-orange-50"
                               : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
                           )}
                         >

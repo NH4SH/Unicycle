@@ -1,0 +1,503 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "HoosFinds home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "HoosFinds logo" [ref=e6]
+        - paragraph [ref=e8]: HoosFinds
+      - navigation [ref=e9]:
+        - link "Browse" [ref=e10] [cursor=pointer]:
+          - /url: /market
+          - img [ref=e11]
+          - text: Browse
+        - link "Sell" [ref=e14] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e15]
+          - text: Sell
+        - link "Saved" [ref=e16] [cursor=pointer]:
+          - /url: /favorites
+          - img [ref=e17]
+          - text: Saved
+        - link "Messages" [ref=e19] [cursor=pointer]:
+          - /url: /messages
+          - img [ref=e20]
+          - text: Messages
+        - link "Purchases" [ref=e22] [cursor=pointer]:
+          - /url: /purchases
+          - img [ref=e23]
+          - text: Purchases
+      - generic [ref=e28]:
+        - button "Switch to dark mode" [ref=e29] [cursor=pointer]:
+          - img [ref=e31]
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - img [ref=e44]
+        - link "Join with UVA email" [ref=e46] [cursor=pointer]:
+          - /url: /sign-in?callbackUrl=%2Fmarket
+          - generic [ref=e47]: Join with UVA email
+  - main [ref=e48]:
+    - generic [ref=e50]:
+      - generic [ref=e52]:
+        - paragraph [ref=e53]: Browse HoosFinds
+        - heading "Browse the best finds on Grounds." [level=1] [ref=e54]
+        - paragraph [ref=e55]: Women's, men's, vintage, streetwear, shoes, and accessories lead the feed. Everything else stays close, just a little quieter.
+      - generic [ref=e56]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - paragraph [ref=e61]: Shop clothing first
+              - heading "Browse the strongest finds first." [level=2] [ref=e62]
+              - paragraph [ref=e63]: Women's, men's, vintage, streetwear, shoes, and accessories come first. Everything else lives under More.
+            - generic [ref=e65]:
+              - button "Women's" [ref=e66] [cursor=pointer]
+              - button "Men's" [ref=e67] [cursor=pointer]
+              - button "Vintage" [ref=e68] [cursor=pointer]
+              - button "Streetwear" [ref=e69] [cursor=pointer]
+              - button "Shoes" [ref=e70] [cursor=pointer]
+              - button "Accessories" [ref=e71] [cursor=pointer]
+              - button "More" [ref=e72] [cursor=pointer]:
+                - text: More
+                - img [ref=e73]
+            - generic [ref=e75]:
+              - paragraph [ref=e76]: More categories
+              - generic [ref=e77]:
+                - button "Dorm" [ref=e78] [cursor=pointer]
+                - button "Tech" [ref=e79] [cursor=pointer]
+                - button "Textbooks" [ref=e80] [cursor=pointer]
+                - button "Furniture" [ref=e81] [cursor=pointer]
+                - button "Tickets" [ref=e82] [cursor=pointer]
+                - button "Extras" [ref=e83] [cursor=pointer]
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]: Search
+              - img
+              - textbox "Search listings" [ref=e87]:
+                - /placeholder: Search jackets, vintage hoodies, sneakers, and more
+            - button "All filters" [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+              - text: All filters
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - paragraph [ref=e94]: Sort
+                - combobox "Sort listings" [ref=e95] [cursor=pointer]:
+                  - img [ref=e96]
+                - combobox [ref=e98]
+              - generic [ref=e99]:
+                - paragraph [ref=e100]: Condition
+                - combobox "Filter by condition" [ref=e101] [cursor=pointer]:
+                  - img [ref=e102]
+                - combobox [ref=e104]
+              - generic [ref=e105]:
+                - paragraph [ref=e106]: Size
+                - combobox "Filter by size" [ref=e107] [cursor=pointer]:
+                  - img [ref=e108]
+                - combobox [ref=e110]
+              - generic [ref=e111]:
+                - paragraph [ref=e112]: Brand
+                - combobox "Filter by brand" [ref=e113] [cursor=pointer]:
+                  - img [ref=e114]
+                - combobox [ref=e116]
+              - generic [ref=e117]:
+                - paragraph [ref=e118]: Color
+                - combobox "Filter by color" [ref=e119] [cursor=pointer]:
+                  - img [ref=e120]
+                - combobox [ref=e122]
+              - generic [ref=e123]:
+                - paragraph [ref=e124]: Pickup spot
+                - combobox "Filter by pickup location" [ref=e125] [cursor=pointer]:
+                  - img [ref=e126]
+                - combobox [ref=e128]
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - paragraph [ref=e131]: Price
+                - paragraph [ref=e132]: $1 - $500+
+              - generic [ref=e133]:
+                - generic [ref=e134]:
+                  - paragraph [ref=e135]: Price
+                  - paragraph [ref=e136]: $1 - $500+
+                - generic "Price range" [ref=e138]
+                - generic [ref=e141]:
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: Min
+                    - generic [ref=e144]:
+                      - generic: $
+                      - textbox "Minimum price in dollars" [ref=e145]: "1"
+                  - generic [ref=e146]:
+                    - generic [ref=e147]: Max
+                    - generic [ref=e148]:
+                      - generic: $
+                      - textbox "Maximum price in dollars" [ref=e149]: "500"
+          - paragraph [ref=e153]: No listings live right now
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]:
+                - paragraph [ref=e158]: Shopping edit
+                - heading "Fresh on Grounds" [level=2] [ref=e159]
+                - paragraph [ref=e160]: New style drops, outerwear, and campus fits posted lately.
+              - link "Shop section" [ref=e161] [cursor=pointer]:
+                - /url: /market?sort=newest
+                - text: Shop section
+                - img [ref=e162]
+            - generic [ref=e164]:
+              - article [ref=e165]:
+                - generic [ref=e166]:
+                  - button "Save listing" [ref=e168] [cursor=pointer]:
+                    - img [ref=e170]
+                    - text: "1"
+                  - link "Umai Clothing CD Girl Unisex T-Shirt New drop $15" [ref=e172] [cursor=pointer]:
+                    - /url: /listing/cmni83pru0009l709pdq2s59m
+                    - generic [ref=e173]:
+                      - img "Umai Clothing CD Girl Unisex T-Shirt" [ref=e174]
+                      - generic [ref=e177]: New drop
+                      - generic [ref=e179]: $15
+                  - generic [ref=e180]:
+                    - link "Umai Clothing CD Girl Unisex T-Shirt" [ref=e183] [cursor=pointer]:
+                      - /url: /listing/cmni83pru0009l709pdq2s59m
+                    - generic [ref=e184]:
+                      - generic [ref=e187]: GW
+                      - generic [ref=e188]:
+                        - generic [ref=e189]:
+                          - paragraph [ref=e190]: gerard way
+                          - generic [ref=e191]: "@noel"
+                        - generic [ref=e192]:
+                          - generic [ref=e193]:
+                            - img [ref=e194]
+                            - text: near the Corner
+                          - generic [ref=e197]: 4h
+              - article [ref=e198]:
+                - generic [ref=e199]:
+                  - button "Save listing" [ref=e201] [cursor=pointer]:
+                    - img [ref=e203]
+                    - text: "1"
+                  - link "Vintage UVA Nike long sleeve $35" [ref=e205] [cursor=pointer]:
+                    - /url: /listing/cmni81mjz0007l709w7d00xz4
+                    - generic [ref=e206]:
+                      - img "Vintage UVA Nike long sleeve" [ref=e207]
+                      - generic [ref=e210]: $35
+                  - generic [ref=e211]:
+                    - link "Vintage UVA Nike long sleeve" [ref=e214] [cursor=pointer]:
+                      - /url: /listing/cmni81mjz0007l709w7d00xz4
+                    - generic [ref=e215]:
+                      - generic [ref=e218]: KW
+                      - generic [ref=e219]:
+                        - generic [ref=e220]:
+                          - paragraph [ref=e221]: kwali
+                          - generic [ref=e222]: "@kabir"
+                        - generic [ref=e223]:
+                          - generic [ref=e224]:
+                            - img [ref=e225]
+                            - text: near the Corner
+                          - generic [ref=e228]: 4h
+              - article [ref=e229]:
+                - generic [ref=e230]:
+                  - button "Save listing" [ref=e232] [cursor=pointer]:
+                    - img [ref=e234]
+                    - text: "1"
+                  - link "Official Nike t shirt $9" [ref=e236] [cursor=pointer]:
+                    - /url: /listing/cmni7ybod0003l409tcam3vi7
+                    - generic [ref=e237]:
+                      - img "Official Nike t shirt" [ref=e238]
+                      - generic [ref=e241]: $9
+                  - generic [ref=e242]:
+                    - link "Official Nike t shirt" [ref=e245] [cursor=pointer]:
+                      - /url: /listing/cmni7ybod0003l409tcam3vi7
+                    - generic [ref=e246]:
+                      - generic [ref=e249]: KW
+                      - generic [ref=e250]:
+                        - generic [ref=e251]:
+                          - paragraph [ref=e252]: kwali
+                          - generic [ref=e253]: "@kabir"
+                        - generic [ref=e254]:
+                          - generic [ref=e255]:
+                            - img [ref=e256]
+                            - text: near the Corner
+                          - generic [ref=e259]: 4h
+              - article [ref=e260]:
+                - generic [ref=e261]:
+                  - button "Save listing" [ref=e263] [cursor=pointer]:
+                    - img [ref=e265]
+                    - text: "1"
+                  - link "US Navy Official Jacket $45" [ref=e267] [cursor=pointer]:
+                    - /url: /listing/cmni7w3m70001l409uhonofu9
+                    - generic [ref=e268]:
+                      - img "US Navy Official Jacket" [ref=e269]
+                      - generic [ref=e272]: $45
+                  - generic [ref=e273]:
+                    - link "US Navy Official Jacket" [ref=e276] [cursor=pointer]:
+                      - /url: /listing/cmni7w3m70001l409uhonofu9
+                    - generic [ref=e277]:
+                      - generic [ref=e280]: KW
+                      - generic [ref=e281]:
+                        - generic [ref=e282]:
+                          - paragraph [ref=e283]: kwali
+                          - generic [ref=e284]: "@kabir"
+                        - generic [ref=e285]:
+                          - generic [ref=e286]:
+                            - img [ref=e287]
+                            - text: near the Corner
+                          - generic [ref=e290]: 4h
+          - generic [ref=e291]:
+            - generic [ref=e292]:
+              - generic [ref=e293]:
+                - paragraph [ref=e294]: Style section
+                - heading "Trending Brands" [level=2] [ref=e295]
+                - paragraph [ref=e296]: The labels getting saved fastest around Grounds right now.
+              - link "Shop section" [ref=e297] [cursor=pointer]:
+                - /url: /market?sort=trending
+                - text: Shop section
+                - img [ref=e298]
+            - generic [ref=e300]:
+              - article [ref=e301]:
+                - generic [ref=e302]:
+                  - button "Save listing" [ref=e304] [cursor=pointer]:
+                    - img [ref=e306]
+                    - text: "2"
+                  - link "UVA Umbrella vintage Trending brand $24" [ref=e308] [cursor=pointer]:
+                    - /url: /listing/cmnhvhqco0003kz09urlvmmza
+                    - generic [ref=e309]:
+                      - img "UVA Umbrella vintage" [ref=e310]
+                      - generic [ref=e313]: Trending brand
+                      - generic [ref=e315]: $24
+                  - generic [ref=e316]:
+                    - link "UVA Umbrella vintage" [ref=e319] [cursor=pointer]:
+                      - /url: /listing/cmnhvhqco0003kz09urlvmmza
+                    - generic [ref=e320]:
+                      - generic [ref=e323]: QS
+                      - generic [ref=e324]:
+                        - generic [ref=e325]:
+                          - paragraph [ref=e326]: qsmith
+                          - generic [ref=e327]: "@qsmith98"
+                        - generic [ref=e328]:
+                          - generic [ref=e329]:
+                            - img [ref=e330]
+                            - text: near the Corner
+                          - generic [ref=e333]: 10h
+              - article [ref=e334]:
+                - generic [ref=e335]:
+                  - button "Save listing" [ref=e337] [cursor=pointer]:
+                    - img [ref=e339]
+                    - text: "2"
+                  - link "Polo Ralph Lauren button up $25" [ref=e341] [cursor=pointer]:
+                    - /url: /listing/cmngrftaa0001lb09pgsg8psx
+                    - generic [ref=e342]:
+                      - img "Polo Ralph Lauren button up" [ref=e343]
+                      - generic [ref=e346]: $25
+                  - generic [ref=e347]:
+                    - link "Polo Ralph Lauren button up" [ref=e350] [cursor=pointer]:
+                      - /url: /listing/cmngrftaa0001lb09pgsg8psx
+                    - generic [ref=e351]:
+                      - generic [ref=e354]: QS
+                      - generic [ref=e355]:
+                        - generic [ref=e356]:
+                          - paragraph [ref=e357]: qsmith
+                          - generic [ref=e358]: "@qsmith98"
+                        - generic [ref=e359]:
+                          - generic [ref=e360]:
+                            - img [ref=e361]
+                            - text: near the Corner
+                          - generic [ref=e364]: 1d
+              - article [ref=e365]:
+                - generic [ref=e366]:
+                  - button "Save listing" [ref=e368] [cursor=pointer]:
+                    - img [ref=e370]
+                    - text: "2"
+                  - link "Vintage UVA colored polo Ralph Lauren $40" [ref=e372] [cursor=pointer]:
+                    - /url: /listing/cmngmr1vo0001l509o0faav2p
+                    - generic [ref=e373]:
+                      - img "Vintage UVA colored polo Ralph Lauren" [ref=e374]
+                      - generic [ref=e377]: $40
+                  - generic [ref=e378]:
+                    - link "Vintage UVA colored polo Ralph Lauren" [ref=e381] [cursor=pointer]:
+                      - /url: /listing/cmngmr1vo0001l509o0faav2p
+                    - generic [ref=e382]:
+                      - generic [ref=e385]: QS
+                      - generic [ref=e386]:
+                        - generic [ref=e387]:
+                          - paragraph [ref=e388]: qsmith
+                          - generic [ref=e389]: "@qsmith98"
+                        - generic [ref=e390]:
+                          - generic [ref=e391]:
+                            - img [ref=e392]
+                            - text: near the Corner
+                          - generic [ref=e395]: 1d
+              - article [ref=e396]:
+                - generic [ref=e397]:
+                  - button "Save listing" [ref=e399] [cursor=pointer]:
+                    - img [ref=e401]
+                    - text: "1"
+                  - link "1950s - 1960s Cropped Hazmat jacket type 1 style $50" [ref=e403] [cursor=pointer]:
+                    - /url: /listing/cmnhv0etp0001kz099urh65ge
+                    - generic [ref=e404]:
+                      - img "1950s - 1960s Cropped Hazmat jacket type 1 style" [ref=e405]
+                      - generic [ref=e408]: $50
+                  - generic [ref=e409]:
+                    - link "1950s - 1960s Cropped Hazmat jacket type 1 style" [ref=e412] [cursor=pointer]:
+                      - /url: /listing/cmnhv0etp0001kz099urh65ge
+                    - generic [ref=e413]:
+                      - generic [ref=e416]: QS
+                      - generic [ref=e417]:
+                        - generic [ref=e418]:
+                          - paragraph [ref=e419]: qsmith
+                          - generic [ref=e420]: "@qsmith98"
+                        - generic [ref=e421]:
+                          - generic [ref=e422]:
+                            - img [ref=e423]
+                            - text: near the Corner
+                          - generic [ref=e426]: 10h
+          - generic [ref=e427]:
+            - generic [ref=e428]:
+              - generic [ref=e429]:
+                - paragraph [ref=e430]: Style section
+                - heading "Under $30" [level=2] [ref=e431]
+                - paragraph [ref=e432]: Easy pickups that still feel like a find, not an afterthought.
+              - link "Shop section" [ref=e433] [cursor=pointer]:
+                - /url: /market?max=3000
+                - text: Shop section
+                - img [ref=e434]
+            - generic [ref=e436]:
+              - article [ref=e437]:
+                - generic [ref=e438]:
+                  - button "Save listing" [ref=e440] [cursor=pointer]:
+                    - img [ref=e442]
+                    - text: "0"
+                  - link "Vintage graphic t shirt Budget pick $15" [ref=e444] [cursor=pointer]:
+                    - /url: /listing/cmni7r8230005l709psbklfzf
+                    - generic [ref=e445]:
+                      - img "Vintage graphic t shirt" [ref=e446]
+                      - generic [ref=e449]: Budget pick
+                      - generic [ref=e451]: $15
+                  - generic [ref=e452]:
+                    - link "Vintage graphic t shirt" [ref=e455] [cursor=pointer]:
+                      - /url: /listing/cmni7r8230005l709psbklfzf
+                    - generic [ref=e456]:
+                      - generic [ref=e459]: KW
+                      - generic [ref=e460]:
+                        - generic [ref=e461]:
+                          - paragraph [ref=e462]: kwali
+                          - generic [ref=e463]: "@kabir"
+                        - generic [ref=e464]:
+                          - generic [ref=e465]:
+                            - img [ref=e466]
+                            - text: near the Corner
+                          - generic [ref=e469]: 5h
+              - article [ref=e470]:
+                - generic [ref=e471]:
+                  - button "Save listing" [ref=e473] [cursor=pointer]:
+                    - img [ref=e475]
+                    - text: "0"
+                  - link "Cavman official t shirt $10" [ref=e477] [cursor=pointer]:
+                    - /url: /listing/cmni7nltq0003l709owiaa98u
+                    - generic [ref=e478]:
+                      - img "Cavman official t shirt" [ref=e479]
+                      - generic [ref=e482]: $10
+                  - generic [ref=e483]:
+                    - link "Cavman official t shirt" [ref=e486] [cursor=pointer]:
+                      - /url: /listing/cmni7nltq0003l709owiaa98u
+                    - generic [ref=e487]:
+                      - generic [ref=e490]: KW
+                      - generic [ref=e491]:
+                        - generic [ref=e492]:
+                          - paragraph [ref=e493]: kwali
+                          - generic [ref=e494]: "@kabir"
+                        - generic [ref=e495]:
+                          - generic [ref=e496]:
+                            - img [ref=e497]
+                            - text: near the Corner
+                          - generic [ref=e500]: 5h
+              - article [ref=e501]:
+                - generic [ref=e502]:
+                  - button "Save listing" [ref=e504] [cursor=pointer]:
+                    - img [ref=e506]
+                    - text: "0"
+                  - link "The Standard UVA t shirt $8" [ref=e508] [cursor=pointer]:
+                    - /url: /listing/cmni7iz9w0001l809y6bl6xqv
+                    - generic [ref=e509]:
+                      - img "The Standard UVA t shirt" [ref=e510]
+                      - generic [ref=e513]: $8
+                  - generic [ref=e514]:
+                    - link "The Standard UVA t shirt" [ref=e517] [cursor=pointer]:
+                      - /url: /listing/cmni7iz9w0001l809y6bl6xqv
+                    - generic [ref=e518]:
+                      - generic [ref=e521]: KW
+                      - generic [ref=e522]:
+                        - generic [ref=e523]:
+                          - paragraph [ref=e524]: kwali
+                          - generic [ref=e525]: "@kabir"
+                        - generic [ref=e526]:
+                          - generic [ref=e527]:
+                            - img [ref=e528]
+                            - text: near the Corner
+                          - generic [ref=e531]: 5h
+              - article [ref=e532]:
+                - generic [ref=e533]:
+                  - button "Save listing" [ref=e535] [cursor=pointer]:
+                    - img [ref=e537]
+                    - text: "0"
+                  - link "Vintage UVA Hoos tee $8" [ref=e539] [cursor=pointer]:
+                    - /url: /listing/cmnhvw6b10007kv09ncbezf28
+                    - generic [ref=e540]:
+                      - img "Vintage UVA Hoos tee" [ref=e541]
+                      - generic [ref=e544]: $8
+                  - generic [ref=e545]:
+                    - link "Vintage UVA Hoos tee" [ref=e548] [cursor=pointer]:
+                      - /url: /listing/cmnhvw6b10007kv09ncbezf28
+                    - generic [ref=e549]:
+                      - generic [ref=e552]: KW
+                      - generic [ref=e553]:
+                        - generic [ref=e554]:
+                          - paragraph [ref=e555]: kwali
+                          - generic [ref=e556]: "@kabir"
+                        - generic [ref=e557]:
+                          - generic [ref=e558]:
+                            - img [ref=e559]
+                            - text: near the Corner
+                          - generic [ref=e562]: 10h
+          - generic [ref=e563]:
+            - generic [ref=e564]:
+              - paragraph [ref=e565]: More on HoosFinds
+              - heading "Beyond the closet, still easy to shop." [level=2] [ref=e566]
+              - paragraph [ref=e567]: Dorm, tech, furniture, tickets, and the rest still belong in HoosFinds. They just show up lower and quieter than the main style sections.
+            - generic [ref=e569]:
+              - generic [ref=e570]:
+                - generic [ref=e571]:
+                  - paragraph [ref=e572]: Tickets & Extras
+                  - paragraph [ref=e573]: Last-minute passes and the off-duty marketplace finds beyond clothes.
+                - link "See all" [ref=e574] [cursor=pointer]:
+                  - /url: /market?lane=tickets
+                  - text: See all
+                  - img [ref=e575]
+              - article [ref=e578]:
+                - generic [ref=e579]:
+                  - button "Save listing" [ref=e581] [cursor=pointer]:
+                    - img [ref=e583]
+                    - text: "2"
+                  - link "UVA Umbrella vintage Campus find $24" [ref=e585] [cursor=pointer]:
+                    - /url: /listing/cmnhvhqco0003kz09urlvmmza
+                    - generic [ref=e586]:
+                      - img "UVA Umbrella vintage" [ref=e587]
+                      - generic [ref=e590]: Campus find
+                      - generic [ref=e592]: $24
+                  - generic [ref=e593]:
+                    - link "UVA Umbrella vintage" [ref=e596] [cursor=pointer]:
+                      - /url: /listing/cmnhvhqco0003kz09urlvmmza
+                    - generic [ref=e597]:
+                      - generic [ref=e600]: QS
+                      - generic [ref=e601]:
+                        - generic [ref=e602]:
+                          - paragraph [ref=e603]: qsmith
+                          - generic [ref=e604]: "@qsmith98"
+                        - generic [ref=e605]:
+                          - generic [ref=e606]:
+                            - img [ref=e607]
+                            - text: near the Corner
+                          - generic [ref=e610]: 10h
+        - generic [ref=e612]:
+          - img [ref=e614]
+          - paragraph [ref=e616]: HoosFinds
+          - heading "No listings live right now" [level=3] [ref=e617]
+          - paragraph [ref=e618]: Check back soon or post something from your own closet.
+          - link "Post a listing" [ref=e619] [cursor=pointer]:
+            - /url: /sell
+  - region "Notifications alt+T"

@@ -73,7 +73,7 @@ export function AccountMenu({
         <button
           type="button"
           aria-label="Open account menu"
-          className="surface-pill inline-flex min-h-11 items-center gap-2 rounded-full p-1 pr-2 transition hover:-translate-y-0.5 hover:border-uva-orange/35 hover:text-foreground"
+          className="surface-pill inline-flex min-h-11 items-center gap-2 rounded-full p-1 pr-2 transition hover:-translate-y-0.5 hover:border-uva-orange/35 hover:text-foreground dark:hover:border-white/22 dark:hover:text-white"
         >
           <UserAvatar
             name={displayName}
@@ -97,7 +97,7 @@ export function AccountMenu({
           sideOffset={12}
           className="z-50 w-[min(19rem,calc(100vw-1rem))] rounded-[1.5rem] border border-border/80 bg-background/98 p-3 shadow-2xl backdrop-blur-xl"
         >
-          <div className="rounded-[1.25rem] border border-border/70 bg-card/70 px-3 py-3">
+          <div className="surface-subtle rounded-[1.25rem] px-3 py-3">
             <p className="text-sm font-semibold text-foreground">{displayName || publicUsername || username}</p>
             <p className="mt-1 text-xs text-muted-foreground">{publicUsername ? `@${publicUsername}` : "HoosFinds account"}</p>
           </div>
@@ -114,8 +114,8 @@ export function AccountMenu({
                     className={cn(
                       "flex min-h-11 items-center justify-between gap-3 rounded-[1.15rem] border px-3 py-3 text-sm font-medium transition",
                       active
-                        ? "border-uva-orange/30 bg-uva-orange/[0.08] text-foreground"
-                        : "border-transparent text-foreground/88 hover:border-border/70 hover:bg-card/70 hover:text-foreground"
+                        ? "border-uva-orange/30 bg-uva-orange/[0.08] text-foreground dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                        : "border-transparent text-foreground/88 hover:border-border/70 hover:bg-card/70 hover:text-foreground dark:text-white/88 dark:hover:border-white/14 dark:hover:bg-white/[0.08] dark:hover:text-white"
                     )}
                   >
                     <span className="inline-flex items-center gap-3">
@@ -135,7 +135,7 @@ export function AccountMenu({
                 setOpen(false);
                 void signOut({ callbackUrl: "/" });
               }}
-              className="flex min-h-11 w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-left text-sm font-medium text-foreground/88 transition hover:bg-card/70 hover:text-foreground"
+              className="flex min-h-11 w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-left text-sm font-medium text-foreground/88 transition hover:bg-card/70 hover:text-foreground dark:text-white/88 dark:hover:bg-white/[0.08] dark:hover:text-white"
             >
               <LogOut className="h-4 w-4" />
               Log out

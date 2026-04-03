@@ -101,7 +101,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
         <Card className="surface-panel-strong">
           <CardContent className="space-y-5 p-6">
             <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-11 w-11 items-center justify-center rounded-full bg-uva-orange/10 text-uva-orange">
+              <div className="surface-pill mt-1 flex h-11 w-11 items-center justify-center text-uva-orange dark:text-orange-50">
                 {dashboard.payoutState.readyToReceivePayments ? (
                   <BadgeCheck className="h-5 w-5" />
                 ) : dashboard.payoutState.status === "under_review" ? (

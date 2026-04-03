@@ -38,7 +38,7 @@ export default function SafetyPage() {
             HoosFinds is designed for real student meetups on Grounds. These guidelines keep that experience trustworthy without making it feel corporate or overbuilt.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft">
+        <div className="surface-pill px-4 py-2 text-xs uppercase tracking-[0.18em]">
           Meet in public
         </div>
       </div>

@@ -146,7 +146,9 @@ export function FollowButton({
         <span
           className={cn(
             "ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]",
-            isFollowing ? "bg-foreground/8 text-current" : "bg-white/15 text-white"
+            isFollowing
+              ? "bg-black/8 text-current dark:bg-white/[0.14] dark:text-white/96"
+              : "bg-white/18 text-white"
           )}
         >
           {followerCount}

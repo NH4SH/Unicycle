@@ -100,7 +100,7 @@ function TransactionCard({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs text-muted-foreground">
+            <div className="surface-pill flex items-center gap-2 px-3 py-1.5 text-xs text-foreground dark:text-white">
               <UserAvatar
                 name={item.counterparty.displayName}
                 username={item.counterparty.username}
@@ -118,7 +118,7 @@ function TransactionCard({
           </div>
 
           {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor || item.listing.pickupLocations.length ? (
-            <div className="space-y-3 rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
+            <div className="space-y-3 rounded-[1.1rem] border border-border bg-card/76 px-4 py-3 text-sm text-muted-foreground dark:border-white/12 dark:bg-white/[0.07]">
               <div className="inline-flex items-center gap-1 font-medium text-foreground">
                 <CalendarDays className="h-4 w-4 text-uva-orange" />
                 Meetup flow
@@ -149,7 +149,7 @@ function TransactionCard({
           ) : null}
 
           {item.review ? (
-            <div className="rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-[1.1rem] border border-border bg-card/76 px-4 py-3 text-sm text-muted-foreground dark:border-white/12 dark:bg-white/[0.07]">
               <div className="inline-flex items-center gap-1 font-medium text-foreground">
                 <Star className="h-4 w-4 fill-uva-orange text-uva-orange" />
                 {item.review.stars} star review

@@ -1,0 +1,12 @@
+[    4690ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[   21190ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:38559
+[  143516ms] [ERROR] Access to fetch at 'https://hoosfinds.com/market?_rsc=1pmxa' from origin 'http://localhost:3000' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:3000/sign-in:0
+[  143517ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://hoosfinds.com/market?_rsc=1pmxa:0
+[  143517ms] [ERROR] Failed to fetch RSC payload for https://hoosfinds.com/market. Falling back to browser navigation. TypeError: Failed to fetch
+    at fetchServerResponse (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:59:27)
+    at refreshReducer (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/reducers/refresh-reducer.js:34:67)
+    at clientReducer (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/router-reducer.js:37:59)
+    at Object.action (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/router/action-queue.js:150:55)
+    at runAction (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/router/action-queue.js:56:38)
+    at runRemainingActions (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/router/action-queue.js:30:13)
+    at handleResult (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/router/action-queue.js:66:9) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:32

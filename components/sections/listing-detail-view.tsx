@@ -415,7 +415,7 @@ export function ListingDetailView({
                   <PlaceMapLink
                     key={loc}
                     place={loc}
-                    className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/14 dark:bg-background/90 dark:text-white/96 dark:hover:border-white/24 dark:hover:bg-background dark:hover:text-white dark:focus-visible:ring-white/30"
+                    className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-uva-blue/28 dark:bg-uva-blue/[0.16] dark:text-white/96 dark:hover:border-uva-blue/38 dark:hover:bg-uva-blue/[0.22] dark:hover:text-white dark:focus-visible:ring-white/30"
                   >
                     <MapPin className="h-3.5 w-3.5 text-foreground/40 dark:text-white/45" />
                     <span>{loc}</span>

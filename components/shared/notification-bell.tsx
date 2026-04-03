@@ -172,7 +172,7 @@ export function NotificationBell() {
         <button
           type="button"
           aria-label="Notifications"
-          className="surface-pill relative inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition hover:-translate-y-0.5 hover:text-foreground"
+          className="surface-pill relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/78 transition hover:-translate-y-0.5 hover:border-uva-orange/30 hover:text-foreground dark:text-white/84 dark:hover:border-white/22 dark:hover:text-white"
         >
           <Bell className="h-4.5 w-4.5" />
           {hasUnread ? (
@@ -226,14 +226,16 @@ export function NotificationBell() {
                       className={cn(
                         "flex w-full items-start gap-3 rounded-[1.25rem] border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:border-border hover:bg-card/70",
                         notification.isRead
-                          ? "border-transparent bg-transparent"
-                          : "border-border/80 bg-card/65 shadow-soft"
+                          ? "border-transparent bg-transparent hover:bg-card/55 dark:hover:bg-slate-900/72"
+                          : "border-border/80 bg-card/72 shadow-soft dark:border-white/14 dark:bg-slate-950/82"
                       )}
                     >
                       <div
                         className={cn(
                           "mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                          notification.isRead ? "bg-card text-muted-foreground" : "bg-orange-500/12 text-orange-500"
+                          notification.isRead
+                            ? "bg-card/92 text-foreground/64 dark:bg-slate-950/82 dark:text-white/78"
+                            : "bg-orange-500/14 text-orange-500 dark:bg-uva-orange/[0.2] dark:text-orange-50"
                         )}
                       >
                         <Icon className="h-4 w-4" />

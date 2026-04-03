@@ -23,7 +23,7 @@ export default function CheckoutCancelPage({ searchParams }: CheckoutCancelPageP
             <div className="relative space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <Badge variant="blue" className="w-fit">Checkout canceled</Badge>
-                <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-card/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/80 shadow-soft dark:border-white/12 dark:bg-white/[0.08] dark:text-white/88">
+                <div className="surface-pill inline-flex items-center gap-1 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground dark:text-white">
                   <WalletCards className="h-3.5 w-3.5 text-electric" />
                   Stripe
                 </div>

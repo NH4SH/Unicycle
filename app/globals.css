@@ -179,6 +179,30 @@ main {
   background-color: hsl(var(--background) / 0.72);
 }
 
+.dark .surface-subtle {
+  border-color: hsl(var(--foreground) / 0.12);
+  background-color: hsl(var(--card) / 0.9);
+  box-shadow: 0 12px 28px rgba(3, 7, 18, 0.16);
+}
+
+.dark .surface-pill {
+  border-color: hsl(var(--foreground) / 0.14);
+  background-color: hsl(var(--card) / 0.94);
+  color: hsl(var(--foreground) / 0.84);
+  box-shadow: 0 12px 28px rgba(3, 7, 18, 0.2);
+}
+
+.dark .surface-chip {
+  border-color: hsl(var(--foreground) / 0.14);
+  background-color: hsl(var(--card) / 0.92);
+  color: hsl(var(--foreground) / 0.82);
+}
+
+.dark .surface-field {
+  border-color: hsl(var(--foreground) / 0.12);
+  background-color: hsl(var(--card) / 0.9);
+}
+
 .lane-surface-warm {
   background-image:
     radial-gradient(circle at top left, rgba(229, 114, 0, 0.17), transparent 42%),

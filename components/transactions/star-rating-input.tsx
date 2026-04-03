@@ -35,8 +35,8 @@ export function StarRatingInput({
               className={cn(
                 "inline-flex h-11 w-11 items-center justify-center rounded-full border transition",
                 active
-                  ? "border-uva-orange/30 bg-uva-orange/12 text-uva-orange"
-                  : "border-border bg-card/70 text-muted-foreground hover:border-uva-blue/20 hover:text-uva-blue"
+                  ? "border-uva-orange/30 bg-uva-orange/12 text-uva-orange dark:border-uva-orange/38 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                  : "border-border bg-card/72 text-muted-foreground hover:border-uva-blue/20 hover:text-uva-blue dark:border-white/14 dark:bg-white/[0.07] dark:text-white/74 dark:hover:border-uva-blue/28 dark:hover:bg-uva-blue/[0.12] dark:hover:text-blue-50"
               )}
               aria-label={`${score} star${score === 1 ? "" : "s"}`}
               aria-checked={active}

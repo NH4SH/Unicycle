@@ -65,8 +65,8 @@ export function PickupMapPreview({
             {locations.slice(0, 3).map((location) => (
               <span
                 key={location}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/92 px-3 py-1.5 text-[0.72rem] font-medium text-slate-800 shadow-soft dark:border-white/12 dark:bg-slate-950/86 dark:text-white/92"
-              >
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/92 px-3 py-1.5 text-[0.72rem] font-medium text-slate-800 shadow-soft dark:border-white/18 dark:bg-slate-950/78 dark:text-white/94"
+                >
                 <MapPin className="h-3.5 w-3.5 text-uva-orange" />
                 {location}
               </span>

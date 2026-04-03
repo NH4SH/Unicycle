@@ -22,7 +22,7 @@ function statusVariant(status: ListingStatus | TransactionStatus): BadgeProps["v
 
 export function ListingStatusBadge({ status, className }: { status: ListingStatus; className?: string }) {
   return (
-    <Badge variant={statusVariant(status)} className={cn(status === ListingStatus.CANCELLED && "opacity-80", className)}>
+    <Badge variant={statusVariant(status)} className={cn(status === ListingStatus.CANCELLED && "opacity-90", className)}>
       {LISTING_STATUS_LABELS[status]}
     </Badge>
   );
@@ -30,7 +30,7 @@ export function ListingStatusBadge({ status, className }: { status: ListingStatu
 
 export function TransactionStatusBadge({ status, className }: { status: TransactionStatus; className?: string }) {
   return (
-    <Badge variant={statusVariant(status)} className={cn(status === TransactionStatus.CANCELLED && "opacity-80", className)}>
+    <Badge variant={statusVariant(status)} className={cn(status === TransactionStatus.CANCELLED && "opacity-90", className)}>
       {TRANSACTION_STATUS_LABELS[status]}
     </Badge>
   );

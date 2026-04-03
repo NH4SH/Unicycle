@@ -55,7 +55,7 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
       <div className={cn("relative space-y-3", hasElevatedTreatment && "space-y-3.5")}>
         <div className="absolute right-3 top-3 z-10">
           <HeartButton
-            className="border-white/16 bg-black/42 text-white backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.28)] hover:border-white/24 hover:bg-black/52 hover:text-white dark:border-white/18 dark:bg-black/48 dark:text-white"
+            className="border-white/18 bg-black/48 text-white backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.28)] hover:border-white/28 hover:bg-black/58 hover:text-white dark:border-white/22 dark:bg-slate-950/72 dark:text-white"
             listingId={listing.id}
             initialFavorited={listing.isFavorited}
             initialCount={listing.favoriteCount}
@@ -86,19 +86,19 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
             {!hasElevatedTreatment ? <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-black/0 to-transparent" /> : null}
             {sticker ? (
               <div className="absolute left-3 top-3">
-                <Badge variant="outline" className="border-border/70 bg-card/92">
+                <Badge variant="outline" className="border-border/70 bg-card/92 dark:border-white/16 dark:bg-slate-950/82 dark:text-white/96">
                   {sticker}
                 </Badge>
               </div>
             ) : null}
             {listing.status !== "ACTIVE" ? (
               <div className="absolute left-3 top-14">
-                <ListingStatusBadge status={listing.status} className="border-border/70 bg-card/92" />
+                <ListingStatusBadge status={listing.status} className="border-border/70 bg-card/92 dark:border-white/16 dark:bg-slate-950/82 dark:text-white/96" />
               </div>
             ) : null}
             {!hasElevatedTreatment ? (
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-end gap-3 p-3">
-                <div className="rounded-full bg-card/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft">
+                <div className="rounded-full border border-border/70 bg-card/92 px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-soft dark:border-white/14 dark:bg-slate-950/84 dark:text-white/96">
                   {formatCurrency(listing.priceCents / 100)}
                 </div>
               </div>

@@ -192,8 +192,8 @@ export function PickupChipSelector({
                     className={cn(
                       "touch-chip inline-flex items-center gap-2 rounded-full border text-sm font-semibold transition",
                       selected
-                        ? "border-uva-blue/28 bg-uva-blue/[0.08] text-uva-blue dark:border-white/18 dark:bg-white/[0.1] dark:text-white"
-                        : "border-border bg-background/80 text-foreground/76 hover:border-uva-orange/35 hover:text-uva-orange dark:bg-white/[0.03] dark:text-white/76 dark:hover:border-white/18 dark:hover:text-white"
+                        ? "border-uva-blue/28 bg-uva-blue/[0.08] text-uva-blue dark:border-uva-blue/34 dark:bg-uva-blue/[0.18] dark:text-blue-50"
+                        : "border-border bg-background/80 text-foreground/76 hover:border-uva-orange/35 hover:text-uva-orange dark:border-white/14 dark:bg-white/[0.06] dark:text-white/82 dark:hover:border-white/22 dark:hover:bg-white/[0.09] dark:hover:text-white"
                     )}
                     aria-pressed={selected}
                   >
@@ -234,7 +234,7 @@ export function PickupChipSelector({
                     key={location}
                     type="button"
                     onClick={() => setSingleOrAppend(location)}
-                    className="inline-flex items-center gap-2 rounded-full border border-uva-blue/18 bg-uva-blue/[0.08] px-3.5 py-2 text-sm font-medium text-foreground/92 dark:border-white/16 dark:bg-white/[0.08] dark:text-white/92"
+                    className="inline-flex items-center gap-2 rounded-full border border-uva-blue/18 bg-uva-blue/[0.08] px-3.5 py-2 text-sm font-medium text-foreground/92 dark:border-uva-blue/28 dark:bg-uva-blue/[0.16] dark:text-white/94"
                   >
                     <MapPin className="h-4 w-4 text-uva-orange" />
                     <span>{location}</span>
@@ -287,15 +287,15 @@ export function PickupChipSelector({
                         className={cn(
                           "flex w-full items-start justify-between rounded-[1.2rem] border px-4 py-3 text-left transition",
                           selected
-                            ? "border-uva-blue/24 bg-uva-blue/[0.08] dark:border-white/16 dark:bg-white/[0.08]"
-                            : "border-border bg-background/72 hover:border-uva-orange/24 dark:bg-white/[0.03]"
+                            ? "border-uva-blue/24 bg-uva-blue/[0.08] dark:border-uva-blue/28 dark:bg-uva-blue/[0.15]"
+                            : "border-border bg-background/72 hover:border-uva-orange/24 dark:border-white/14 dark:bg-white/[0.05] dark:hover:border-white/22 dark:hover:bg-white/[0.08]"
                         )}
                       >
                         <div className="space-y-1">
                           <p className="text-sm font-semibold text-foreground/92 dark:text-white/92">{entry.name}</p>
                           <p className="text-xs text-foreground/62 dark:text-white/68">{entry.area}</p>
                         </div>
-                        <div className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/80 text-foreground/58 dark:text-white/68">
+                        <div className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/80 text-foreground/58 dark:border-white/14 dark:bg-white/[0.05] dark:text-white/72">
                           {selected ? <Check className="h-3.5 w-3.5 text-uva-orange" /> : <MapPin className="h-3.5 w-3.5" />}
                         </div>
                       </button>
