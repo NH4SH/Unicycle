@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
-import { Heart, LogOut, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Heart, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
 
+import { AccountMenu } from "@/components/shared/account-menu";
 import { Logo } from "@/components/shared/logo";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -47,35 +47,18 @@ export function NavBar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <ThemeToggle className="origin-right scale-[0.92] sm:scale-100" />
           {status === "authenticated" ? (
             <>
               <NotificationBell />
-              <Link
-                href={`/u/${session.user.username ?? "me"}`}
-                className="surface-pill inline-flex touch-target items-center justify-center rounded-full p-1 transition hover:-translate-y-0.5"
-                aria-label="Go to profile"
-              >
-                <UserAvatar
-                  name={session.user.publicDisplayName ?? session.user.name}
-                  username={session.user.publicUsername ?? session.user.username}
-                  imageUrl={session.user.image}
-                  className="h-7 w-7 sm:h-8 sm:w-8"
-                />
-              </Link>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-11 px-0 sm:hidden"
-                onClick={() => signOut({ callbackUrl: "/" })}
-                aria-label="Log out"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="secondary" className="hidden sm:inline-flex" onClick={() => signOut({ callbackUrl: "/" })}>
-                Log out
-              </Button>
+              <AccountMenu
+                displayName={session.user.publicDisplayName ?? session.user.name}
+                publicUsername={session.user.publicUsername}
+                username={session.user.username}
+                imageUrl={session.user.image}
+                isVerifiedShop={isVerifiedShop}
+              />
             </>
           ) : (
             <Button size="sm" asChild>

@@ -53,9 +53,9 @@ export default async function HomePage() {
 
   return (
     <div className="container space-y-12 py-5 md:space-y-16 md:py-8">
-      <section className="grid gap-5 sm:gap-6 xl:grid-cols-[1.02fr_0.98fr] xl:items-end xl:gap-8">
-        <div className="space-y-5 sm:space-y-6">
-          <div className="space-y-3 sm:space-y-4">
+      <section className="grid gap-5 sm:gap-6 xl:grid-cols-[1.02fr_0.98fr] xl:items-start xl:gap-8">
+        <div className="space-y-5 sm:space-y-6 xl:max-w-[40rem] xl:pt-1">
+          <div className="space-y-2.5 sm:space-y-3.5">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
             <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
               The best fits on <span className="font-editorial italic font-semibold text-uva-orange">Grounds</span>.
@@ -66,7 +66,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 pt-0.5">
             <Button asChild size="lg">
               <Link href="/market">Browse Finds</Link>
             </Button>
@@ -84,7 +84,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr]">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr] xl:pt-0.5">
           {heroLead ? (
             <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
               <div className="relative aspect-[4/5] overflow-hidden">
