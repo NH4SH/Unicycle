@@ -267,7 +267,7 @@ export default async function HomePage() {
               href="/market?max=3000"
               className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
             >
-              Shop the lane <ArrowRight className="h-4 w-4" />
+              Shop the edit <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">

@@ -2,6 +2,7 @@ import {
   Category,
   Condition,
   HandoffStatus,
+  ListingBrowseLane,
   ListingModerationStatus,
   ListingStatus,
   OrderStatus,
@@ -12,6 +13,7 @@ import {
 import { unstable_noStore as noStore } from "next/cache";
 
 import {
+  getListingBrowseSectionLabel,
   type MarketBrowseLaneId,
   getListingBrowseMeta,
   isFashionBrowseListing,
@@ -74,6 +76,7 @@ type ListingLike = {
   description: string;
   priceCents: number;
   category: Category;
+  shoppingLane: ListingBrowseLane | null;
   condition: Condition;
   images: Prisma.JsonValue;
   pickupLocations: Prisma.JsonValue;
@@ -166,6 +169,8 @@ export type ListingCardData = {
   color: string;
   priceCents: number;
   category: Category;
+  shoppingLane: ListingBrowseLane | null;
+  categoryLabel: string | null;
   condition: Condition;
   images: string[];
   pickupLocations: string[];
@@ -295,7 +300,7 @@ function hasDerivedBrowseFilters(query: MarketQuery) {
   return Boolean(query.lane && query.lane !== "all") || Boolean(query.brand && query.brand !== "all") || Boolean(query.size && query.size !== "all") || Boolean(query.color && query.color !== "all");
 }
 
-function matchesDerivedBrowseFilters(listing: Pick<ListingLike, "title" | "description" | "category">, query: MarketQuery) {
+function matchesDerivedBrowseFilters(listing: Pick<ListingLike, "title" | "description" | "category" | "shoppingLane">, query: MarketQuery) {
   const normalizedLane = normalizeMarketBrowseLane(query.lane);
 
   if (normalizedLane && normalizedLane !== "all" && !matchesBrowseLane(listing, normalizedLane as MarketBrowseLaneId)) {
@@ -431,7 +436,14 @@ function mapListing(listing: ListingLike, userId?: string): ListingCardData {
   const browseMeta = getListingBrowseMeta({
     title: listing.title,
     description: listing.description,
-    category: listing.category
+    category: listing.category,
+    shoppingLane: listing.shoppingLane
+  });
+  const categoryLabel = getListingBrowseSectionLabel({
+    title: listing.title,
+    description: listing.description,
+    category: listing.category,
+    shoppingLane: listing.shoppingLane
   });
 
   return {
@@ -443,6 +455,8 @@ function mapListing(listing: ListingLike, userId?: string): ListingCardData {
     color: browseMeta.color,
     priceCents: listing.priceCents,
     category: listing.category,
+    shoppingLane: listing.shoppingLane,
+    categoryLabel,
     condition: listing.condition,
     images: fromJsonArray(listing.images),
     pickupLocations: fromJsonArray(listing.pickupLocations),
@@ -530,7 +544,8 @@ export async function getMarketListings(query: MarketQuery): Promise<MarketListi
           {
             title: listing.title,
             description: listing.description,
-            category: listing.category
+            category: listing.category,
+            shoppingLane: listing.shoppingLane
           },
           normalized
         )
@@ -734,7 +749,8 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
     isFashionBrowseListing({
       title: listing.title,
       description: listing.description,
-      category: listing.category
+      category: listing.category,
+      shoppingLane: listing.shoppingLane
     })
   );
   const trendingBrands = sortListingsForMarket(
@@ -743,7 +759,8 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
         getListingBrowseMeta({
           title: listing.title,
           description: listing.description,
-          category: listing.category
+          category: listing.category,
+          shoppingLane: listing.shoppingLane
         }).brand
       )
     ),
@@ -757,7 +774,8 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
       {
         title: listing.title,
         description: listing.description,
-        category: listing.category
+        category: listing.category,
+        shoppingLane: listing.shoppingLane
       },
       "furniture"
     )
@@ -769,7 +787,8 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
         {
           title: listing.title,
           description: listing.description,
-          category: listing.category
+          category: listing.category,
+          shoppingLane: listing.shoppingLane
         },
         "extras"
       )
@@ -985,7 +1004,7 @@ export async function getListingDetail(listingId: string, userId?: string) {
       id: { not: listing.id },
       status: ListingStatus.ACTIVE,
       moderationStatus: ListingModerationStatus.VISIBLE,
-      category: listing.category,
+      ...(listing.shoppingLane ? { shoppingLane: listing.shoppingLane } : { category: listing.category }),
       priceCents: {
         gte: lowerBand,
         lte: upperBand

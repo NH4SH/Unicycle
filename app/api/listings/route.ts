@@ -6,7 +6,7 @@ import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/const
 import { assertSellerCanPublishListing } from "@/lib/listing-guardrails";
 import { packListingDescription } from "@/lib/listing-draft";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
-import { normalizeMarketBrowseLane } from "@/lib/market-browse";
+import { normalizeMarketBrowseLane, toPrismaBrowseLane } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { canUserSell } from "@/lib/user-access";
@@ -119,6 +119,7 @@ export async function POST(request: Request) {
       description: packListingDescription(parsed.data),
       priceCents: parsed.data.priceCents,
       category: parsed.data.category,
+      shoppingLane: toPrismaBrowseLane(parsed.data.browseLane),
       condition: parsed.data.condition,
       sellerId: session.user.id,
       images: parsed.data.images,

@@ -1,44 +1,20 @@
-const PLACE_LABELS = [
-  "The Corner",
-  "Newcomb",
-  "JPJ",
-  "Grounds",
-  "UVA",
-  "Rotunda",
-  "Scott Stadium",
-  "Clemons",
-  "Rice Hall",
-  "Pavilion",
-  "Alumni Hall",
-  "Clark Hall",
-  "Boylan",
-  "Trin",
-  "The Southern",
-  "Charlottesville"
-] as const;
+import { getPickupLocationMapHref, UVA_PICKUP_LOCATIONS } from "@/lib/campus-pickup-locations";
 
-const PLACE_QUERY_MAP = {
-  "The Corner": "The Corner Charlottesville VA",
-  Newcomb: "Newcomb Hall University of Virginia",
-  JPJ: "John Paul Jones Arena Charlottesville VA",
+const EXTRA_PLACE_QUERY_MAP = {
   Grounds: "University of Virginia Charlottesville VA",
   UVA: "University of Virginia Charlottesville VA",
-  Rotunda: "Rotunda University of Virginia",
-  "Scott Stadium": "Scott Stadium Charlottesville VA",
-  Clemons: "Clemons Library University of Virginia",
-  "Rice Hall": "Rice Hall University of Virginia",
-  Pavilion: "Pavilion at the University of Virginia",
-  "Alumni Hall": "Alumni Hall University of Virginia",
-  "Clark Hall": "Clark Hall University of Virginia",
-  Boylan: "Boylan Heights Charlottesville VA",
-  Trin: "Trinity Irish Pub Charlottesville VA",
-  "The Southern": "The Southern Cafe and Music Hall Charlottesville VA",
   Charlottesville: "Charlottesville VA"
-} satisfies Record<(typeof PLACE_LABELS)[number], string>;
+} as const;
+
+const PLACE_LABELS = [...UVA_PICKUP_LOCATIONS.map((location) => location.name), ...Object.keys(EXTRA_PLACE_QUERY_MAP)];
 
 const normalizedPlaceMap = new Map(
-  PLACE_LABELS.map((label) => [label.toLowerCase(), { label, query: PLACE_QUERY_MAP[label] }])
+  UVA_PICKUP_LOCATIONS.map((location) => [location.name.toLowerCase(), getPickupLocationMapHref(location.name)])
 );
+
+for (const [label, query] of Object.entries(EXTRA_PLACE_QUERY_MAP)) {
+  normalizedPlaceMap.set(label.toLowerCase(), `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`);
+}
 
 function escapeForRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -50,10 +26,7 @@ const placePattern = new RegExp(
 );
 
 export function getPlaceMapHref(placeName: string) {
-  const entry = normalizedPlaceMap.get(placeName.trim().toLowerCase());
-  if (!entry) return null;
-
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(entry.query)}`;
+  return normalizedPlaceMap.get(placeName.trim().toLowerCase()) ?? getPickupLocationMapHref(placeName);
 }
 
 export function splitTextWithPlaceLinks(text: string) {

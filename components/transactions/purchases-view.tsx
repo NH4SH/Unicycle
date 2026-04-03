@@ -11,7 +11,9 @@ import { toast } from "sonner";
 import { TransactionStatusBadge } from "@/components/shared/sale-status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LinkedPlaceText } from "@/components/shared/linked-place-text";
+import { PickupMapPreview } from "@/components/shared/pickup-map-preview";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { MeetupPlannerDialog } from "@/components/transactions/meetup-planner-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -115,8 +117,8 @@ function TransactionCard({
             <p>{item.confirmedAt ? `Completed ${timeAgo(item.confirmedAt)} ago` : getHandoffCopy(item, role)}</p>
           </div>
 
-          {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor ? (
-            <div className="rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
+          {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor || item.listing.pickupLocations.length ? (
+            <div className="space-y-3 rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
               <div className="inline-flex items-center gap-1 font-medium text-foreground">
                 <CalendarDays className="h-4 w-4 text-uva-orange" />
                 Meetup flow
@@ -124,6 +126,12 @@ function TransactionCard({
               {item.meetupLocation ? <p className="mt-2">Spot: {item.meetupLocation}</p> : null}
               {item.meetupScheduledFor ? <p>When: {new Date(item.meetupScheduledFor).toLocaleString()}</p> : null}
               {item.meetupPlan ? <p className="mt-1 leading-6">{item.meetupPlan}</p> : null}
+              <PickupMapPreview
+                locations={item.meetupLocation ? [item.meetupLocation] : item.listing.pickupLocations}
+                compact
+                title="Meetup map"
+                detail="This handoff uses a custom meetup spot, so HoosFinds links it out to maps instead of pinning it on the campus map."
+              />
             </div>
           ) : null}
 
@@ -212,6 +220,13 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [meetupDraft, setMeetupDraft] = useState<{
+    transactionId: string;
+    listing: PurchaseSummaryData["listing"];
+    meetupLocation: string | null;
+    meetupPlan: string | null;
+    meetupScheduledFor: string | null;
+  } | null>(null);
 
   const defaultTab = useMemo(() => {
     return searchParams.get("tab") === "sales" ? "sales" : "purchases";
@@ -238,11 +253,33 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
     router.refresh();
   }
 
-  async function scheduleMeetup(transactionId: string, listing: PurchaseSummaryData["listing"]) {
-    const location = window.prompt(`Meetup spot (${listing.pickupLocations.join(", ")})`, listing.pickupLocations[0] ?? "");
-    if (location === null) return;
+  function scheduleMeetup(
+    transactionId: string,
+    listing: PurchaseSummaryData["listing"],
+    currentLocation?: string | null,
+    currentPlan?: string | null,
+    currentScheduledFor?: string | null
+  ) {
+    setMeetupDraft({
+      transactionId,
+      listing,
+      meetupLocation: currentLocation ?? null,
+      meetupPlan: currentPlan ?? null,
+      meetupScheduledFor: currentScheduledFor ?? null
+    });
+  }
 
-    const meetupPlan = window.prompt("Add an optional meetup note or timing detail.", "") ?? "";
+  async function saveMeetupPlan(payload: { meetupLocation?: string; meetupPlan?: string; meetupScheduledFor?: string }) {
+    if (!meetupDraft) {
+      return false;
+    }
+
+    if (!payload.meetupLocation && !payload.meetupPlan) {
+      toast.error("Add a meetup spot or a handoff note before saving.");
+      return false;
+    }
+
+    const transactionId = meetupDraft.transactionId;
     setLoadingKey(`meetup-${transactionId}`);
     const response = await fetch(`/api/transactions/${transactionId}/handoff`, {
       method: "POST",
@@ -251,8 +288,9 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
       },
       body: JSON.stringify({
         action: "schedule_meetup",
-        meetupLocation: location.trim() || undefined,
-        meetupPlan: meetupPlan.trim() || undefined
+        meetupLocation: payload.meetupLocation,
+        meetupPlan: payload.meetupPlan,
+        meetupScheduledFor: payload.meetupScheduledFor
       })
     });
     setLoadingKey(null);
@@ -260,11 +298,13 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
     if (!response.ok) {
       const data = (await response.json().catch(() => null)) as { message?: string } | null;
       toast.error(data?.message || "Could not save the meetup plan.");
-      return;
+      return false;
     }
 
     toast.success("Meetup details saved.");
+    setMeetupDraft(null);
     router.refresh();
+    return true;
   }
 
   async function confirmHandoff(transactionId: string) {
@@ -362,7 +402,15 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
               role="buyer"
               onCancel={cancelSale}
               onRelist={relist}
-              onScheduleMeetup={scheduleMeetup}
+              onScheduleMeetup={(transactionId, listing) =>
+                scheduleMeetup(
+                  transactionId,
+                  listing,
+                  item.meetupLocation,
+                  item.meetupPlan,
+                  item.meetupScheduledFor
+                )
+              }
               onConfirmHandoff={confirmHandoff}
               onReportIssue={reportIssue}
               loadingKey={loadingKey}
@@ -387,7 +435,15 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
               role="seller"
               onCancel={cancelSale}
               onRelist={relist}
-              onScheduleMeetup={scheduleMeetup}
+              onScheduleMeetup={(transactionId, listing) =>
+                scheduleMeetup(
+                  transactionId,
+                  listing,
+                  item.meetupLocation,
+                  item.meetupPlan,
+                  item.meetupScheduledFor
+                )
+              }
               onConfirmHandoff={confirmHandoff}
               onReportIssue={reportIssue}
               loadingKey={loadingKey}
@@ -402,6 +458,20 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
           />
         )}
       </TabsContent>
+
+      <MeetupPlannerDialog
+        open={Boolean(meetupDraft)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMeetupDraft(null);
+          }
+        }}
+        listing={meetupDraft?.listing ?? null}
+        currentLocation={meetupDraft?.meetupLocation ?? null}
+        currentPlan={meetupDraft?.meetupPlan ?? null}
+        currentScheduledFor={meetupDraft?.meetupScheduledFor ?? null}
+        onSubmit={saveMeetupPlan}
+      />
     </Tabs>
   );
 }

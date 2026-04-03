@@ -10,6 +10,7 @@ import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
+import { getPickupLocationShortLabel } from "@/lib/campus-pickup-locations";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { type ListingCardData } from "@/lib/data";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
@@ -22,7 +23,7 @@ type ListingCardProps = {
 };
 
 export function ListingCard({ listing, sticker, layout = "default", className }: ListingCardProps) {
-  const primaryPickup = listing.pickupLocations[0] || "Grounds";
+  const primaryPickup = getPickupLocationShortLabel(listing.pickupLocations[0] || "Grounds");
   const postedLabel = timeAgo(listing.createdAt);
   const sellerTrustLabel = listing.sellerRating
     ? `${listing.sellerRating.toFixed(1)} (${listing.sellerReviewCount})`
@@ -33,10 +34,11 @@ export function ListingCard({ listing, sticker, layout = "default", className }:
   const isLead = layout === "lead";
   const isFeatured = layout === "featured";
   const hasElevatedTreatment = isLead || isFeatured;
+  const browseCategoryLabel = listing.categoryLabel ?? CATEGORY_LABELS[listing.category];
   const metaLabel = isLead
-    ? CATEGORY_LABELS[listing.category]
+    ? browseCategoryLabel
     : isFeatured
-      ? CATEGORY_LABELS[listing.category]
+      ? browseCategoryLabel
       : null;
   const imageSizes = isLead
     ? "(max-width: 768px) 100vw, (max-width: 1280px) 66vw, 50vw"

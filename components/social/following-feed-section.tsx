@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/shared/user-avatar";
 import { SellerNetworkCard } from "@/components/social/seller-network-card";
 import { SuggestedSellersSection } from "@/components/social/suggested-sellers-section";
 import { Button } from "@/components/ui/button";
+import { getPickupLocationShortLabel } from "@/lib/campus-pickup-locations";
 import { type FollowingFeedData, type ListingCardData } from "@/lib/data";
 import type { SellerNetworkProfile } from "@/lib/user-social";
 import { timeAgo } from "@/lib/utils";
@@ -53,7 +54,7 @@ function buildClosetActivity(items: ListingCardData[]) {
         displayName: item.seller.displayName,
         name: item.seller.name,
         profileImageUrl: item.seller.profileImageUrl,
-        primaryPickup: item.pickupLocations[0] || "Grounds",
+        primaryPickup: getPickupLocationShortLabel(item.pickupLocations[0] || "Grounds"),
         latestDropAt: item.createdAt,
         dropCount: 1,
         sellerRating: item.sellerRating,
@@ -67,7 +68,7 @@ function buildClosetActivity(items: ListingCardData[]) {
 
     if (new Date(item.createdAt) > new Date(existing.latestDropAt)) {
       existing.latestDropAt = item.createdAt;
-      existing.primaryPickup = item.pickupLocations[0] || existing.primaryPickup;
+      existing.primaryPickup = getPickupLocationShortLabel(item.pickupLocations[0] || existing.primaryPickup);
     }
   }
 
@@ -180,7 +181,7 @@ function LeadDropPanel({ listing, closet }: { listing: ListingCardData; closet: 
 
         <span className="inline-flex items-center gap-1.5 text-foreground/88 dark:text-white/88">
           <MapPin className="h-4 w-4 text-uva-orange" />
-          {closet?.primaryPickup || listing.pickupLocations[0] || "Grounds"}
+          {closet?.primaryPickup || getPickupLocationShortLabel(listing.pickupLocations[0] || "Grounds")}
         </span>
 
         {closet?.dropCount && closet.dropCount > 1 ? <span>{closet.dropCount} live from this seller</span> : null}

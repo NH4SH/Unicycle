@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { ListingCard } from "@/components/cards/listing-card";
 import { HeartButton } from "@/components/cards/heart-button";
 import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
+import { PickupMapPreview } from "@/components/shared/pickup-map-preview";
 import { ListingStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
@@ -308,7 +309,7 @@ export function ListingDetailView({
           <div className="space-y-3">
             <p className="editorial-eyebrow">Listed on Grounds</p>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{CATEGORY_LABELS[listing.category]}</Badge>
+              <Badge variant="outline">{listing.categoryLabel ?? CATEGORY_LABELS[listing.category]}</Badge>
               <Badge variant="orange">{CONDITION_LABELS[listing.condition]}</Badge>
               {listing.status !== "ACTIVE" ? <ListingStatusBadge status={listing.status} /> : null}
               <p className="text-xs text-muted-foreground sm:ml-auto">Posted {timeAgo(listing.createdAt)} ago</p>
@@ -421,6 +422,11 @@ export function ListingDetailView({
                   </PlaceMapLink>
                 ))}
               </div>
+              <PickupMapPreview
+                locations={listing.pickupLocations}
+                title="Pickup preview"
+                detail="This listing uses a custom meetup spot, so HoosFinds links it out to maps instead of rendering a campus pin preview."
+              />
               {listing.meetupNotes ? (
                 <p className="text-xs leading-6 text-muted-foreground">
                   <LinkedPlaceText
@@ -538,7 +544,7 @@ export function ListingDetailView({
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="editorial-eyebrow">Keep browsing</p>
-            <h2 className="font-display text-2xl font-extrabold tracking-tight md:text-3xl">More in this lane</h2>
+            <h2 className="font-display text-2xl font-extrabold tracking-tight md:text-3xl">More like this</h2>
           </div>
           <p className="text-sm text-muted-foreground">Similar price point, same campus style energy.</p>
         </div>

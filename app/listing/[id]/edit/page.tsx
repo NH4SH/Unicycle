@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthSession } from "@/lib/auth";
 import { unpackListingDescription } from "@/lib/listing-draft";
+import { fromPrismaBrowseLane, inferBrowseLane } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { isStripeConnectConfigured } from "@/lib/stripe";
@@ -37,6 +38,14 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
   }
 
   const structured = unpackListingDescription(listing.description);
+  const inferredBrowseLane =
+    fromPrismaBrowseLane(listing.shoppingLane) ??
+    inferBrowseLane({
+      title: listing.title,
+      description: listing.description,
+      category: listing.category
+    }) ??
+    "streetwear";
   const locked = listing.status === ListingStatus.PENDING_CONFIRMATION || listing.status === ListingStatus.COMPLETED;
   const payoutState = await getSellerPayoutState(session.user.id);
   const payoutsConfigured = isStripeConnectConfigured();
@@ -121,6 +130,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           description: structured.description,
           price: Math.round(listing.priceCents / 100).toString(),
           category: listing.category,
+          browseLane: inferredBrowseLane === "outerwear" ? "streetwear" : inferredBrowseLane,
           condition: listing.condition,
           brand: structured.brand,
           size: structured.size,

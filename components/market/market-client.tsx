@@ -383,7 +383,7 @@ export function MarketClient({
   const hasActiveFilters = exploreFiltersActive || filters.sort !== DEFAULT_MARKET_FILTERS.sort;
   const activeControlCount = activeFilterChips.length;
   const advancedFilterCount =
-    Number(filters.category !== DEFAULT_MARKET_FILTERS.category) + Number(filters.location !== DEFAULT_MARKET_FILTERS.location);
+    Number(filters.location !== DEFAULT_MARKET_FILTERS.location);
   const visibleCount = items.length ? Math.min(items.length, total) : 0;
   const resultSummary =
     total === 0
@@ -550,12 +550,12 @@ export function MarketClient({
           <div className="space-y-2.5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="space-y-1">
-                <p className="editorial-eyebrow">Fashion-first browse</p>
+                <p className="editorial-eyebrow">Shop clothing first</p>
                 <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
                   Browse the strongest finds first.
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-foreground/70 dark:text-white/74">
-                  Women&apos;s, men&apos;s, vintage, streetwear, outerwear, shoes, and accessories stay up front. Everything else stays one tap away.
+                  Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories stay up front. Dorm, tech, textbooks, tickets, and extras live under More.
                 </p>
               </div>
               <div className="hidden rounded-full border border-border/70 bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft md:block">
@@ -861,23 +861,6 @@ export function MarketClient({
 
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Category</p>
-                    <Select value={filters.category} onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
-                      <SelectTrigger aria-label="Filter by category">
-                        <SelectValue placeholder="Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All categories</SelectItem>
-                        {CATEGORY_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
                     <p className="text-[0.78rem] font-medium text-muted-foreground">Pickup spot</p>
                     <Select value={filters.location} onValueChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}>
                       <SelectTrigger aria-label="Filter by pickup location">
@@ -942,7 +925,7 @@ export function MarketClient({
             <section key={section.id} className="space-y-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-1.5">
-                  <p className="editorial-eyebrow">{index === 0 ? "Browse edit" : "Style lane"}</p>
+                  <p className="editorial-eyebrow">{index === 0 ? "Shopping edit" : "Style section"}</p>
                   <h2 className="font-display text-[1.75rem] font-extrabold tracking-tight md:text-[2.2rem]">{section.title}</h2>
                   <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{section.description}</p>
                 </div>
@@ -950,7 +933,7 @@ export function MarketClient({
                   href={section.href}
                   className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange"
                 >
-                  Open lane <ArrowRight className="h-4 w-4" />
+                  Shop section <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
@@ -977,12 +960,12 @@ export function MarketClient({
           {curatedSections.secondary.length ? (
             <section className="space-y-5 border-t border-border/80 pt-8">
               <div className="space-y-1.5">
-                <p className="editorial-eyebrow">Still useful beyond clothes</p>
+                <p className="editorial-eyebrow">More on HoosFinds</p>
                 <h2 className="font-display text-[1.65rem] font-extrabold tracking-tight md:text-[2rem]">
-                  Everything else, without hijacking the front door.
+                  Beyond the closet, still easy to shop.
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Dorm, tech, furniture, tickets, and the rest still belong in HoosFinds. They just show up lower and quieter than the fashion lanes.
+                  Dorm, tech, furniture, tickets, and the rest still belong in HoosFinds. They just show up lower and quieter than the main style sections.
                 </p>
               </div>
 
@@ -1074,7 +1057,7 @@ export function MarketClient({
             title={hasActiveFilters ? "Nothing matches this filter mix yet" : "No listings live right now"}
             description={
               hasActiveFilters
-                ? "Try a wider price range, switch a style lane, or reset a filter to open the market back up."
+                ? "Try a wider price range, switch sections, or reset a filter to open the market back up."
                 : "Check back soon or post something from your own closet."
             }
             ctaHref={hasActiveFilters ? undefined : "/sell"}

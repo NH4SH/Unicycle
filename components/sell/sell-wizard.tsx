@@ -10,16 +10,18 @@ import { toast } from "sonner";
 import { PayoutSetupButton } from "@/components/payments/payout-setup-button";
 import { PickupChipSelector } from "@/components/shared/pickup-chip-selector";
 import { LinkedPlaceText, PlaceMapLink } from "@/components/shared/linked-place-text";
+import { PickupMapPreview } from "@/components/shared/pickup-map-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
+import { CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { packListingDescription } from "@/lib/listing-draft";
+import { getMarketBrowsePillLabel, getStoredCategoryForBrowseLane, PRIMARY_MARKET_BROWSE_PILLS, SECONDARY_MARKET_BROWSE_PILLS, type SellerBrowseLaneId } from "@/lib/market-browse";
 import type { SellerPayoutState } from "@/lib/seller-payouts";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
 import { listingSubmissionSchema } from "@/lib/validators";
@@ -31,6 +33,7 @@ type Draft = {
   description: string;
   price: string;
   category: string;
+  browseLane: SellerBrowseLaneId;
   condition: string;
   brand: string;
   size: string;
@@ -48,6 +51,7 @@ const defaultDraft: Draft = {
   description: "",
   price: "",
   category: "STREETWEAR",
+  browseLane: "streetwear",
   condition: "GOOD",
   brand: "",
   size: "",
@@ -121,7 +125,9 @@ export function SellWizard({
       if (draft.title.trim().length < 4) return "Title should be at least 4 characters.";
       if (!draft.price || Number(draft.price) < 1) return "Set a valid price.";
       if (draft.description.trim().length < 12) return "Description should be at least 12 characters.";
-      if (draft.category === "STREETWEAR" && draft.size.trim().length === 0) return "Add a size for apparel listings.";
+      if (["womens", "mens", "vintage", "streetwear", "shoes"].includes(draft.browseLane) && draft.size.trim().length === 0) {
+        return "Add a size for clothing or shoe listings.";
+      }
     }
     if (step === 3 && draft.pickupLocations.length < 1) {
       return "Pick at least one meetup spot on Grounds.";
@@ -165,12 +171,21 @@ export function SellWizard({
     });
   }
 
+  function updateBrowseLane(nextLane: SellerBrowseLaneId) {
+    setDraft((prev) => ({
+      ...prev,
+      browseLane: nextLane,
+      category: getStoredCategoryForBrowseLane(nextLane)
+    }));
+  }
+
   async function publish() {
     const parsed = listingSubmissionSchema.safeParse({
       title: draft.title,
       description: draft.description,
       priceCents: Number(draft.price) * 100,
       category: draft.category,
+      browseLane: draft.browseLane,
       condition: draft.condition,
       images: draft.images,
       pickupLocations: draft.pickupLocations,
@@ -360,19 +375,34 @@ export function SellWizard({
               </div>
 
               <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={draft.category} onValueChange={(value) => setDraft((prev) => ({ ...prev, category: value }))} disabled={locked}>
+                <Label>Shop section</Label>
+                <Select value={draft.browseLane} onValueChange={(value) => updateBrowseLane(value as SellerBrowseLaneId)} disabled={locked}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel>Fashion first</SelectLabel>
+                      {PRIMARY_MARKET_BROWSE_PILLS.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      <SelectLabel>More categories</SelectLabel>
+                      {SECONDARY_MARKET_BROWSE_PILLS.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
+                <p className="text-xs leading-6 text-foreground/68 dark:text-white/72">
+                  Pick the shopper-facing section where this should show up first.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -395,6 +425,9 @@ export function SellWizard({
                   placeholder="S, M, 28, 8.5..."
                   disabled={locked}
                 />
+                {["womens", "mens", "vintage", "streetwear", "shoes"].includes(draft.browseLane) ? (
+                  <p className="text-xs leading-6 text-foreground/68 dark:text-white/72">Required for clothing and shoe listings.</p>
+                ) : null}
               </div>
 
               <div className="space-y-2 md:col-span-2">
@@ -442,6 +475,15 @@ export function SellWizard({
               value={draft.pickupLocations}
               onChange={(pickupLocations) => setDraft((prev) => ({ ...prev, pickupLocations }))}
             />
+
+            {draft.pickupLocations.length ? (
+              <PickupMapPreview
+                locations={draft.pickupLocations}
+                compact
+                title="Pickup preview"
+                detail="Custom meetup text can still be stored on the listing, but known UVA spots unlock the campus map preview."
+              />
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="meetupNotes">Meetup notes (optional)</Label>
@@ -491,7 +533,7 @@ export function SellWizard({
 
             <div className="rounded-[2rem] border border-border bg-background/70 p-5">
               <div className="mb-4 flex flex-wrap gap-2">
-                <Badge variant="outline">{CATEGORY_LABELS[draft.category as keyof typeof CATEGORY_LABELS] || draft.category}</Badge>
+                <Badge variant="outline">{getMarketBrowsePillLabel(draft.browseLane)}</Badge>
                 <Badge variant="orange">{CONDITION_LABELS[draft.condition as keyof typeof CONDITION_LABELS] || draft.condition}</Badge>
                 <Badge variant="blue">{draft.price ? `$${draft.price}` : "$0"}</Badge>
                 {mode === "edit" ? <Badge variant={draft.status === "ACTIVE" ? "blue" : "outline"}>{draft.status === "ACTIVE" ? "Live" : "Paused"}</Badge> : null}

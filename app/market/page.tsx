@@ -76,7 +76,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             Browse the best finds on Grounds.
           </h1>
           <p className="text-sm text-foreground/72 dark:text-white/74 md:text-[0.98rem]">
-            Fashion leads the feed. Dorm, tech, textbooks, tickets, and extras stay close without crowding the front door.
+            Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories lead the feed. Everything else stays close, just a little quieter.
           </p>
         </div>
       </div>

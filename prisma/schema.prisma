@@ -18,6 +18,21 @@ enum Category {
   MISC
 }
 
+enum ListingBrowseLane {
+  WOMENS
+  MENS
+  VINTAGE
+  STREETWEAR
+  SHOES
+  ACCESSORIES
+  DORM
+  TECH
+  TEXTBOOKS
+  FURNITURE
+  TICKETS
+  EXTRAS
+}
+
 enum Condition {
   NEW
   LIKE_NEW
@@ -223,6 +238,7 @@ model Listing {
   description      String
   priceCents       Int
   category         Category
+  shoppingLane     ListingBrowseLane?
   condition        Condition
   images           Json
   pickupLocations  Json
@@ -252,6 +268,7 @@ model Listing {
 
   @@index([createdAt])
   @@index([category])
+  @@index([shoppingLane])
   @@index([status])
   @@index([sellerId])
   @@index([moderationStatus])

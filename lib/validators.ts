@@ -1,21 +1,34 @@
 import { Category, Condition, ListingStatus } from "@prisma/client";
 import { z } from "zod";
 
-import { PICKUP_LOCATIONS } from "@/lib/constants";
+import { normalizePickupLocationValue } from "@/lib/campus-pickup-locations";
+import { getStoredCategoryForBrowseLane, type SellerBrowseLaneId } from "@/lib/market-browse";
 import { isValidUsername, normalizeUsername } from "@/lib/user-identity";
 import { TRANSACTION_ISSUE_TYPES } from "@/lib/trust-types";
 
 const APPAREL_CATEGORIES = new Set<Category>([Category.STREETWEAR]);
-const pickupLocationSchema = z.enum(PICKUP_LOCATIONS);
+const APPAREL_BROWSE_LANES = new Set<SellerBrowseLaneId>(["womens", "mens", "vintage", "streetwear", "shoes"]);
+const sellerBrowseLaneSchema = z.enum(["womens", "mens", "vintage", "streetwear", "shoes", "accessories", "dorm", "tech", "textbooks", "furniture", "tickets", "extras"]);
+const pickupLocationSchema = z
+  .string()
+  .trim()
+  .min(2, "Choose a meetup spot.")
+  .max(80, "Keep meetup spots under 80 characters.")
+  .transform((value) => normalizePickupLocationValue(value));
 
 const baseListingSubmissionSchema = z.object({
   title: z.string().min(4).max(90),
   description: z.string().min(12).max(1500),
   priceCents: z.number().int().min(100).max(250000),
   category: z.nativeEnum(Category),
+  browseLane: sellerBrowseLaneSchema.optional(),
   condition: z.nativeEnum(Condition),
   images: z.array(z.string().url()).min(2).max(6),
-  pickupLocations: z.array(pickupLocationSchema).min(1).max(8),
+  pickupLocations: z
+    .array(pickupLocationSchema)
+    .min(1)
+    .max(8)
+    .transform((values) => Array.from(new Set(values.map((value) => value.trim())))),
   meetupNotes: z.string().max(180).optional(),
   brand: z
     .string()
@@ -41,14 +54,30 @@ function withApparelRequirements<T extends z.ZodTypeAny>(schema: T) {
   return schema.superRefine((value: z.infer<T>, ctx) => {
     const listingValue = value as {
       category?: Category;
+      browseLane?: SellerBrowseLaneId;
       size?: string;
     };
 
-    if (listingValue.category && APPAREL_CATEGORIES.has(listingValue.category)) {
+    if (listingValue.browseLane) {
+      const expectedCategory = getStoredCategoryForBrowseLane(listingValue.browseLane);
+
+      if (listingValue.category && listingValue.category !== expectedCategory) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "This shop section doesn't match the selected marketplace category.",
+          path: ["browseLane"]
+        });
+      }
+    }
+
+    if (
+      (listingValue.browseLane && APPAREL_BROWSE_LANES.has(listingValue.browseLane)) ||
+      (listingValue.category && APPAREL_CATEGORIES.has(listingValue.category))
+    ) {
       if (!listingValue.size) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Add a size for apparel listings.",
+          message: "Add a size for clothing or shoe listings.",
           path: ["size"]
         });
       }

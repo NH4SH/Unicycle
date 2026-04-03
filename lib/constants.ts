@@ -1,25 +1,17 @@
 import { Category, Condition, ListingStatus, TransactionStatus } from "@prisma/client";
+import { FEATURED_PICKUP_LOCATIONS } from "@/lib/campus-pickup-locations";
 
 export const SITE_NAME = "HoosFinds";
 export const SITE_URL = "https://hoosfinds.com";
 export const MARKET_PRICE_MIN_CENTS = 100;
 export const MARKET_PRICE_OPEN_MAX_CENTS = 50000;
 
-export const PICKUP_LOCATIONS = [
-  "Newcomb",
-  "Pavilion",
-  "The Corner",
-  "Rice Hall",
-  "Clemons",
-  "Alumni Hall",
-  "JPJ",
-  "Scott Stadium"
-] as const;
+export const PICKUP_LOCATIONS = FEATURED_PICKUP_LOCATIONS.map((location) => location.name);
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   DORM: "Dorm",
   TEXTBOOKS: "Textbooks",
-  STREETWEAR: "Vintage / Streetwear",
+  STREETWEAR: "Clothing",
   TECH: "Tech",
   TICKETS: "Tickets",
   MISC: "Accessories / Extras"
@@ -66,16 +58,22 @@ export const LISTING_SORT_OPTIONS = [
 
 export const HOME_PRIMARY_LANES = [
   {
+    label: "Women's",
+    href: "/market?lane=womens",
+    eyebrow: "Women's",
+    description: "Going-out pieces, denim, layered staples, and quick pickup finds."
+  },
+  {
+    label: "Men's",
+    href: "/market?lane=mens",
+    eyebrow: "Men's",
+    description: "Vintage sweats, everyday campus fits, and closet cleanout standouts."
+  },
+  {
     label: "Vintage",
     href: "/market?lane=vintage",
     eyebrow: "Lead lane",
     description: "Thrifted sweats, worn-in layers, and the campus pieces with real history."
-  },
-  {
-    label: "Outerwear",
-    href: "/market?lane=outerwear",
-    eyebrow: "Layering lane",
-    description: "Jackets, fleeces, shells, and cold-weather layers that still feel sharp on Grounds."
   },
   {
     label: "Streetwear",
@@ -94,18 +92,6 @@ export const HOME_PRIMARY_LANES = [
     href: "/market?lane=shoes",
     eyebrow: "Underfoot",
     description: "Sneakers, boots, and daily pairs worth crossing Grounds for."
-  },
-  {
-    label: "Men's Clothing",
-    href: "/market?lane=mens",
-    eyebrow: "Men's",
-    description: "Vintage sweats, everyday campus fits, and closet cleanout standouts."
-  },
-  {
-    label: "Women's Clothing",
-    href: "/market?lane=womens",
-    eyebrow: "Women's",
-    description: "Going-out pieces, denim, layered staples, and quick pickup finds."
   }
 ] as const;
 

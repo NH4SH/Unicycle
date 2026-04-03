@@ -5,6 +5,7 @@ import { ListingStatus } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 import { assertSellerCanPublishListing, getListingMutationProtection } from "@/lib/listing-guardrails";
 import { packListingDescription, unpackListingDescription } from "@/lib/listing-draft";
+import { fromPrismaBrowseLane, toPrismaBrowseLane } from "@/lib/market-browse";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
@@ -58,6 +59,7 @@ export async function PATCH(request: Request, { params }: Params) {
     description: safeData.description ?? currentDetails.description,
     priceCents: safeData.priceCents ?? listing.priceCents,
     category: safeData.category ?? listing.category,
+    browseLane: safeData.browseLane ?? fromPrismaBrowseLane(listing.shoppingLane),
     condition: safeData.condition ?? listing.condition,
     images: safeData.images ?? (Array.isArray(listing.images) ? listing.images : []),
     pickupLocations: safeData.pickupLocations ?? (Array.isArray(listing.pickupLocations) ? listing.pickupLocations : []),
@@ -112,6 +114,7 @@ export async function PATCH(request: Request, { params }: Params) {
       description: packListingDescription(mergedListing.data),
       priceCents: mergedListing.data.priceCents,
       category: mergedListing.data.category,
+      shoppingLane: toPrismaBrowseLane(mergedListing.data.browseLane),
       condition: mergedListing.data.condition,
       images: mergedListing.data.images,
       pickupLocations: mergedListing.data.pickupLocations,
