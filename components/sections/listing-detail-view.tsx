@@ -35,12 +35,29 @@ type ListingDetailViewProps = {
   saleContext: {
     currentTransaction: {
       id: string;
-      status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED";
+      status: "PENDING_CONFIRMATION" | "ISSUE_REPORTED" | "COMPLETED" | "CANCELLED";
+      handoffStatus: "PENDING_HANDOFF" | "MEETUP_SCHEDULED" | "HANDOFF_CONFIRMED" | "RECEIVED" | "ISSUE_REPORTED" | "CANCELLED";
       agreedPriceCents: number | null;
       sellerMarkedSoldAt: string | null;
+      meetupLocation: string | null;
+      meetupPlan: string | null;
+      meetupScheduledFor: string | null;
+      handoffConfirmedAt: string | null;
       buyerConfirmedReceivedAt: string | null;
       confirmedAt: string | null;
       conversationId: string | null;
+      order: {
+        id: string;
+        status: string;
+        paidAt: string | null;
+        refundedAt: string | null;
+      } | null;
+      openIssue: {
+        id: string;
+        issueType: string;
+        description: string | null;
+        createdAt: string;
+      } | null;
       buyer: {
         id: string;
         name: string | null;
@@ -78,7 +95,7 @@ type ListingDetailViewProps = {
       };
       lastMessage: string | null;
       lastMessageAt: string | null;
-      transactionStatus: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED" | null;
+      transactionStatus: "PENDING_CONFIRMATION" | "ISSUE_REPORTED" | "COMPLETED" | "CANCELLED" | null;
     }[];
   };
 };
@@ -145,7 +162,7 @@ export function ListingDetailView({
 
   function getTrustCopy() {
     if (showCheckoutCta) {
-      return "You’ll review the item price, HoosFinds fee, and tax before Stripe. Meet in a public spot on Grounds.";
+      return "You’ll review the item price, HoosFinds fee, and tax before Stripe. Payment is captured at checkout, and HoosFinds still records the real handoff afterward.";
     }
 
     if (viewerSignedIn && !viewerCanBuy) {
@@ -203,7 +220,8 @@ export function ListingDetailView({
     setUpdating(false);
 
     if (!response.ok) {
-      toast.error("Could not delete listing.");
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not delete listing.");
       return;
     }
 
@@ -308,7 +326,11 @@ export function ListingDetailView({
                   >
                     {listing.favoriteCount} saves
                   </Badge>
-                  {listing.status === "PENDING_CONFIRMATION" ? <Badge variant="blue">Waiting on buyer receipt</Badge> : null}
+                  {listing.status === "PENDING_CONFIRMATION" ? (
+                    <Badge variant={saleContext.currentTransaction?.status === "ISSUE_REPORTED" ? "outline" : "blue"}>
+                      {saleContext.currentTransaction?.status === "ISSUE_REPORTED" ? "Issue under review" : "Waiting on buyer receipt"}
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -472,7 +494,9 @@ export function ListingDetailView({
           {!listingIsLive ? (
             <div className="surface-subtle rounded-[1.75rem] p-4 text-sm leading-7 text-muted-foreground">
               {listing.status === "PENDING_CONFIRMATION"
-                ? "This piece has already been handed off and is waiting on the selected buyer to confirm receipt."
+                ? saleContext.currentTransaction?.status === "ISSUE_REPORTED"
+                  ? "This piece has an open handoff issue, so HoosFinds paused normal completion until it is resolved."
+                  : "This piece has already been handed off and is waiting on the selected buyer to confirm receipt."
                 : listing.status === "COMPLETED"
                   ? "This transaction has been fully completed and recorded on HoosFinds."
                   : "This listing is currently cancelled and off the feed until the seller relists it."}

@@ -1,7 +1,8 @@
-import { ListingStatus, TransactionStatus } from "@prisma/client";
+import { HandoffStatus, ListingStatus, TransactionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { getListingMutationProtection } from "@/lib/listing-guardrails";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { createTransactionSchema } from "@/lib/validators";
@@ -57,11 +58,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Relist this item before marking it sold again." }, { status: 409 });
   }
 
+  const protection = await getListingMutationProtection(conversation.listingId);
+  if (protection.blocked) {
+    return NextResponse.json({ message: protection.message }, { status: 409 });
+  }
+
   const activeTransaction = await prisma.transaction.findFirst({
     where: {
       listingId: conversation.listingId,
       status: {
-        in: [TransactionStatus.PENDING_CONFIRMATION, TransactionStatus.COMPLETED]
+        in: [TransactionStatus.PENDING_CONFIRMATION, TransactionStatus.ISSUE_REPORTED, TransactionStatus.COMPLETED]
       }
     },
     select: {
@@ -83,6 +89,7 @@ export async function POST(request: Request) {
         buyerId: conversation.buyerId,
         conversationId: conversation.id,
         status: TransactionStatus.PENDING_CONFIRMATION,
+        handoffStatus: HandoffStatus.HANDOFF_CONFIRMED,
         agreedPriceCents: parsed.data.agreedPriceCents ?? conversation.listing.priceCents,
         sellerMarkedSoldAt: now
       }

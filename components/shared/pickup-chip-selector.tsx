@@ -23,6 +23,7 @@ export function PickupChipSelector({ options, value, onChange }: PickupChipSelec
   return (
     <div className="surface-panel-strong p-4">
       <p className="editorial-eyebrow mb-3">Pickup on Grounds</p>
+      <p className="mb-3 text-sm leading-6 text-muted-foreground">Choose public, campus-friendly meetup spots. Use meetup notes for timing, not private addresses.</p>
       <div className="flex flex-wrap gap-2">
         {options.map((location) => {
           const selected = value.includes(location);

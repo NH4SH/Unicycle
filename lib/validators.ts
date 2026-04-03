@@ -1,24 +1,80 @@
 import { Category, Condition, ListingStatus } from "@prisma/client";
 import { z } from "zod";
+
+import { PICKUP_LOCATIONS } from "@/lib/constants";
 import { isValidUsername, normalizeUsername } from "@/lib/user-identity";
+import { TRANSACTION_ISSUE_TYPES } from "@/lib/trust-types";
+
+const APPAREL_CATEGORIES = new Set<Category>([Category.STREETWEAR]);
+const pickupLocationSchema = z.enum(PICKUP_LOCATIONS);
+
+const baseListingSubmissionSchema = z.object({
+  title: z.string().min(4).max(90),
+  description: z.string().min(12).max(1500),
+  priceCents: z.number().int().min(100).max(250000),
+  category: z.nativeEnum(Category),
+  condition: z.nativeEnum(Condition),
+  images: z.array(z.string().url()).min(2).max(6),
+  pickupLocations: z.array(pickupLocationSchema).min(1).max(8),
+  meetupNotes: z.string().max(180).optional(),
+  brand: z
+    .string()
+    .trim()
+    .max(60)
+    .optional()
+    .transform((value) => value || undefined),
+  size: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .transform((value) => value || undefined),
+  color: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .transform((value) => value || undefined)
+});
+
+function withApparelRequirements<T extends z.ZodTypeAny>(schema: T) {
+  return schema.superRefine((value: z.infer<T>, ctx) => {
+    const listingValue = value as {
+      category?: Category;
+      brand?: string;
+      size?: string;
+    };
+
+    if (listingValue.category && APPAREL_CATEGORIES.has(listingValue.category)) {
+      if (!listingValue.brand) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Add a brand for apparel listings.",
+          path: ["brand"]
+        });
+      }
+
+      if (!listingValue.size) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Add a size for apparel listings.",
+          path: ["size"]
+        });
+      }
+    }
+  });
+}
 
 export const waitlistSchema = z.object({
   email: z.string().email("Please enter a valid email."),
   reason: z.string().min(5).max(240)
 });
 
-export const listingSchema = z.object({
-  title: z.string().min(4).max(90),
-  description: z.string().min(12).max(1500),
-  priceCents: z.number().int().min(100).max(250000),
-  category: z.nativeEnum(Category),
-  condition: z.nativeEnum(Condition),
-  images: z.array(z.string().url()).min(1).max(6),
-  pickupLocations: z.array(z.string()).min(1).max(8),
-  meetupNotes: z.string().max(180).optional()
-});
+export const listingSchema = withApparelRequirements(baseListingSubmissionSchema);
 
-export const listingUpdateSchema = listingSchema
+export const listingSubmissionSchema = withApparelRequirements(baseListingSubmissionSchema);
+
+export const listingUpdateSchema = baseListingSubmissionSchema
   .partial()
   .extend({
     status: z
@@ -127,6 +183,48 @@ export const createTransactionSchema = z.object({
   agreedPriceCents: z.number().int().min(100).max(250000).optional()
 });
 
+export const updateTransactionHandoffSchema = z
+  .object({
+    action: z.enum(["schedule_meetup", "confirm_handoff"]),
+    meetupLocation: z
+      .string()
+      .trim()
+      .max(80)
+      .optional()
+      .transform((value) => value || undefined),
+    meetupPlan: z
+      .string()
+      .trim()
+      .max(280)
+      .optional()
+      .transform((value) => value || undefined),
+    meetupScheduledFor: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => value || undefined)
+  })
+  .superRefine((value, ctx) => {
+    if (value.action === "schedule_meetup" && !value.meetupLocation && !value.meetupPlan) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Add a meetup location or plan before scheduling.",
+        path: ["meetupPlan"]
+      });
+    }
+
+    if (value.meetupScheduledFor) {
+      const parsedDate = new Date(value.meetupScheduledFor);
+      if (Number.isNaN(parsedDate.getTime())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Use a valid meetup time.",
+          path: ["meetupScheduledFor"]
+        });
+      }
+    }
+  });
+
 export const confirmTransactionSchema = z
   .object({
     stars: z.number().int().min(1).max(5).optional(),
@@ -146,6 +244,41 @@ export const confirmTransactionSchema = z
       });
     }
   });
+
+export const reportTransactionIssueSchema = z.object({
+  issueType: z.enum(TRANSACTION_ISSUE_TYPES),
+  description: z
+    .string()
+    .trim()
+    .min(4, "Share a little context so HoosFinds can understand what went wrong.")
+    .max(500, "Keep the issue summary under 500 characters.")
+});
+
+export const cancelTransactionSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .max(280)
+    .optional()
+    .transform((value) => value || undefined)
+});
+
+export const blockUserSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .max(280)
+    .optional()
+    .transform((value) => value || undefined)
+});
+
+export const reportConversationSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(4, "Share a short reason for the conversation report.")
+    .max(500, "Keep the report under 500 characters.")
+});
 
 export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(100).default(1),

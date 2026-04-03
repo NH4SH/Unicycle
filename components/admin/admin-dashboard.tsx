@@ -34,6 +34,9 @@ type AdminDashboardData = {
     gmvCents: number;
     buyerVolumeCents: number;
     platformRevenueCents: number;
+    refundedOrders: number;
+    openTransactionIssues: number;
+    reportedConversations: number;
   };
   applications: Array<{
     id: string;
@@ -117,6 +120,63 @@ type AdminDashboardData = {
     targetUser: { id: string; name: string | null; email: string; username: string } | null;
     targetListing: { id: string; title: string } | null;
     targetVerifiedSellerApplication: { id: string; businessName: string; email: string } | null;
+  }>;
+  recentRefunds: Array<{
+    id: string;
+    status: "REFUND_PENDING" | "REFUNDED";
+    refundReason: string | null;
+    refundFailureReason: string | null;
+    createdAt: string;
+    paidAt: string | null;
+    refundedAt: string | null;
+    listing: { id: string; title: string };
+    buyer: { id: string; name: string | null; username: string };
+    seller: { id: string; name: string | null; username: string };
+  }>;
+  recentTransactionIssues: Array<{
+    id: string;
+    issueType: string;
+    status: "OPEN" | "RESOLVED" | "DISMISSED";
+    description: string | null;
+    createdAt: string;
+    resolvedAt: string | null;
+    resolutionNotes: string | null;
+    reporter: { id: string; name: string | null; username: string };
+    resolvedBy: { id: string; name: string | null; username: string } | null;
+    transaction: {
+      id: string;
+      status: string;
+      listing: { id: string; title: string };
+      buyer: { id: string; name: string | null; username: string };
+      seller: { id: string; name: string | null; username: string };
+    };
+  }>;
+  recentConversationReports: Array<{
+    id: string;
+    reason: string;
+    status: "OPEN" | "REVIEWED" | "DISMISSED";
+    notes: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
+    reporter: { id: string; name: string | null; username: string };
+    reviewedBy: { id: string; name: string | null; username: string } | null;
+    conversation: {
+      id: string;
+      listing: { id: string; title: string };
+      buyer: { id: string; name: string | null; username: string };
+      seller: { id: string; name: string | null; username: string };
+    };
+  }>;
+  recentTrustEvents: Array<{
+    id: string;
+    type: string;
+    description: string | null;
+    createdAt: string;
+    metadata: unknown;
+    user: { id: string; name: string | null; username: string };
+    listing: { id: string; title: string } | null;
+    order: { id: string; status: string } | null;
+    transaction: { id: string; status: string } | null;
   }>;
   userActivitySummaries: Array<{
     id: string;
@@ -223,7 +283,7 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
       {
         label: "Platform revenue",
         value: formatCurrencyFromCents(data.overview.platformRevenueCents, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        hint: `${data.overview.removedListings.toLocaleString()} removed · ${data.overview.hiddenListings.toLocaleString()} hidden listings`,
+        hint: `${data.overview.refundedOrders.toLocaleString()} refunds · ${data.overview.openTransactionIssues.toLocaleString()} open handoff issues · ${data.overview.reportedConversations.toLocaleString()} reported threads`,
         icon: ShieldAlert
       }
     ],
@@ -692,6 +752,156 @@ export function AdminDashboard({ data }: { data: AdminDashboardData }) {
                       <Link href="/market">View live marketplace</Link>
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <Card className="surface-panel-strong">
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <p className="editorial-eyebrow">Refund history</p>
+                  <h2 className="font-display text-3xl font-extrabold tracking-tight">Paid sale reversals</h2>
+                </div>
+                <div className="space-y-3">
+                  {data.recentRefunds.length ? (
+                    data.recentRefunds.map((refund) => (
+                      <div key={refund.id} className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Link href={`/listing/${refund.listing.id}`} className="font-semibold text-foreground transition hover:text-uva-orange">
+                              {refund.listing.title}
+                            </Link>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Buyer {refund.buyer.name || `@${refund.buyer.username}`} · Seller {refund.seller.name || `@${refund.seller.username}`}
+                            </p>
+                          </div>
+                          <Badge variant={refund.status === "REFUNDED" ? "orange" : "outline"}>{refund.status.toLowerCase()}</Badge>
+                        </div>
+                        <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                          <p>Created {formatDateTime(refund.createdAt)}</p>
+                          {refund.paidAt ? <p>Paid at {formatDateTime(refund.paidAt)}</p> : null}
+                          {refund.refundedAt ? <p>Refunded at {formatDateTime(refund.refundedAt)}</p> : null}
+                          {refund.refundReason ? <p>Reason: {refund.refundReason}</p> : null}
+                          {refund.refundFailureReason ? <p>Failure: {refund.refundFailureReason}</p> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-7 text-muted-foreground">No refund activity yet.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel-strong">
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <p className="editorial-eyebrow">Transaction problems</p>
+                  <h2 className="font-display text-3xl font-extrabold tracking-tight">Open handoff issues</h2>
+                </div>
+                <div className="space-y-3">
+                  {data.recentTransactionIssues.length ? (
+                    data.recentTransactionIssues.map((issue) => (
+                      <div key={issue.id} className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Link href={`/listing/${issue.transaction.listing.id}`} className="font-semibold text-foreground transition hover:text-uva-orange">
+                              {issue.transaction.listing.title}
+                            </Link>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {issue.issueType.replaceAll("_", " ").toLowerCase()} · reported by {issue.reporter.name || `@${issue.reporter.username}`}
+                            </p>
+                          </div>
+                          <Badge variant={issue.status === "OPEN" ? "orange" : "outline"}>{issue.status.toLowerCase()}</Badge>
+                        </div>
+                        <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                          <p>Buyer: {issue.transaction.buyer.name || `@${issue.transaction.buyer.username}`}</p>
+                          <p>Seller: {issue.transaction.seller.name || `@${issue.transaction.seller.username}`}</p>
+                          <p>Opened {formatDateTime(issue.createdAt)}</p>
+                          {issue.description ? <p>Details: {issue.description}</p> : null}
+                          {issue.resolvedAt ? <p>Resolved {formatDateTime(issue.resolvedAt)}</p> : null}
+                          {issue.resolutionNotes ? <p>Resolution: {issue.resolutionNotes}</p> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-7 text-muted-foreground">No transaction issues have been reported yet.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <Card className="surface-panel-strong">
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <p className="editorial-eyebrow">Messaging safety</p>
+                  <h2 className="font-display text-3xl font-extrabold tracking-tight">Reported conversations</h2>
+                </div>
+                <div className="space-y-3">
+                  {data.recentConversationReports.length ? (
+                    data.recentConversationReports.map((report) => (
+                      <div key={report.id} className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <Link href={`/listing/${report.conversation.listing.id}`} className="font-semibold text-foreground transition hover:text-uva-orange">
+                              {report.conversation.listing.title}
+                            </Link>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Buyer {report.conversation.buyer.name || `@${report.conversation.buyer.username}`} · Seller {report.conversation.seller.name || `@${report.conversation.seller.username}`}
+                            </p>
+                          </div>
+                          <Badge variant={report.status === "OPEN" ? "orange" : "outline"}>{report.status.toLowerCase()}</Badge>
+                        </div>
+                        <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                          <p>Reported by {report.reporter.name || `@${report.reporter.username}`}</p>
+                          <p>Reason: {report.reason}</p>
+                          <p>Opened {formatDateTime(report.createdAt)}</p>
+                          {report.notes ? <p>Notes: {report.notes}</p> : null}
+                          {report.reviewedAt ? <p>Reviewed {formatDateTime(report.reviewedAt)}</p> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-7 text-muted-foreground">No conversation reports yet.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="surface-panel-strong">
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <p className="editorial-eyebrow">Trust signals</p>
+                  <h2 className="font-display text-3xl font-extrabold tracking-tight">Behavior patterns</h2>
+                </div>
+                <div className="space-y-3">
+                  {data.recentTrustEvents.length ? (
+                    data.recentTrustEvents.map((event) => (
+                      <div key={event.id} className="rounded-[1.25rem] border border-border bg-background/70 px-4 py-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-foreground">{event.type.replaceAll("_", " ").toLowerCase()}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {event.user.name || `@${event.user.username}`}
+                              {event.listing ? ` · ${event.listing.title}` : ""}
+                            </p>
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{timeAgo(event.createdAt)} ago</p>
+                        </div>
+                        <div className="mt-3 grid gap-1 text-sm text-muted-foreground">
+                          {event.description ? <p>{event.description}</p> : null}
+                          {event.order ? <p>Order: {event.order.id} · {event.order.status.toLowerCase()}</p> : null}
+                          {event.transaction ? <p>Transaction: {event.transaction.id} · {event.transaction.status.toLowerCase()}</p> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm leading-7 text-muted-foreground">No trust events recorded yet.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

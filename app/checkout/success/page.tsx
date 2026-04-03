@@ -76,7 +76,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
                 </h1>
                 <p className="max-w-xl text-muted-foreground">
                   {paymentComplete
-                    ? "Stripe accepted your payment. HoosFinds recorded the order, routed the seller payout underneath the listing, and moved the sale into buyer confirmation so you can confirm receipt after pickup."
+                    ? "Stripe accepted your payment. HoosFinds recorded the order and moved the sale into the handoff flow so you can confirm receipt after pickup. That confirmation records the meetup outcome inside HoosFinds; it does not delay the card charge that just succeeded."
                     : "Stripe is still finalizing the payment state. Refresh in a moment if this page stays in processing."}
                 </p>
               </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import { CheckCircle2, Loader2, SendHorizontal, Star, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, SendHorizontal, ShieldAlert, Star, UserX, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
@@ -41,11 +41,28 @@ type ConversationPayload = {
   }[];
   transaction: {
     id: string;
-    status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED";
+    status: "PENDING_CONFIRMATION" | "ISSUE_REPORTED" | "COMPLETED" | "CANCELLED";
+    handoffStatus: "PENDING_HANDOFF" | "MEETUP_SCHEDULED" | "HANDOFF_CONFIRMED" | "RECEIVED" | "ISSUE_REPORTED" | "CANCELLED";
     agreedPriceCents: number | null;
     sellerMarkedSoldAt: string | null;
+    meetupLocation: string | null;
+    meetupPlan: string | null;
+    meetupScheduledFor: string | null;
+    handoffConfirmedAt: string | null;
     buyerConfirmedReceivedAt: string | null;
     confirmedAt: string | null;
+    order: {
+      id: string;
+      status: string;
+      paidAt: string | null;
+      refundedAt: string | null;
+    } | null;
+    openIssue: {
+      id: string;
+      issueType: string;
+      description: string | null;
+      createdAt: string;
+    } | null;
     review: {
       stars: number;
       comment: string | null;
@@ -114,7 +131,8 @@ export function MessagesClient({ userId }: { userId: string }) {
     setSending(false);
 
     if (response.ok === false) {
-      toast.error("Message failed to send.");
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Message failed to send.");
       return;
     }
 
@@ -179,6 +197,64 @@ export function MessagesClient({ userId }: { userId: string }) {
     router.refresh();
   }
 
+  async function blockUser(targetUserId: string) {
+    const reason = window.prompt("Optional: why are you blocking this user?", "") ?? "";
+    setActionKey(`block-${targetUserId}`);
+    const response = await fetch(`/api/users/${targetUserId}/block`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reason.trim() || undefined })
+    });
+    setActionKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not block this user.");
+      return;
+    }
+
+    toast.success("User blocked. Messaging is now disabled until you unblock them.");
+    router.refresh();
+  }
+
+  async function unblockUser(targetUserId: string) {
+    setActionKey(`unblock-${targetUserId}`);
+    const response = await fetch(`/api/users/${targetUserId}/unblock`, {
+      method: "POST"
+    });
+    setActionKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not unblock this user.");
+      return;
+    }
+
+    toast.success("User unblocked.");
+    router.refresh();
+  }
+
+  async function reportConversation(conversationId: string) {
+    const reason = window.prompt("Share a short reason for this conversation report.", "");
+    if (!reason) return;
+
+    setActionKey(`report-${conversationId}`);
+    const response = await fetch(`/api/conversations/${conversationId}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })
+    });
+    setActionKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not report this conversation.");
+      return;
+    }
+
+    toast.success("Conversation reported for review.");
+  }
+
   function renderSalePanel(conversation: ConversationPayload) {
     const isSeller = conversation.role === "seller";
     const isBuyer = conversation.role === "buyer";
@@ -207,13 +283,21 @@ export function MessagesClient({ userId }: { userId: string }) {
             <div className="flex flex-wrap items-center gap-2">
               <TransactionStatusBadge status={conversation.transaction.status} />
               <p className="text-sm font-medium text-foreground">
-                {isBuyer ? "You can confirm receipt once the item is in hand." : "Waiting on the buyer to confirm receipt."}
+                {conversation.transaction.handoffStatus === "MEETUP_SCHEDULED"
+                  ? "Meetup details are set."
+                  : conversation.transaction.handoffStatus === "HANDOFF_CONFIRMED"
+                    ? isBuyer
+                      ? "You can confirm receipt once the item is in hand."
+                      : "Waiting on the buyer to confirm receipt."
+                    : "Payment is captured and the meetup still needs to happen."}
               </p>
             </div>
             <p className="text-sm leading-6 text-muted-foreground">
-              {isBuyer
-                ? "This keeps HoosFinds honest and only finalizes the sale after the real handoff happens."
-                : "If plans changed, you can cancel the pending sale and relist the item right away."}
+              {conversation.transaction.meetupLocation || conversation.transaction.meetupPlan
+                ? `${conversation.transaction.meetupLocation ? `Spot: ${conversation.transaction.meetupLocation}. ` : ""}${conversation.transaction.meetupPlan ?? ""}`.trim()
+                : isBuyer
+                  ? "HoosFinds only finalizes the sale after the real handoff happens. Schedule the meetup from Purchases."
+                  : "If plans changed, you can cancel the sale or manage the meetup flow from Purchases."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -239,6 +323,27 @@ export function MessagesClient({ userId }: { userId: string }) {
               <Link href="/purchases">Open purchases</Link>
             </Button>
           </div>
+        </div>
+      );
+    }
+
+    if (conversation.transaction?.status === "ISSUE_REPORTED") {
+      return (
+        <div className="surface-subtle flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <TransactionStatusBadge status={conversation.transaction.status} />
+              <p className="text-sm font-medium text-foreground">This handoff has an open issue.</p>
+            </div>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {conversation.transaction.openIssue
+                ? `${conversation.transaction.openIssue.issueType.replaceAll("_", " ")}${conversation.transaction.openIssue.description ? `: ${conversation.transaction.openIssue.description}` : ""}`
+                : "HoosFinds paused the normal completion flow while this issue is active."}
+            </p>
+          </div>
+          <Button variant="secondary" asChild>
+            <Link href="/purchases">Open purchases</Link>
+          </Button>
         </div>
       );
     }
@@ -381,7 +486,7 @@ export function MessagesClient({ userId }: { userId: string }) {
                   ) : null}
                 </div>
               </div>
-              <div className="grid grid-cols-[56px_1fr] items-center gap-3 rounded-[1.2rem] border border-border bg-background/70 p-2">
+            <div className="grid grid-cols-[56px_1fr] items-center gap-3 rounded-[1.2rem] border border-border bg-background/70 p-2">
                 <div className="relative h-14 w-14 overflow-hidden rounded-[0.9rem] border border-border">
                   <Image
                     src={
@@ -402,8 +507,41 @@ export function MessagesClient({ userId }: { userId: string }) {
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{formatCurrency(activeConversation.listing.priceCents / 100)}</p>
-                </div>
               </div>
+            </div>
+          </div>
+
+            <div className="flex flex-wrap gap-2 px-4 pb-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void reportConversation(activeConversation.id)}
+                disabled={actionKey === `report-${activeConversation.id}`}
+              >
+                {actionKey === `report-${activeConversation.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-1.5 h-4 w-4" />}
+                Report thread
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void blockUser(activeConversation.otherUser.id)}
+                disabled={actionKey === `block-${activeConversation.otherUser.id}`}
+              >
+                {actionKey === `block-${activeConversation.otherUser.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserX className="mr-1.5 h-4 w-4" />}
+                Block user
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void unblockUser(activeConversation.otherUser.id)}
+                disabled={actionKey === `unblock-${activeConversation.otherUser.id}`}
+              >
+                {actionKey === `unblock-${activeConversation.otherUser.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                Unblock
+              </Button>
             </div>
 
             <div className="border-b border-border/70 px-4 py-3">{renderSalePanel(activeConversation)}</div>

@@ -9,6 +9,10 @@ function statusVariant(status: ListingStatus | TransactionStatus): BadgeProps["v
     return "blue";
   }
 
+  if (status === "ISSUE_REPORTED") {
+    return "outline";
+  }
+
   if (status === "COMPLETED") {
     return "orange";
   }

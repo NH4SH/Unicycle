@@ -1,4 +1,14 @@
-import { Category, Condition, ListingModerationStatus, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
+import {
+  Category,
+  Condition,
+  HandoffStatus,
+  ListingModerationStatus,
+  ListingStatus,
+  OrderStatus,
+  Prisma,
+  TransactionIssueStatus,
+  TransactionStatus
+} from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
 import {
@@ -99,6 +109,14 @@ const transactionSummaryInclude = Prisma.validator<Prisma.TransactionInclude>()(
   listing: {
     include: listingCardInclude
   },
+  order: {
+    select: {
+      id: true,
+      status: true,
+      paidAt: true,
+      refundedAt: true
+    }
+  },
   buyer: {
     select: publicUserSummarySelect
   },
@@ -115,6 +133,21 @@ const transactionSummaryInclude = Prisma.validator<Prisma.TransactionInclude>()(
   conversation: {
     select: {
       id: true
+    }
+  },
+  issues: {
+    where: {
+      status: TransactionIssueStatus.OPEN
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 1,
+    select: {
+      id: true,
+      issueType: true,
+      description: true,
+      createdAt: true
     }
   }
 });
@@ -172,9 +205,14 @@ export type SellerReviewData = {
 export type PurchaseSummaryData = {
   id: string;
   status: TransactionStatus;
+  handoffStatus: HandoffStatus;
   agreedPriceCents: number;
   createdAt: string;
   sellerMarkedSoldAt: string | null;
+  meetupLocation: string | null;
+  meetupPlan: string | null;
+  meetupScheduledFor: string | null;
+  handoffConfirmedAt: string | null;
   buyerConfirmedReceivedAt: string | null;
   confirmedAt: string | null;
   listing: ListingCardData;
@@ -188,6 +226,18 @@ export type PurchaseSummaryData = {
     publicUsername: string | null;
   };
   conversationId: string | null;
+  order: {
+    id: string;
+    status: OrderStatus;
+    paidAt: string | null;
+    refundedAt: string | null;
+  } | null;
+  openIssue: {
+    id: string;
+    issueType: string;
+    description: string | null;
+    createdAt: string;
+  } | null;
   review: {
     stars: number;
     comment: string | null;
@@ -313,7 +363,8 @@ function sortListingsForMarket(listings: ListingCardRecord[], sort: string) {
 
 function listingWhere(query: MarketQuery): Prisma.ListingWhereInput {
   const where: Prisma.ListingWhereInput = {
-    status: ListingStatus.ACTIVE
+    status: ListingStatus.ACTIVE,
+    moderationStatus: ListingModerationStatus.VISIBLE
   };
 
   if (query.q) {
@@ -411,18 +462,40 @@ function mapListing(listing: ListingLike, userId?: string): ListingCardData {
 
 function mapPurchaseSummary(transaction: TransactionSummaryRecord, viewerId: string): PurchaseSummaryData {
   const counterparty = transaction.buyerId === viewerId ? transaction.seller : transaction.buyer;
+  const openIssue = transaction.issues[0] ?? null;
 
   return {
     id: transaction.id,
     status: transaction.status,
+    handoffStatus: transaction.handoffStatus,
     agreedPriceCents: transaction.agreedPriceCents ?? transaction.listing.priceCents,
     createdAt: transaction.createdAt.toISOString(),
     sellerMarkedSoldAt: transaction.sellerMarkedSoldAt?.toISOString() ?? null,
+    meetupLocation: transaction.meetupLocation,
+    meetupPlan: transaction.meetupPlan,
+    meetupScheduledFor: transaction.meetupScheduledFor?.toISOString() ?? null,
+    handoffConfirmedAt: transaction.handoffConfirmedAt?.toISOString() ?? null,
     buyerConfirmedReceivedAt: transaction.buyerConfirmedReceivedAt?.toISOString() ?? null,
     confirmedAt: transaction.confirmedAt?.toISOString() ?? null,
     listing: mapListing(transaction.listing, viewerId),
     counterparty: toPublicUserSummary(counterparty),
     conversationId: transaction.conversation?.id ?? null,
+    order: transaction.order
+      ? {
+          id: transaction.order.id,
+          status: transaction.order.status,
+          paidAt: transaction.order.paidAt?.toISOString() ?? null,
+          refundedAt: transaction.order.refundedAt?.toISOString() ?? null
+        }
+      : null,
+    openIssue: openIssue
+      ? {
+          id: openIssue.id,
+          issueType: openIssue.issueType,
+          description: openIssue.description,
+          createdAt: openIssue.createdAt.toISOString()
+        }
+      : null,
     review: transaction.review
       ? {
           stars: transaction.review.stars,
@@ -567,7 +640,7 @@ export async function getLandingDrops(userId?: string) {
   noStore();
 
   const todaysDrops = await prisma.listing.findMany({
-    where: { status: ListingStatus.ACTIVE },
+    where: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
     orderBy: { createdAt: "desc" },
     take: 8,
     include: listingCardInclude
@@ -579,7 +652,7 @@ export async function getLandingDrops(userId?: string) {
     by: ["listingId"],
     where: {
       createdAt: { gte: since },
-      listing: { status: ListingStatus.ACTIVE }
+      listing: { status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE }
     },
     _count: {
       listingId: true
@@ -597,7 +670,7 @@ export async function getLandingDrops(userId?: string) {
   if (group.length > 0) {
     const listingIds = group.map((item) => item.listingId);
     const fetched = await prisma.listing.findMany({
-      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE },
+      where: { id: { in: listingIds }, status: ListingStatus.ACTIVE, moderationStatus: ListingModerationStatus.VISIBLE },
       include: listingCardInclude
     });
 
@@ -610,6 +683,7 @@ export async function getLandingDrops(userId?: string) {
     const fallback = await prisma.listing.findMany({
       where: {
         status: ListingStatus.ACTIVE,
+        moderationStatus: ListingModerationStatus.VISIBLE,
         id: { notIn: hotListings.map((listing) => listing.id) }
       },
       orderBy: { createdAt: "desc" },
@@ -646,7 +720,8 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
 
   const listings = await prisma.listing.findMany({
     where: {
-      status: ListingStatus.ACTIVE
+      status: ListingStatus.ACTIVE,
+      moderationStatus: ListingModerationStatus.VISIBLE
     },
     include: listingCardInclude
   });
@@ -780,6 +855,7 @@ export async function getFollowingFeedListings(userId: string, page = 1, limit =
   const pagination = normalizePage(page, limit, 20);
   const where = {
     status: ListingStatus.ACTIVE,
+    moderationStatus: ListingModerationStatus.VISIBLE,
     seller: {
       followers: {
         some: {
@@ -858,6 +934,29 @@ export async function getListingDetail(listingId: string, userId?: string) {
             select: {
               id: true
             }
+          },
+          order: {
+            select: {
+              id: true,
+              status: true,
+              paidAt: true,
+              refundedAt: true
+            }
+          },
+          issues: {
+            where: {
+              status: TransactionIssueStatus.OPEN
+            },
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 1,
+            select: {
+              id: true,
+              issueType: true,
+              description: true,
+              createdAt: true
+            }
           }
         },
         orderBy: {
@@ -899,7 +998,10 @@ export async function getListingDetail(listingId: string, userId?: string) {
       ? null
       : listing.transactions.find((transaction) => {
           if (listing.status === ListingStatus.PENDING_CONFIRMATION) {
-            return transaction.status === TransactionStatus.PENDING_CONFIRMATION;
+            return (
+              transaction.status === TransactionStatus.PENDING_CONFIRMATION ||
+              transaction.status === TransactionStatus.ISSUE_REPORTED
+            );
           }
 
           if (listing.status === ListingStatus.COMPLETED) {
@@ -918,11 +1020,32 @@ export async function getListingDetail(listingId: string, userId?: string) {
         ? {
             id: currentTransaction.id,
             status: currentTransaction.status,
+            handoffStatus: currentTransaction.handoffStatus,
             agreedPriceCents: currentTransaction.agreedPriceCents,
             sellerMarkedSoldAt: currentTransaction.sellerMarkedSoldAt?.toISOString() ?? null,
+            meetupLocation: currentTransaction.meetupLocation,
+            meetupPlan: currentTransaction.meetupPlan,
+            meetupScheduledFor: currentTransaction.meetupScheduledFor?.toISOString() ?? null,
+            handoffConfirmedAt: currentTransaction.handoffConfirmedAt?.toISOString() ?? null,
             buyerConfirmedReceivedAt: currentTransaction.buyerConfirmedReceivedAt?.toISOString() ?? null,
             confirmedAt: currentTransaction.confirmedAt?.toISOString() ?? null,
             conversationId: currentTransaction.conversation?.id ?? null,
+            order: currentTransaction.order
+              ? {
+                  id: currentTransaction.order.id,
+                  status: currentTransaction.order.status,
+                  paidAt: currentTransaction.order.paidAt?.toISOString() ?? null,
+                  refundedAt: currentTransaction.order.refundedAt?.toISOString() ?? null
+                }
+              : null,
+            openIssue: currentTransaction.issues[0]
+              ? {
+                  id: currentTransaction.issues[0].id,
+                  issueType: currentTransaction.issues[0].issueType,
+                  description: currentTransaction.issues[0].description,
+                  createdAt: currentTransaction.issues[0].createdAt.toISOString()
+                }
+              : null,
             buyer: toPublicUserSummary(currentTransaction.buyer),
             review: currentTransaction.review
               ? {
@@ -1128,6 +1251,29 @@ export async function getConversationsForUser(userId: string) {
         },
         take: 1,
         include: {
+          order: {
+            select: {
+              id: true,
+              status: true,
+              paidAt: true,
+              refundedAt: true
+            }
+          },
+          issues: {
+            where: {
+              status: TransactionIssueStatus.OPEN
+            },
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 1,
+            select: {
+              id: true,
+              issueType: true,
+              description: true,
+              createdAt: true
+            }
+          },
           review: true
         }
       }
@@ -1159,10 +1305,31 @@ export async function getConversationsForUser(userId: string) {
         ? {
             id: transaction.id,
             status: transaction.status,
+            handoffStatus: transaction.handoffStatus,
             agreedPriceCents: transaction.agreedPriceCents,
             sellerMarkedSoldAt: transaction.sellerMarkedSoldAt?.toISOString() ?? null,
+            meetupLocation: transaction.meetupLocation,
+            meetupPlan: transaction.meetupPlan,
+            meetupScheduledFor: transaction.meetupScheduledFor?.toISOString() ?? null,
+            handoffConfirmedAt: transaction.handoffConfirmedAt?.toISOString() ?? null,
             buyerConfirmedReceivedAt: transaction.buyerConfirmedReceivedAt?.toISOString() ?? null,
             confirmedAt: transaction.confirmedAt?.toISOString() ?? null,
+            order: transaction.order
+              ? {
+                  id: transaction.order.id,
+                  status: transaction.order.status,
+                  paidAt: transaction.order.paidAt?.toISOString() ?? null,
+                  refundedAt: transaction.order.refundedAt?.toISOString() ?? null
+                }
+              : null,
+            openIssue: transaction.issues[0]
+              ? {
+                  id: transaction.issues[0].id,
+                  issueType: transaction.issues[0].issueType,
+                  description: transaction.issues[0].description,
+                  createdAt: transaction.issues[0].createdAt.toISOString()
+                }
+              : null,
             review: transaction.review
               ? {
                   stars: transaction.review.stars,

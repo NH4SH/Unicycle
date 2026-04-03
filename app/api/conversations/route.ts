@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
 import { getConversationsForUser, markConversationAsRead } from "@/lib/data";
+import { assertUsersCanMessageEachOther } from "@/lib/message-safety";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 
@@ -45,8 +46,21 @@ export async function POST(request: Request) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
   if (!listing) return NextResponse.json({ message: "Listing not found" }, { status: 404 });
 
+  if (listing.status !== "ACTIVE" || listing.moderationStatus !== "VISIBLE") {
+    return NextResponse.json({ message: "This listing is no longer available for new conversations." }, { status: 409 });
+  }
+
   if (listing.sellerId === session.user.id) {
     return NextResponse.json({ message: "Cannot message yourself" }, { status: 400 });
+  }
+
+  try {
+    await assertUsersCanMessageEachOther(session.user.id, listing.sellerId);
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Messaging is unavailable for this listing." },
+      { status: 403 }
+    );
   }
 
   const conversation = await prisma.conversation.upsert({

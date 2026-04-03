@@ -59,11 +59,19 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       console.error("[admin/listings]", error);
     }
 
+    const message = error instanceof Error ? error.message : "Could not update this listing right now.";
+    const status =
+      message === "Listing not found."
+        ? 404
+        : message === "Add a removal reason so the moderation history stays clear."
+          ? 400
+          : 500;
+
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Could not update this listing right now."
+        message
       },
-      { status: 500 }
+      { status }
     );
   }
 }

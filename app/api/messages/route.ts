@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
+import { assertUsersCanMessageEachOther } from "@/lib/message-safety";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { messageSchema } from "@/lib/validators";
@@ -36,6 +37,18 @@ export async function POST(request: Request) {
   const isParticipant = conversation.buyerId === session.user.id || conversation.sellerId === session.user.id;
   if (!isParticipant) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    await assertUsersCanMessageEachOther(
+      session.user.id,
+      conversation.buyerId === session.user.id ? conversation.sellerId : conversation.buyerId
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof Error ? error.message : "Messaging is unavailable in this conversation." },
+      { status: 403 }
+    );
   }
 
   const message = await prisma.message.create({

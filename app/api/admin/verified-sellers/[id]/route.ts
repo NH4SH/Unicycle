@@ -51,11 +51,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       console.error("[admin/verified-sellers]", error);
     }
 
+    const message = error instanceof Error ? error.message : "Could not update this application right now.";
+    const status = message === "Verified seller application not found." ? 404 : 500;
+
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Could not update this application right now."
+        message
       },
-      { status: 500 }
+      { status }
     );
   }
 }

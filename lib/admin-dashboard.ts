@@ -1,6 +1,14 @@
 import "server-only";
 
-import { ListingModerationStatus, OrderStatus, Prisma, TransactionStatus, VerifiedSellerApplicationStatus } from "@prisma/client";
+import {
+  ConversationReportStatus,
+  ListingModerationStatus,
+  OrderStatus,
+  Prisma,
+  TransactionIssueStatus,
+  TransactionStatus,
+  VerifiedSellerApplicationStatus
+} from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -180,7 +188,11 @@ export async function getAdminDashboardData() {
     recentListingActivity,
     recentOrders,
     recentTransactions,
-    recentUserSignups
+    recentUserSignups,
+    recentRefunds,
+    recentTransactionIssues,
+    recentConversationReports,
+    recentTrustEvents
   ] = await Promise.all([
     prisma.user.count(),
     prisma.listing.count(),
@@ -366,6 +378,163 @@ export async function getAdminDashboardData() {
       select: {
         createdAt: true
       }
+    }),
+    prisma.order.findMany({
+      where: {
+        status: {
+          in: [OrderStatus.REFUND_PENDING, OrderStatus.REFUNDED]
+        }
+      },
+      orderBy: {
+        updatedAt: "desc"
+      },
+      take: 12,
+      include: {
+        listing: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        }
+      }
+    }),
+    prisma.transactionIssue.findMany({
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      take: 16,
+      include: {
+        transaction: {
+          select: {
+            id: true,
+            status: true,
+            listing: {
+              select: {
+                id: true,
+                title: true
+              }
+            },
+            buyer: {
+              select: {
+                id: true,
+                name: true,
+                username: true
+              }
+            },
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                username: true
+              }
+            }
+          }
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        },
+        resolvedBy: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        }
+      }
+    }),
+    prisma.conversationReport.findMany({
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      take: 16,
+      include: {
+        conversation: {
+          select: {
+            id: true,
+            listing: {
+              select: {
+                id: true,
+                title: true
+              }
+            },
+            buyer: {
+              select: {
+                id: true,
+                name: true,
+                username: true
+              }
+            },
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                username: true
+              }
+            }
+          }
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        },
+        reviewedBy: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        }
+      }
+    }),
+    prisma.userTrustEvent.findMany({
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: 20,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true
+          }
+        },
+        listing: {
+          select: {
+            id: true,
+            title: true
+          }
+        },
+        order: {
+          select: {
+            id: true,
+            status: true
+          }
+        },
+        transaction: {
+          select: {
+            id: true,
+            status: true
+          }
+        }
+      }
     })
   ]);
 
@@ -399,13 +568,62 @@ export async function getAdminDashboardData() {
       paidOrders,
       gmvCents: paidOrderAggregates._sum.amountCents ?? 0,
       buyerVolumeCents: paidOrderAggregates._sum.buyerTotalCents ?? 0,
-      platformRevenueCents
+      platformRevenueCents,
+      refundedOrders: recentRefunds.filter((order) => order.status === OrderStatus.REFUNDED).length,
+      openTransactionIssues: recentTransactionIssues.filter((issue) => issue.status === TransactionIssueStatus.OPEN).length,
+      reportedConversations: recentConversationReports.filter((report) => report.status === ConversationReportStatus.OPEN).length
     },
     applications,
     recentUsers,
     recentListings,
     recentSales,
     recentAuditLog,
+    recentRefunds: recentRefunds.map((order) => ({
+      id: order.id,
+      status: order.status,
+      refundReason: order.refundReason,
+      refundFailureReason: order.refundFailureReason,
+      createdAt: order.createdAt,
+      paidAt: order.paidAt,
+      refundedAt: order.refundedAt,
+      listing: order.listing,
+      buyer: order.buyer,
+      seller: order.seller
+    })),
+    recentTransactionIssues: recentTransactionIssues.map((issue) => ({
+      id: issue.id,
+      issueType: issue.issueType,
+      status: issue.status,
+      description: issue.description,
+      createdAt: issue.createdAt,
+      resolvedAt: issue.resolvedAt,
+      resolutionNotes: issue.resolutionNotes,
+      reporter: issue.reporter,
+      resolvedBy: issue.resolvedBy,
+      transaction: issue.transaction
+    })),
+    recentConversationReports: recentConversationReports.map((report) => ({
+      id: report.id,
+      reason: report.reason,
+      status: report.status,
+      notes: report.notes,
+      createdAt: report.createdAt,
+      reviewedAt: report.reviewedAt,
+      reporter: report.reporter,
+      reviewedBy: report.reviewedBy,
+      conversation: report.conversation
+    })),
+    recentTrustEvents: recentTrustEvents.map((event) => ({
+      id: event.id,
+      type: event.type,
+      description: event.description,
+      createdAt: event.createdAt,
+      metadata: event.metadata,
+      user: event.user,
+      listing: event.listing,
+      order: event.order,
+      transaction: event.transaction
+    })),
     userActivitySummaries: recentUserRows.map((user) => {
       const latestActivity = getMostRecentDate([
         user.createdAt,

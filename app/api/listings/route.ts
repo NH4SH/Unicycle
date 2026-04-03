@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { getMarketListings } from "@/lib/data";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
+import { assertSellerCanPublishListing } from "@/lib/listing-guardrails";
+import { packListingDescription } from "@/lib/listing-draft";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { canUserSell } from "@/lib/user-access";
-import { listingSchema } from "@/lib/validators";
+import { listingSubmissionSchema } from "@/lib/validators";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -77,9 +79,23 @@ export async function POST(request: Request) {
   }
 
   const payload = await request.json();
-  const parsed = listingSchema.safeParse(payload);
+  const parsed = listingSubmissionSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json({ message: "Invalid listing", errors: parsed.error.flatten() }, { status: 400 });
+  }
+
+  try {
+    await assertSellerCanPublishListing({
+      userId: session.user.id,
+      priceCents: parsed.data.priceCents
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : "Your account cannot publish this listing yet."
+      },
+      { status: 403 }
+    );
   }
 
   const payoutState = await getSellerPayoutState(session.user.id);
@@ -98,10 +114,15 @@ export async function POST(request: Request) {
 
   const listing = await prisma.listing.create({
     data: {
-      ...parsed.data,
+      title: parsed.data.title,
+      description: packListingDescription(parsed.data),
+      priceCents: parsed.data.priceCents,
+      category: parsed.data.category,
+      condition: parsed.data.condition,
       sellerId: session.user.id,
       images: parsed.data.images,
-      pickupLocations: parsed.data.pickupLocations
+      pickupLocations: parsed.data.pickupLocations,
+      meetupNotes: parsed.data.meetupNotes
     }
   });
 

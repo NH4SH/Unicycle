@@ -1,4 +1,4 @@
-import { ListingStatus, TransactionStatus } from "@prisma/client";
+import { HandoffStatus, ListingStatus, TransactionIssueStatus, TransactionStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
@@ -29,6 +29,14 @@ export async function POST(request: Request, { params }: Params) {
       id: params.id
     },
     include: {
+      issues: {
+        where: {
+          status: TransactionIssueStatus.OPEN
+        },
+        select: {
+          id: true
+        }
+      },
       review: true,
       listing: true
     }
@@ -54,6 +62,13 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ message: "This transaction has already been reviewed." }, { status: 409 });
   }
 
+  if (transaction.issues.length > 0) {
+    return NextResponse.json(
+      { message: "Resolve the open handoff issue before confirming that everything went smoothly." },
+      { status: 409 }
+    );
+  }
+
   const now = new Date();
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -63,6 +78,7 @@ export async function POST(request: Request, { params }: Params) {
       },
       data: {
         status: TransactionStatus.COMPLETED,
+        handoffStatus: HandoffStatus.RECEIVED,
         confirmedAt: now,
         buyerConfirmedReceivedAt: now
       }

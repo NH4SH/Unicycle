@@ -119,7 +119,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                     Make sure the total looks right before Stripe.
                   </h1>
                   <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-                    HoosFinds keeps pickup local and payment secure. There’s no shipping here, just the item, the platform fee, applicable tax, and your final total.
+                    HoosFinds keeps pickup local and payment secure. There’s no shipping here, just the item, the platform fee, applicable tax, and your final total. Payment is captured at checkout, while buyer confirmation later is only the handoff record inside HoosFinds.
                   </p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
               <div className="rounded-[1.5rem] border border-border bg-background/70 px-5 py-4">
                 <div className="flex items-start gap-3 text-sm leading-6 text-muted-foreground">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-uva-orange" />
-                  <p>By continuing, you’ll be redirected to Stripe for secure payment.</p>
+                  <p>By continuing, you’ll be redirected to Stripe for secure payment. The card charge happens there right away if checkout succeeds.</p>
                 </div>
               </div>
             </CardContent>

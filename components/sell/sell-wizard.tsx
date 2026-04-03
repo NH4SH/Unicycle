@@ -22,7 +22,7 @@ import { CATEGORY_LABELS, CATEGORY_OPTIONS, CONDITION_LABELS, CONDITION_OPTIONS,
 import { packListingDescription } from "@/lib/listing-draft";
 import type { SellerPayoutState } from "@/lib/seller-payouts";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
-import { listingSchema } from "@/lib/validators";
+import { listingSubmissionSchema } from "@/lib/validators";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 type Draft = {
@@ -116,11 +116,13 @@ export function SellWizard({
   const needsPayoutSetupToSubmit = !locked && !payoutsReady && (mode === "create" || draft.status === "ACTIVE");
 
   function validateCurrentStep() {
-    if (step === 1 && draft.images.length < 1) return "Add at least one photo.";
+    if (step === 1 && draft.images.length < 2) return "Add at least two photos so buyers can trust the listing.";
     if (step === 2) {
       if (draft.title.trim().length < 4) return "Title should be at least 4 characters.";
       if (!draft.price || Number(draft.price) < 1) return "Set a valid price.";
       if (draft.description.trim().length < 12) return "Description should be at least 12 characters.";
+      if (draft.category === "STREETWEAR" && draft.brand.trim().length === 0) return "Add a brand for apparel listings.";
+      if (draft.category === "STREETWEAR" && draft.size.trim().length === 0) return "Add a size for apparel listings.";
     }
     if (step === 3 && draft.pickupLocations.length < 1) {
       return "Pick at least one meetup spot on Grounds.";
@@ -165,15 +167,18 @@ export function SellWizard({
   }
 
   async function publish() {
-    const parsed = listingSchema.safeParse({
+    const parsed = listingSubmissionSchema.safeParse({
       title: draft.title,
-      description: buildDescription(),
+      description: draft.description,
       priceCents: Number(draft.price) * 100,
       category: draft.category,
       condition: draft.condition,
       images: draft.images,
       pickupLocations: draft.pickupLocations,
-      meetupNotes: draft.meetupNotes || undefined
+      meetupNotes: draft.meetupNotes || undefined,
+      brand: draft.brand || undefined,
+      size: draft.size || undefined,
+      color: draft.color || undefined
     });
 
     if (!parsed.success) {

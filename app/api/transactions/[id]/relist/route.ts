@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createTrustEvent } from "@/lib/trust-signals";
 
 type Params = {
   params: {
@@ -46,6 +47,22 @@ export async function POST(_: Request, { params }: Params) {
       soldToUserId: null
     }
   });
+
+  try {
+    await createTrustEvent({
+      userId: transaction.sellerId,
+      type: "RELIST_AFTER_FAILED_HANDOFF",
+      transactionId: transaction.id,
+      listingId: transaction.listingId,
+      metadata: {
+        relistedByUserId: session.user.id
+      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[transactions/relist] trust logging failed", error);
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }

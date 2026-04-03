@@ -36,14 +36,61 @@ enum ListingStatus {
 enum OrderStatus {
   CHECKOUT_CREATED
   PAID
+  REFUND_PENDING
+  REFUNDED
   EXPIRED
   FAILED
 }
 
 enum TransactionStatus {
   PENDING_CONFIRMATION
+  ISSUE_REPORTED
   COMPLETED
   CANCELLED
+}
+
+enum HandoffStatus {
+  PENDING_HANDOFF
+  MEETUP_SCHEDULED
+  HANDOFF_CONFIRMED
+  RECEIVED
+  ISSUE_REPORTED
+  CANCELLED
+}
+
+enum TransactionIssueType {
+  ITEM_NOT_RECEIVED
+  ITEM_NOT_AS_DESCRIBED
+  WRONG_ITEM
+  DAMAGED_OR_POOR_CONDITION
+  SELLER_NO_SHOW
+  BUYER_NO_SHOW
+  LAST_MINUTE_CANCELLATION
+  OTHER
+}
+
+enum TransactionIssueStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum ConversationReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum TrustEventType {
+  PAID_CANCELLATION
+  REFUND_ISSUED
+  SELLER_NO_SHOW
+  BUYER_NO_SHOW
+  ISSUE_REPORTED
+  CONVERSATION_REPORTED
+  USER_BLOCKED
+  RELIST_AFTER_FAILED_HANDOFF
+  DUPLICATE_CHECKOUT_BLOCKED
 }
 
 enum UserRole {
@@ -84,29 +131,29 @@ enum AdminAuditActionType {
 model User {
   /// Public display name shown across the marketplace. Keep UVA email / local
   /// computing ID internal to auth and account recovery, not profile identity.
-  id              String    @id @default(cuid())
-  name            String?
-  email           String    @unique
-  emailVerified   DateTime?
-  passwordHash    String?
-  image           String?
-  profileImageUrl String?
-  uvaStudentId    String?
-  username        String    @unique @default(cuid())
-  usernameConfirmed Boolean @default(true)
-  bio             String?
-  gradYear        Int?
-  favoritePickup  String?
-  role            UserRole   @default(USER)
-  sellerKind      SellerKind @default(STUDENT)
-  verifiedShopName String?
-  verifiedShopApprovedAt DateTime?
+  id                       String     @id @default(cuid())
+  name                     String?
+  email                    String     @unique
+  emailVerified            DateTime?
+  passwordHash             String?
+  image                    String?
+  profileImageUrl          String?
+  uvaStudentId             String?
+  username                 String     @unique @default(cuid())
+  usernameConfirmed        Boolean    @default(true)
+  bio                      String?
+  gradYear                 Int?
+  favoritePickup           String?
+  role                     UserRole   @default(USER)
+  sellerKind               SellerKind @default(STUDENT)
+  verifiedShopName         String?
+  verifiedShopApprovedAt   DateTime?
   verifiedShopNeighborhood String?
-  verifiedShopAddress String?
-  verifiedShopInstagram String?
-  verifiedShopWebsite String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  verifiedShopAddress      String?
+  verifiedShopInstagram    String?
+  verifiedShopWebsite      String?
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
 
   accounts Account[]
   sessions Session[]
@@ -119,30 +166,39 @@ model User {
   buyerConvos  Conversation[] @relation("BuyerConversations")
   sellerConvos Conversation[] @relation("SellerConversations")
 
-  messages              Message[]
-  reports               Report[]          @relation("ReporterReports")
-  waitlistEntries       WaitlistEntry[]
-  buyerOrders           Order[]           @relation("BuyerOrders")
-  sellerOrders          Order[]           @relation("SellerOrders")
-  buyerTransactions     Transaction[]     @relation("BuyerTransactions")
-  sellerTransactions    Transaction[]     @relation("SellerTransactions")
-  purchasedListings     Listing[]         @relation("ListingSoldTo")
-  writtenSellerReviews  SellerReview[]    @relation("WrittenSellerReviews")
-  receivedSellerReviews SellerReview[]    @relation("ReceivedSellerReviews")
-  connectedAccount      ConnectedAccount?
-  emailVerificationTokens EmailVerificationToken[]
-  passwordResetTokens     PasswordResetToken[]
-  connectProducts       ConnectProduct[]  @relation("ConnectProductOwner")
-  connectBuyerOrders    ConnectOrder[]    @relation("ConnectBuyerOrders")
-  connectSellerOrders   ConnectOrder[]    @relation("ConnectSellerOrders")
+  messages                           Message[]
+  reports                            Report[]                    @relation("ReporterReports")
+  waitlistEntries                    WaitlistEntry[]
+  buyerOrders                        Order[]                     @relation("BuyerOrders")
+  sellerOrders                       Order[]                     @relation("SellerOrders")
+  buyerTransactions                  Transaction[]               @relation("BuyerTransactions")
+  sellerTransactions                 Transaction[]               @relation("SellerTransactions")
+  refundRequestedOrders              Order[]                     @relation("OrderRefundRequestedBy")
+  purchasedListings                  Listing[]                   @relation("ListingSoldTo")
+  writtenSellerReviews               SellerReview[]              @relation("WrittenSellerReviews")
+  receivedSellerReviews              SellerReview[]              @relation("ReceivedSellerReviews")
+  connectedAccount                   ConnectedAccount?
+  checkoutReservations               CheckoutReservation[]       @relation("CheckoutReservationBuyer")
+  reportedTransactionIssues          TransactionIssue[]          @relation("TransactionIssueReporter")
+  resolvedTransactionIssues          TransactionIssue[]          @relation("TransactionIssueResolvedBy")
+  reportedConversationReports        ConversationReport[]        @relation("ConversationReportReporter")
+  reviewedConversationReports        ConversationReport[]        @relation("ConversationReportReviewedBy")
+  blocksInitiated                    UserBlock[]                 @relation("UserBlockBlocker")
+  blocksReceived                     UserBlock[]                 @relation("UserBlockBlocked")
+  trustEvents                        UserTrustEvent[]            @relation("UserTrustSubject")
+  emailVerificationTokens            EmailVerificationToken[]
+  passwordResetTokens                PasswordResetToken[]
+  connectProducts                    ConnectProduct[]            @relation("ConnectProductOwner")
+  connectBuyerOrders                 ConnectOrder[]              @relation("ConnectBuyerOrders")
+  connectSellerOrders                ConnectOrder[]              @relation("ConnectSellerOrders")
   reviewedVerifiedSellerApplications VerifiedSellerApplication[] @relation("VerifiedSellerApplicationReviewedBy")
-  approvedVerifiedSellerApplication VerifiedSellerApplication? @relation("VerifiedSellerApplicationApprovedUser")
-  bans                 UserBan[]          @relation("BannedUser")
-  issuedUserBans       UserBan[]          @relation("UserBanIssuedBy")
-  revokedUserBans      UserBan[]          @relation("UserBanRevokedBy")
-  moderatedListings    Listing[]          @relation("ListingModeratedBy")
-  adminAuditLogs       AdminAuditLog[]    @relation("AdminActionActor")
-  adminTargetUserLogs  AdminAuditLog[]    @relation("AdminActionUserTarget")
+  approvedVerifiedSellerApplication  VerifiedSellerApplication?  @relation("VerifiedSellerApplicationApprovedUser")
+  bans                               UserBan[]                   @relation("BannedUser")
+  issuedUserBans                     UserBan[]                   @relation("UserBanIssuedBy")
+  revokedUserBans                    UserBan[]                   @relation("UserBanRevokedBy")
+  moderatedListings                  Listing[]                   @relation("ListingModeratedBy")
+  adminAuditLogs                     AdminAuditLog[]             @relation("AdminActionActor")
+  adminTargetUserLogs                AdminAuditLog[]             @relation("AdminActionUserTarget")
 
   @@index([username])
   @@index([createdAt])
@@ -151,35 +207,37 @@ model User {
 }
 
 model Listing {
-  id              String        @id @default(cuid())
-  title           String
-  description     String
-  priceCents      Int
-  category        Category
-  condition       Condition
-  images          Json
-  pickupLocations Json
-  meetupNotes     String?
-  status          ListingStatus @default(ACTIVE)
+  id               String                  @id @default(cuid())
+  title            String
+  description      String
+  priceCents       Int
+  category         Category
+  condition        Condition
+  images           Json
+  pickupLocations  Json
+  meetupNotes      String?
+  status           ListingStatus           @default(ACTIVE)
   moderationStatus ListingModerationStatus @default(VISIBLE)
   moderationReason String?
-  moderatedAt     DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  moderatedAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
-  sellerId     String
-  seller       User    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  soldToUserId String?
-  soldToUser   User?   @relation("ListingSoldTo", fields: [soldToUserId], references: [id], onDelete: SetNull)
+  sellerId      String
+  seller        User    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  soldToUserId  String?
+  soldToUser    User?   @relation("ListingSoldTo", fields: [soldToUserId], references: [id], onDelete: SetNull)
   moderatedById String?
-  moderatedBy  User?   @relation("ListingModeratedBy", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderatedBy   User?   @relation("ListingModeratedBy", fields: [moderatedById], references: [id], onDelete: SetNull)
 
-  favorites     Favorite[]
-  conversations Conversation[]
-  reports       Report[]
-  orders        Order[]
-  transactions  Transaction[]
-  adminAuditLogs AdminAuditLog[] @relation("AdminActionListingTarget")
+  favorites           Favorite[]
+  conversations       Conversation[]
+  reports             Report[]
+  orders              Order[]
+  checkoutReservation CheckoutReservation?
+  transactions        Transaction[]
+  trustEvents         UserTrustEvent[]
+  adminAuditLogs      AdminAuditLog[]      @relation("AdminActionListingTarget")
 
   @@index([createdAt])
   @@index([category])
@@ -221,11 +279,12 @@ model Conversation {
   listingId String
   createdAt DateTime @default(now())
 
-  buyer        User          @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller       User          @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
-  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer        User                 @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller       User                 @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
+  listing      Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
   messages     Message[]
   transactions Transaction[]
+  reports      ConversationReport[]
 
   @@unique([buyerId, sellerId, listingId])
   @@index([buyerId])
@@ -282,18 +341,28 @@ model Order {
   status                  OrderStatus @default(CHECKOUT_CREATED)
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId   String?     @unique
+  stripeRefundId          String?     @unique
   checkoutExpiresAt       DateTime?
+  paidAt                  DateTime?
+  refundedAt              DateTime?
+  refundReason            String?
+  refundFailureReason     String?
+  refundRequestedById     String?
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
 
-  listing     Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  buyer       User         @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller      User         @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
-  transaction Transaction?
+  listing             Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer               User                 @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller              User                 @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  refundRequestedBy   User?                @relation("OrderRefundRequestedBy", fields: [refundRequestedById], references: [id], onDelete: SetNull)
+  checkoutReservation CheckoutReservation?
+  transaction         Transaction?
+  trustEvents         UserTrustEvent[]
 
   @@index([listingId])
   @@index([buyerId])
   @@index([sellerId])
+  @@index([refundRequestedById])
   @@index([status])
 }
 
@@ -305,25 +374,34 @@ model Transaction {
   conversationId           String?
   orderId                  String?           @unique
   status                   TransactionStatus @default(PENDING_CONFIRMATION)
+  handoffStatus            HandoffStatus     @default(PENDING_HANDOFF)
   agreedPriceCents         Int?
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
   confirmedAt              DateTime?
   sellerMarkedSoldAt       DateTime?
+  meetupLocation           String?
+  meetupPlan               String?
+  meetupScheduledAt        DateTime?
+  meetupScheduledFor       DateTime?
+  handoffConfirmedAt       DateTime?
   buyerConfirmedReceivedAt DateTime?
 
-  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  seller       User          @relation("SellerTransactions", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer        User          @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
-  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  order        Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  listing      Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  seller       User               @relation("SellerTransactions", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer        User               @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
+  conversation Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  order        Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
   review       SellerReview?
+  issues       TransactionIssue[]
+  trustEvents  UserTrustEvent[]
 
   @@index([listingId])
   @@index([sellerId])
   @@index([buyerId])
   @@index([conversationId])
   @@index([status])
+  @@index([handoffStatus])
   @@index([createdAt])
 }
 
@@ -350,14 +428,14 @@ enum ConnectedAccountStatus {
 }
 
 model ConnectedAccount {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  stripeAccountId String   @unique
+  id              String                 @id @default(cuid())
+  userId          String                 @unique
+  stripeAccountId String                 @unique
   status          ConnectedAccountStatus @default(ACTIVE)
   statusReason    String?
   disconnectedAt  DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   /// Stripe Connect sits underneath marketplace listings and only tracks where
   /// HoosFinds should route seller payouts.
@@ -369,6 +447,116 @@ model ConnectedAccount {
   products ConnectProduct[]
   orders   ConnectOrder[]
 
+  @@index([createdAt])
+}
+
+model CheckoutReservation {
+  id                      String   @id @default(cuid())
+  listingId               String   @unique
+  buyerId                 String
+  orderId                 String   @unique
+  stripeCheckoutSessionId String?  @unique
+  expiresAt               DateTime
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer   User    @relation("CheckoutReservationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([buyerId])
+  @@index([expiresAt])
+}
+
+model StripeWebhookEvent {
+  id                  String    @id @default(cuid())
+  stripeEventId       String    @unique
+  eventType           String
+  payload             Json?
+  createdAt           DateTime  @default(now())
+  processingStartedAt DateTime?
+  processedAt         DateTime?
+  lastError           String?
+
+  @@index([eventType, createdAt])
+  @@index([processingStartedAt])
+  @@index([processedAt])
+}
+
+model TransactionIssue {
+  id              String                 @id @default(cuid())
+  transactionId   String
+  reporterId      String
+  resolvedById    String?
+  issueType       TransactionIssueType
+  description     String?
+  status          TransactionIssueStatus @default(OPEN)
+  resolutionNotes String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  resolvedAt      DateTime?
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  reporter    User        @relation("TransactionIssueReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy  User?       @relation("TransactionIssueResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([transactionId, status, createdAt])
+  @@index([reporterId, createdAt])
+  @@index([issueType, createdAt])
+}
+
+model ConversationReport {
+  id             String                   @id @default(cuid())
+  conversationId String
+  reporterId     String
+  reviewedById   String?
+  reason         String
+  status         ConversationReportStatus @default(OPEN)
+  notes          String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  reviewedAt     DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reporter     User         @relation("ConversationReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy   User?        @relation("ConversationReportReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
+}
+
+model UserBlock {
+  blockerUserId String
+  blockedUserId String
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  blocker User @relation("UserBlockBlocker", fields: [blockerUserId], references: [id], onDelete: Cascade)
+  blocked User @relation("UserBlockBlocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@id([blockerUserId, blockedUserId])
+  @@index([blockedUserId])
+  @@index([createdAt])
+}
+
+model UserTrustEvent {
+  id            String         @id @default(cuid())
+  userId        String
+  type          TrustEventType
+  description   String?
+  metadata      Json?
+  orderId       String?
+  transactionId String?
+  listingId     String?
+  createdAt     DateTime       @default(now())
+
+  user        User         @relation("UserTrustSubject", fields: [userId], references: [id], onDelete: Cascade)
+  order       Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  listing     Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, type, createdAt])
   @@index([createdAt])
 }
 
@@ -440,29 +628,29 @@ model WaitlistEntry {
 }
 
 model VerifiedSellerApplication {
-  id               String                          @id @default(cuid())
-  businessName     String
-  contactName      String
-  email            String                          @unique
-  phone            String
-  instagram        String
-  website          String?
-  neighborhood     String
-  address          String
-  whatTheySell     String
-  description      String
-  whyJoin          String
-  status           VerifiedSellerApplicationStatus @default(PENDING)
-  internalNotes    String?
-  createdAt        DateTime                        @default(now())
-  updatedAt        DateTime                        @updatedAt
-  reviewedAt       DateTime?
-  approvedAt       DateTime?
-  reviewedById     String?
-  approvedUserId   String?                         @unique
+  id             String                          @id @default(cuid())
+  businessName   String
+  contactName    String
+  email          String                          @unique
+  phone          String
+  instagram      String
+  website        String?
+  neighborhood   String
+  address        String
+  whatTheySell   String
+  description    String
+  whyJoin        String
+  status         VerifiedSellerApplicationStatus @default(PENDING)
+  internalNotes  String?
+  createdAt      DateTime                        @default(now())
+  updatedAt      DateTime                        @updatedAt
+  reviewedAt     DateTime?
+  approvedAt     DateTime?
+  reviewedById   String?
+  approvedUserId String?                         @unique
 
-  reviewedBy User? @relation("VerifiedSellerApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-  approvedUser User? @relation("VerifiedSellerApplicationApprovedUser", fields: [approvedUserId], references: [id], onDelete: SetNull)
+  reviewedBy     User?           @relation("VerifiedSellerApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  approvedUser   User?           @relation("VerifiedSellerApplicationApprovedUser", fields: [approvedUserId], references: [id], onDelete: SetNull)
   adminAuditLogs AdminAuditLog[] @relation("AdminActionVerifiedSellerTarget")
 
   @@index([status, createdAt])
@@ -470,15 +658,15 @@ model VerifiedSellerApplication {
 }
 
 model UserBan {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
   reason        String
   internalNotes String?
-  startsAt      DateTime @default(now())
+  startsAt      DateTime  @default(now())
   endsAt        DateTime?
   revokedAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   createdById   String
   revokedById   String?
 
@@ -491,20 +679,20 @@ model UserBan {
 }
 
 model AdminAuditLog {
-  id                             String               @id @default(cuid())
-  action                         AdminAuditActionType
-  reason                         String?
-  notes                          String?
-  metadata                       Json?
-  createdAt                      DateTime             @default(now())
-  actorId                        String
-  targetUserId                   String?
-  targetListingId                String?
+  id                                String               @id @default(cuid())
+  action                            AdminAuditActionType
+  reason                            String?
+  notes                             String?
+  metadata                          Json?
+  createdAt                         DateTime             @default(now())
+  actorId                           String
+  targetUserId                      String?
+  targetListingId                   String?
   targetVerifiedSellerApplicationId String?
 
-  actor                   User                       @relation("AdminActionActor", fields: [actorId], references: [id], onDelete: Cascade)
-  targetUser              User?                      @relation("AdminActionUserTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
-  targetListing           Listing?                   @relation("AdminActionListingTarget", fields: [targetListingId], references: [id], onDelete: SetNull)
+  actor                           User                       @relation("AdminActionActor", fields: [actorId], references: [id], onDelete: Cascade)
+  targetUser                      User?                      @relation("AdminActionUserTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetListing                   Listing?                   @relation("AdminActionListingTarget", fields: [targetListingId], references: [id], onDelete: SetNull)
   targetVerifiedSellerApplication VerifiedSellerApplication? @relation("AdminActionVerifiedSellerTarget", fields: [targetVerifiedSellerApplicationId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
@@ -551,13 +739,13 @@ model VerificationToken {
 }
 
 model EmailVerificationToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   email      String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -566,13 +754,13 @@ model EmailVerificationToken {
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
   email      String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   expiresAt  DateTime
   consumedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

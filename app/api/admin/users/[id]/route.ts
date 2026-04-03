@@ -76,11 +76,23 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       console.error("[admin/users]", error);
     }
 
+    const message = error instanceof Error ? error.message : "Could not update this user right now.";
+    const status =
+      message === "User not found."
+        ? 404
+        : message === "Admins cannot ban themselves." ||
+            message === "Admin accounts cannot be banned from this dashboard." ||
+            message === "Add a ban reason so the moderation record stays useful." ||
+            message === "Choose a future end date for a temporary ban." ||
+            message === "There is no active ban to remove for this user."
+          ? 400
+          : 500;
+
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Could not update this user right now."
+        message
       },
-      { status: 500 }
+      { status }
     );
   }
 }

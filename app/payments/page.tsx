@@ -18,8 +18,9 @@ type PaymentsPageProps = {
   };
 };
 
-function getSaleStatusLabel(status: "PENDING_CONFIRMATION" | "COMPLETED" | "CANCELLED" | null) {
+function getSaleStatusLabel(status: "PENDING_CONFIRMATION" | "ISSUE_REPORTED" | "COMPLETED" | "CANCELLED" | null) {
   if (status === "COMPLETED") return "Completed";
+  if (status === "ISSUE_REPORTED") return "Issue reported";
   if (status === "PENDING_CONFIRMATION") return "Awaiting pickup";
   if (status === "CANCELLED") return "Canceled";
   return "Paid";
@@ -177,7 +178,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <div className="rounded-[1.4rem] border border-border bg-background/70 px-4 py-4">
                 <p className="editorial-eyebrow">3</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">Get paid</p>
-                <p className="mt-1 text-sm text-muted-foreground">HoosFinds routes the sale to your payout account after checkout.</p>
+                <p className="mt-1 text-sm text-muted-foreground">HoosFinds routes the sale to your payout account after checkout, while buyer confirmation stays a handoff record inside the app.</p>
               </div>
             </div>
           </CardContent>

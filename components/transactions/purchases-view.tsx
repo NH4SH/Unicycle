@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { TransactionStatus } from "@prisma/client";
-import { Loader2, MessageCircle, RefreshCcw, Star, XCircle } from "lucide-react";
+import { AlertCircle, CalendarDays, Loader2, MessageCircle, RefreshCcw, Star, XCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PurchaseSummaryData } from "@/lib/data";
+import { TRANSACTION_ISSUE_TYPES } from "@/lib/trust-types";
 import { formatCurrency, timeAgo } from "@/lib/utils";
 
 type PurchasesViewProps = {
@@ -23,17 +24,51 @@ type PurchasesViewProps = {
   sales: PurchaseSummaryData[];
 };
 
+function getHandoffCopy(item: PurchaseSummaryData, role: "buyer" | "seller") {
+  if (item.status === TransactionStatus.ISSUE_REPORTED) {
+    return item.openIssue
+      ? `Issue reported: ${item.openIssue.issueType.replaceAll("_", " ").toLowerCase()}.`
+      : "This handoff is paused while an issue is being reviewed.";
+  }
+
+  if (item.handoffStatus === "MEETUP_SCHEDULED") {
+    return item.meetupScheduledFor
+      ? `Meetup planned for ${new Date(item.meetupScheduledFor).toLocaleString()}.`
+      : "Meetup details are set and waiting on the handoff.";
+  }
+
+  if (item.handoffStatus === "HANDOFF_CONFIRMED") {
+    return role === "buyer" ? "The seller marked the handoff done. Confirm once the item is truly in hand." : "Handoff marked complete. Waiting on the buyer’s receipt confirmation.";
+  }
+
+  if (item.order?.status === "PAID") {
+    return role === "buyer"
+      ? "Your payment is captured. Use messages or schedule the meetup before confirming receipt."
+      : "Payment is captured. Lock in the meetup details before asking the buyer to confirm receipt.";
+  }
+
+  return role === "buyer"
+    ? "This sale is pending your real-world handoff."
+    : "The sale is live inside HoosFinds and still waiting on the handoff.";
+}
+
 function TransactionCard({
   item,
   role,
   onCancel,
   onRelist,
+  onScheduleMeetup,
+  onConfirmHandoff,
+  onReportIssue,
   loadingKey
 }: {
   item: PurchaseSummaryData;
   role: "buyer" | "seller";
   onCancel: (transactionId: string) => void;
   onRelist: (transactionId: string) => void;
+  onScheduleMeetup: (transactionId: string, listing: PurchaseSummaryData["listing"]) => void;
+  onConfirmHandoff: (transactionId: string) => void;
+  onReportIssue: (transactionId: string, role: "buyer" | "seller") => void;
   loadingKey: string | null;
 }) {
   return (
@@ -76,9 +111,34 @@ function TransactionCard({
 
           <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-3">
             <p>Started {timeAgo(item.createdAt)} ago</p>
-            <p>{role === "buyer" ? "Marked sold" : "Buyer confirmation"} {item.sellerMarkedSoldAt ? timeAgo(item.sellerMarkedSoldAt) + " ago" : "pending"}</p>
-            <p>{item.confirmedAt ? `Completed ${timeAgo(item.confirmedAt)} ago` : "Still awaiting final confirmation"}</p>
+            <p>{item.order?.paidAt ? `Paid ${timeAgo(item.order.paidAt)} ago` : item.sellerMarkedSoldAt ? `Marked sold ${timeAgo(item.sellerMarkedSoldAt)} ago` : "Waiting on payment or seller mark"}</p>
+            <p>{item.confirmedAt ? `Completed ${timeAgo(item.confirmedAt)} ago` : getHandoffCopy(item, role)}</p>
           </div>
+
+          {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor ? (
+            <div className="rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
+              <div className="inline-flex items-center gap-1 font-medium text-foreground">
+                <CalendarDays className="h-4 w-4 text-uva-orange" />
+                Meetup flow
+              </div>
+              {item.meetupLocation ? <p className="mt-2">Spot: {item.meetupLocation}</p> : null}
+              {item.meetupScheduledFor ? <p>When: {new Date(item.meetupScheduledFor).toLocaleString()}</p> : null}
+              {item.meetupPlan ? <p className="mt-1 leading-6">{item.meetupPlan}</p> : null}
+            </div>
+          ) : null}
+
+          {item.openIssue ? (
+            <div className="rounded-[1.1rem] border border-uva-orange/20 bg-uva-orange/6 px-4 py-3 text-sm text-foreground/88">
+              <div className="inline-flex items-center gap-1 font-medium text-foreground">
+                <AlertCircle className="h-4 w-4 text-uva-orange" />
+                Open issue
+              </div>
+              <p className="mt-2 uppercase tracking-[0.14em] text-xs text-muted-foreground">
+                {item.openIssue.issueType.replaceAll("_", " ")}
+              </p>
+              {item.openIssue.description ? <p className="mt-1 leading-6">{item.openIssue.description}</p> : null}
+            </div>
+          ) : null}
 
           {item.review ? (
             <div className="rounded-[1.1rem] border border-border bg-card/72 px-4 py-3 text-sm text-muted-foreground">
@@ -95,15 +155,33 @@ function TransactionCard({
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            {role === "buyer" && item.status === TransactionStatus.PENDING_CONFIRMATION ? (
+            {item.status === TransactionStatus.PENDING_CONFIRMATION && item.handoffStatus !== "MEETUP_SCHEDULED" ? (
+              <Button variant="secondary" onClick={() => onScheduleMeetup(item.id, item.listing)} disabled={loadingKey === `meetup-${item.id}`}>
+                {loadingKey === `meetup-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-1.5 h-4 w-4" />}
+                Schedule meetup
+              </Button>
+            ) : null}
+            {item.status === TransactionStatus.PENDING_CONFIRMATION && item.handoffStatus !== "HANDOFF_CONFIRMED" ? (
+              <Button variant="outline" onClick={() => onConfirmHandoff(item.id)} disabled={loadingKey === `handoff-${item.id}`}>
+                {loadingKey === `handoff-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                Mark handoff done
+              </Button>
+            ) : null}
+            {(item.status === TransactionStatus.PENDING_CONFIRMATION || item.status === TransactionStatus.ISSUE_REPORTED) ? (
+              <Button variant="outline" onClick={() => onReportIssue(item.id, role)} disabled={loadingKey === `issue-${item.id}`}>
+                {loadingKey === `issue-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-1.5 h-4 w-4" />}
+                Report issue
+              </Button>
+            ) : null}
+            {role === "buyer" && item.status === TransactionStatus.PENDING_CONFIRMATION && !item.openIssue ? (
               <Button asChild>
                 <Link href={`/purchases/${item.id}/confirm`}>Confirm receipt</Link>
               </Button>
             ) : null}
-            {role === "seller" && item.status === TransactionStatus.PENDING_CONFIRMATION ? (
+            {role === "seller" && (item.status === TransactionStatus.PENDING_CONFIRMATION || item.status === TransactionStatus.ISSUE_REPORTED) ? (
               <Button variant="outline" onClick={() => onCancel(item.id)} disabled={loadingKey === `cancel-${item.id}`}>
                 {loadingKey === `cancel-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <XCircle className="mr-1.5 h-4 w-4" />}
-                Cancel pending sale
+                Cancel sale
               </Button>
             ) : null}
             {role === "seller" && item.status === TransactionStatus.CANCELLED ? (
@@ -142,7 +220,11 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
   async function cancelSale(transactionId: string) {
     setLoadingKey(`cancel-${transactionId}`);
     const response = await fetch(`/api/transactions/${transactionId}/cancel`, {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({})
     });
     setLoadingKey(null);
 
@@ -153,6 +235,97 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
     }
 
     toast.success("Pending sale cancelled.");
+    router.refresh();
+  }
+
+  async function scheduleMeetup(transactionId: string, listing: PurchaseSummaryData["listing"]) {
+    const location = window.prompt(`Meetup spot (${listing.pickupLocations.join(", ")})`, listing.pickupLocations[0] ?? "");
+    if (location === null) return;
+
+    const meetupPlan = window.prompt("Add an optional meetup note or timing detail.", "") ?? "";
+    setLoadingKey(`meetup-${transactionId}`);
+    const response = await fetch(`/api/transactions/${transactionId}/handoff`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "schedule_meetup",
+        meetupLocation: location.trim() || undefined,
+        meetupPlan: meetupPlan.trim() || undefined
+      })
+    });
+    setLoadingKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not save the meetup plan.");
+      return;
+    }
+
+    toast.success("Meetup details saved.");
+    router.refresh();
+  }
+
+  async function confirmHandoff(transactionId: string) {
+    setLoadingKey(`handoff-${transactionId}`);
+    const response = await fetch(`/api/transactions/${transactionId}/handoff`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "confirm_handoff"
+      })
+    });
+    setLoadingKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not mark the handoff as complete.");
+      return;
+    }
+
+    toast.success("Handoff marked complete.");
+    router.refresh();
+  }
+
+  async function reportIssue(transactionId: string, role: "buyer" | "seller") {
+    const issueTypeInput = window.prompt(
+      `Issue type (${TRANSACTION_ISSUE_TYPES.join(", ")})`,
+      role === "buyer" ? "ITEM_NOT_AS_DESCRIBED" : "BUYER_NO_SHOW"
+    );
+    if (!issueTypeInput) return;
+
+    const issueType = issueTypeInput.trim().toUpperCase();
+    if (!TRANSACTION_ISSUE_TYPES.includes(issueType as (typeof TRANSACTION_ISSUE_TYPES)[number])) {
+      toast.error("Use one of the listed issue types.");
+      return;
+    }
+
+    const description = window.prompt("Share a short summary of what happened.", "");
+    if (description === null) return;
+
+    setLoadingKey(`issue-${transactionId}`);
+    const response = await fetch(`/api/transactions/${transactionId}/issue`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        issueType,
+        description
+      })
+    });
+    setLoadingKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not report this issue.");
+      return;
+    }
+
+    toast.success("Issue reported. HoosFinds marked the transaction for review.");
     router.refresh();
   }
 
@@ -183,7 +356,17 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
       <TabsContent value="purchases" className="space-y-4">
         {purchases.length ? (
           purchases.map((item) => (
-            <TransactionCard key={item.id} item={item} role="buyer" onCancel={cancelSale} onRelist={relist} loadingKey={loadingKey} />
+            <TransactionCard
+              key={item.id}
+              item={item}
+              role="buyer"
+              onCancel={cancelSale}
+              onRelist={relist}
+              onScheduleMeetup={scheduleMeetup}
+              onConfirmHandoff={confirmHandoff}
+              onReportIssue={reportIssue}
+              loadingKey={loadingKey}
+            />
           ))
         ) : (
           <EmptyState
@@ -198,7 +381,17 @@ export function PurchasesView({ purchases, sales }: PurchasesViewProps) {
       <TabsContent value="sales" className="space-y-4">
         {sales.length ? (
           sales.map((item) => (
-            <TransactionCard key={item.id} item={item} role="seller" onCancel={cancelSale} onRelist={relist} loadingKey={loadingKey} />
+            <TransactionCard
+              key={item.id}
+              item={item}
+              role="seller"
+              onCancel={cancelSale}
+              onRelist={relist}
+              onScheduleMeetup={scheduleMeetup}
+              onConfirmHandoff={confirmHandoff}
+              onReportIssue={reportIssue}
+              loadingKey={loadingKey}
+            />
           ))
         ) : (
           <EmptyState

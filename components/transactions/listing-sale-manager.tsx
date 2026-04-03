@@ -33,11 +33,28 @@ type InterestedBuyer = {
 type CurrentTransaction = {
   id: string;
   status: TransactionStatus;
+  handoffStatus: "PENDING_HANDOFF" | "MEETUP_SCHEDULED" | "HANDOFF_CONFIRMED" | "RECEIVED" | "ISSUE_REPORTED" | "CANCELLED";
   agreedPriceCents: number | null;
   sellerMarkedSoldAt: string | null;
+  meetupLocation: string | null;
+  meetupPlan: string | null;
+  meetupScheduledFor: string | null;
+  handoffConfirmedAt: string | null;
   buyerConfirmedReceivedAt: string | null;
   confirmedAt: string | null;
   conversationId: string | null;
+  order: {
+    id: string;
+    status: string;
+    paidAt: string | null;
+    refundedAt: string | null;
+  } | null;
+  openIssue: {
+    id: string;
+    issueType: string;
+    description: string | null;
+    createdAt: string;
+  } | null;
   buyer: {
     id: string;
     name: string | null;
@@ -198,15 +215,31 @@ export function ListingSaleManager({
           <div className="surface-subtle space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="font-medium text-foreground">Waiting on buyer confirmation</p>
-                <p className="text-sm text-muted-foreground">The item is marked sold to {currentTransaction.buyer.displayName}.</p>
+                <p className="font-medium text-foreground">
+                  {currentTransaction.status === TransactionStatus.ISSUE_REPORTED ? "Issue reported on this handoff" : "Waiting on buyer confirmation"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {currentTransaction.status === TransactionStatus.ISSUE_REPORTED
+                    ? "Normal completion is paused until this issue is resolved."
+                    : `The item is marked sold to ${currentTransaction.buyer.displayName}.`}
+                </p>
               </div>
               <TransactionStatusBadge status={currentTransaction.status} />
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span>Marked sold {currentTransaction.sellerMarkedSoldAt ? timeAgo(currentTransaction.sellerMarkedSoldAt) : "just now"} ago</span>
+              <span>
+                {currentTransaction.order?.paidAt
+                  ? `Paid ${timeAgo(currentTransaction.order.paidAt)} ago`
+                  : `Marked sold ${currentTransaction.sellerMarkedSoldAt ? timeAgo(currentTransaction.sellerMarkedSoldAt) : "just now"} ago`}
+              </span>
               <span>Price {formatCurrency((currentTransaction.agreedPriceCents ?? 0) / 100)}</span>
             </div>
+            {currentTransaction.openIssue ? (
+              <div className="rounded-[1.1rem] border border-uva-orange/20 bg-uva-orange/6 px-4 py-3 text-sm text-foreground/88">
+                <p className="font-medium text-foreground">{currentTransaction.openIssue.issueType.replaceAll("_", " ")}</p>
+                {currentTransaction.openIssue.description ? <p className="mt-1 leading-6">{currentTransaction.openIssue.description}</p> : null}
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {currentTransaction.conversationId ? (
                 <Button variant="secondary" asChild>

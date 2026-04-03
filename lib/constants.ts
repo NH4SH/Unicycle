@@ -42,6 +42,7 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
 
 export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   PENDING_CONFIRMATION: "Pending confirmation",
+  ISSUE_REPORTED: "Issue reported",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled"
 };

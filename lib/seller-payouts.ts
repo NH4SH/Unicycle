@@ -601,7 +601,9 @@ export async function getSellerPayoutDashboardData(userId?: string): Promise<Sel
     prisma.transaction.count({
       where: {
         sellerId: userId,
-        status: TransactionStatus.PENDING_CONFIRMATION
+        status: {
+          in: [TransactionStatus.PENDING_CONFIRMATION, TransactionStatus.ISSUE_REPORTED]
+        }
       }
     }),
     prisma.transaction.count({

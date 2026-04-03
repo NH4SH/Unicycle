@@ -59,7 +59,7 @@ export function ConfirmReceiptForm({ transaction }: { transaction: PurchaseSumma
         <p className="editorial-eyebrow">Confirm receipt</p>
         <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Did you receive this item?</h1>
         <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-          Once you confirm, HoosFinds finalizes the transaction and unlocks the buyer-only seller rating tied to this handoff.
+          Once you confirm, HoosFinds finalizes the transaction and unlocks the buyer-only seller rating tied to this handoff. This step records receipt inside HoosFinds; it does not control when Stripe captured the payment.
         </p>
       </div>
 
