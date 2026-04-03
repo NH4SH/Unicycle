@@ -270,14 +270,14 @@ export function FollowingFeedSection({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-5 md:space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-2">
           <p className="editorial-eyebrow">Your network</p>
           <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">{title}</h2>
-          <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{subtitle}</p>
+          <p className="max-w-2xl text-[0.96rem] leading-6 text-foreground/76 dark:text-white/80">{subtitle}</p>
           {items.length ? (
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground/86 dark:text-white/88">
+            <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground/90 dark:text-white/88">
               <Sparkles className="h-4 w-4 text-uva-orange" />
               {items.length} drop{items.length === 1 ? "" : "s"} live from {closetCount} closet{closetCount === 1 ? "" : "s"} you follow.
             </div>
@@ -304,7 +304,7 @@ export function FollowingFeedSection({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-1">
                   <h3 className="font-display text-xl font-bold tracking-tight">Add a few more closets</h3>
-                  <p className="max-w-2xl text-sm leading-6 text-muted-foreground">A few more follows will sharpen this feed.</p>
+                  <p className="max-w-2xl text-sm leading-6 text-foreground/72 dark:text-white/78">A few more follows will sharpen this feed.</p>
                 </div>
                 <Button variant="ghost" asChild className="px-0 text-sm font-semibold text-foreground/88 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange">
                   <Link href="/market">Browse all finds</Link>

@@ -383,7 +383,13 @@ export function MarketClient({
   const hasActiveFilters = exploreFiltersActive || filters.sort !== DEFAULT_MARKET_FILTERS.sort;
   const activeControlCount = activeFilterChips.length;
   const advancedFilterCount =
-    Number(filters.location !== DEFAULT_MARKET_FILTERS.location);
+    Number(filters.sort !== DEFAULT_MARKET_FILTERS.sort) +
+    Number(filters.condition !== DEFAULT_MARKET_FILTERS.condition) +
+    Number(filters.location !== DEFAULT_MARKET_FILTERS.location) +
+    Number(filters.brand !== DEFAULT_MARKET_FILTERS.brand) +
+    Number(filters.size !== DEFAULT_MARKET_FILTERS.size) +
+    Number(filters.color !== DEFAULT_MARKET_FILTERS.color) +
+    Number(filters.min !== DEFAULT_MARKET_FILTERS.min || filters.max !== DEFAULT_MARKET_FILTERS.max);
   const visibleCount = items.length ? Math.min(items.length, total) : 0;
   const resultSummary =
     total === 0
@@ -546,21 +552,16 @@ export function MarketClient({
   return (
     <div className="space-y-6 pb-16 md:space-y-8">
       <section className="surface-floating overflow-hidden">
-        <div className="space-y-3.5 px-4 py-4 md:px-5 md:py-5">
+        <div className="space-y-3 px-4 py-4 md:px-5 md:py-5">
           <div className="space-y-2.5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div className="space-y-1">
-                <p className="editorial-eyebrow">Shop clothing first</p>
-                <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
-                  Browse the strongest finds first.
-                </h2>
-                <p className="max-w-2xl text-sm leading-6 text-foreground/70 dark:text-white/74">
-                  Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories stay up front. Dorm, tech, textbooks, tickets, and extras live under More.
-                </p>
-              </div>
-              <div className="hidden rounded-full border border-border/70 bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft md:block">
-                {resultSummary}
-              </div>
+            <div className="space-y-1">
+              <p className="editorial-eyebrow">Shop clothing first</p>
+              <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
+                Browse the strongest finds first.
+              </h2>
+              <p className="max-w-2xl text-[0.95rem] leading-6 text-foreground/76 dark:text-white/80">
+                Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories come first. Everything else lives under More.
+              </p>
             </div>
 
             <div className="-mx-1 overflow-x-auto px-1 md:mx-0 md:overflow-visible md:px-0">
@@ -611,7 +612,7 @@ export function MarketClient({
               )}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="surface-inset mt-1 rounded-[1.55rem] p-3.5 md:p-4">
+                <div className="surface-inset mt-1 rounded-[1.55rem] p-3 md:p-3.5">
                   <p className="mb-3 editorial-eyebrow">More categories</p>
                   <div className="flex flex-wrap gap-2">
                     {SECONDARY_MARKET_BROWSE_PILLS.map((pill) => {
@@ -639,9 +640,9 @@ export function MarketClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end lg:grid-cols-[minmax(0,1.45fr)_minmax(13rem,0.55fr)_auto]">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <label className="relative block min-w-0">
-              <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">Search</span>
+              <span className="mb-1.5 block text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Search</span>
               <Search className="pointer-events-none absolute left-4 top-[calc(50%+0.65rem)] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={filters.q}
@@ -652,28 +653,12 @@ export function MarketClient({
               />
             </label>
 
-            <div className="hidden min-w-0 lg:block">
-              <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">Sort</span>
-              <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
-                <SelectTrigger aria-label="Sort listings">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LISTING_SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="flex items-end">
               <Button
                 type="button"
                 variant="secondary"
                 className={cn(
-                  "h-11 w-full justify-center md:w-auto",
+                  "h-11 w-full justify-center md:min-w-[10rem] md:w-auto",
                   (advancedFiltersOpen || advancedFilterCount > 0) && "border-uva-orange/40 bg-card text-foreground"
                 )}
                 onClick={() => setAdvancedFiltersOpen((open) => !open)}
@@ -681,88 +666,10 @@ export function MarketClient({
                 aria-controls={advancedPanelId}
               >
                 <SlidersHorizontal className="mr-2 h-4 w-4 text-uva-orange" />
-                {advancedFiltersOpen ? "Hide filters" : `Filters${advancedFilterCount ? ` (${advancedFilterCount})` : ""}`}
+                {advancedFiltersOpen ? "Hide filters" : `All filters${advancedFilterCount ? ` (${advancedFilterCount})` : ""}`}
               </Button>
             </div>
           </div>
-
-          <div className="hidden gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-2">
-              <p className="text-[0.78rem] font-medium text-muted-foreground">Size</p>
-              <Select value={filters.size} onValueChange={(value) => setFilters((prev) => ({ ...prev, size: value }))}>
-                <SelectTrigger aria-label="Filter by size">
-                  <SelectValue placeholder="Size" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All sizes</SelectItem>
-                  {sizeOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.78rem] font-medium text-muted-foreground">Brand</p>
-              <Select value={filters.brand} onValueChange={(value) => setFilters((prev) => ({ ...prev, brand: value }))}>
-                <SelectTrigger aria-label="Filter by brand">
-                  <SelectValue placeholder="Brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All brands</SelectItem>
-                  {brandOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.78rem] font-medium text-muted-foreground">Condition</p>
-              <Select value={filters.condition} onValueChange={(value) => setFilters((prev) => ({ ...prev, condition: value }))}>
-                <SelectTrigger aria-label="Filter by condition">
-                  <SelectValue placeholder="Condition" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All conditions</SelectItem>
-                  {CONDITION_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[0.78rem] font-medium text-muted-foreground">Color</p>
-              <Select value={filters.color} onValueChange={(value) => setFilters((prev) => ({ ...prev, color: value }))}>
-                <SelectTrigger aria-label="Filter by color">
-                  <SelectValue placeholder="Color" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All colors</SelectItem>
-                  {colorOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <PriceRangeSlider
-            min={MARKET_PRICE_MIN_CENTS}
-            max={MARKET_PRICE_OPEN_MAX_CENTS}
-            step={100}
-            value={[filters.min, filters.max]}
-            onValueChange={([min, max]) => setFilters((prev) => ({ ...prev, min, max }))}
-          />
 
           <div
             id={advancedPanelId}
@@ -772,10 +679,10 @@ export function MarketClient({
             )}
           >
             <div className="min-h-0 overflow-hidden">
-              <div className="space-y-3 border-t border-border/70 pt-4">
-                <div className="grid gap-2.5 sm:grid-cols-2 md:hidden">
+              <div className="space-y-4 border-t border-border/70 pt-4">
+                <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Sort</p>
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Sort</p>
                     <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
                       <SelectTrigger aria-label="Sort listings">
                         <SelectValue placeholder="Sort" />
@@ -791,7 +698,7 @@ export function MarketClient({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Condition</p>
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Condition</p>
                     <Select value={filters.condition} onValueChange={(value) => setFilters((prev) => ({ ...prev, condition: value }))}>
                       <SelectTrigger aria-label="Filter by condition">
                         <SelectValue placeholder="Condition" />
@@ -808,7 +715,7 @@ export function MarketClient({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Size</p>
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Size</p>
                     <Select value={filters.size} onValueChange={(value) => setFilters((prev) => ({ ...prev, size: value }))}>
                       <SelectTrigger aria-label="Filter by size">
                         <SelectValue placeholder="Size" />
@@ -825,7 +732,7 @@ export function MarketClient({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Brand</p>
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Brand</p>
                     <Select value={filters.brand} onValueChange={(value) => setFilters((prev) => ({ ...prev, brand: value }))}>
                       <SelectTrigger aria-label="Filter by brand">
                         <SelectValue placeholder="Brand" />
@@ -841,8 +748,8 @@ export function MarketClient({
                     </Select>
                   </div>
 
-                  <div className="space-y-2 sm:col-span-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Color</p>
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Color</p>
                     <Select value={filters.color} onValueChange={(value) => setFilters((prev) => ({ ...prev, color: value }))}>
                       <SelectTrigger aria-label="Filter by color">
                         <SelectValue placeholder="Color" />
@@ -857,11 +764,8 @@ export function MarketClient({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <p className="text-[0.78rem] font-medium text-muted-foreground">Pickup spot</p>
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Pickup spot</p>
                     <Select value={filters.location} onValueChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}>
                       <SelectTrigger aria-label="Filter by pickup location">
                         <SelectValue placeholder="Pickup spot" />
@@ -876,6 +780,24 @@ export function MarketClient({
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[0.78rem] font-medium text-foreground/70 dark:text-white/74">Price</p>
+                    <p className="text-xs text-foreground/62 dark:text-white/68">
+                      {filters.max >= MARKET_PRICE_OPEN_MAX_CENTS
+                        ? `${formatCurrency(filters.min / 100)} - ${formatCurrency(MARKET_PRICE_OPEN_MAX_CENTS / 100)}+`
+                        : `${formatCurrency(filters.min / 100)} - ${formatCurrency(filters.max / 100)}`}
+                    </p>
+                  </div>
+                  <PriceRangeSlider
+                    min={MARKET_PRICE_MIN_CENTS}
+                    max={MARKET_PRICE_OPEN_MAX_CENTS}
+                    step={100}
+                    value={[filters.min, filters.max]}
+                    onValueChange={([min, max]) => setFilters((prev) => ({ ...prev, min, max }))}
+                  />
                 </div>
               </div>
             </div>

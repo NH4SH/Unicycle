@@ -16,6 +16,8 @@ export function NavBar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const isVerifiedShop = session?.user.sellerKind === "VERIFIED_SHOP" && Boolean(session.user.verifiedShopApprovedAt);
+  const hideMobileNavPaths = new Set(["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password", "/verify-email"]);
+  const showMobileNav = status === "authenticated" || !hideMobileNavPaths.has(pathname);
   const navItems = [
     { href: "/market", label: "Browse", icon: Search },
     isVerifiedShop ? { href: "/verified-seller/portal", label: "Portal", icon: Store } : { href: "/sell", label: "Sell", icon: Plus },
@@ -26,7 +28,7 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background md:bg-background/88 md:backdrop-blur-xl">
-      <div className="container flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-3">
+      <div className="container flex h-12 items-center justify-between gap-1.5 sm:h-16 sm:gap-3">
         <Logo />
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
@@ -47,7 +49,7 @@ export function NavBar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           <ThemeToggle className="origin-right scale-[0.92] sm:scale-100" />
           {status === "authenticated" ? (
             <>
@@ -70,24 +72,26 @@ export function NavBar() {
           )}
         </div>
       </div>
-      <nav className="container grid grid-cols-5 gap-1.5 pb-2 pt-0.5 md:hidden">
-        {navItems.map((item) => {
-          const active = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "inline-flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-[1rem] px-1.5 py-1.5 text-[10.5px] font-semibold transition",
-                active ? "surface-subtle bg-card text-foreground shadow-soft" : "text-muted-foreground hover:bg-card/60"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      {showMobileNav ? (
+        <nav className="container grid grid-cols-5 gap-1 pb-1.5 pt-0.5 md:hidden">
+          {navItems.map((item) => {
+            const active = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "inline-flex min-h-10 flex-col items-center justify-center gap-0.5 rounded-[0.95rem] px-1 py-1 text-[10px] font-semibold transition",
+                  active ? "surface-subtle bg-card text-foreground shadow-soft" : "text-muted-foreground hover:bg-card/60"
+                )}
+              >
+                <item.icon className="h-[0.95rem] w-[0.95rem]" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
     </header>
   );
 }

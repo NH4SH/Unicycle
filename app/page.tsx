@@ -42,7 +42,7 @@ export default async function HomePage() {
   const { todaysDrops, hotOnGrounds } = landing;
 
   const heroLead = todaysDrops[0] ?? hotOnGrounds[0] ?? null;
-  const heroSide = [...todaysDrops.slice(1, 3), ...hotOnGrounds.slice(0, 2)].slice(0, 2);
+  const heroSide = [...todaysDrops.slice(1, 3), ...hotOnGrounds.slice(0, 2)].slice(0, 1);
   const freshFinds = todaysDrops.filter((listing) => isFashionBrowseListing(listing)).slice(0, 8);
   const trendingBrandFinds = hotOnGrounds.filter((listing) => isFashionBrowseListing(listing) && Boolean(listing.brand)).slice(0, 8);
   const hotFinds = (trendingBrandFinds.length ? trendingBrandFinds : hotOnGrounds.filter((listing) => isFashionBrowseListing(listing))).slice(0, 8);
@@ -52,17 +52,17 @@ export default async function HomePage() {
     .slice(0, 8);
 
   return (
-    <div className="container space-y-12 py-5 md:space-y-16 md:py-8">
-      <section className="space-y-10 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(20rem,35rem)] xl:items-start xl:gap-x-8 xl:gap-y-8 xl:space-y-0">
-        <div className="space-y-5 sm:space-y-6 xl:max-w-[40rem]">
+    <div className="container space-y-10 py-5 md:space-y-14 md:py-8">
+      <section className="space-y-8 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(19rem,33rem)] xl:items-start xl:gap-x-8 xl:space-y-0">
+        <div className="space-y-5 sm:space-y-6 xl:max-w-[37rem] xl:pt-2">
           <div className="space-y-2.5 sm:space-y-3.5">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
             <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
               The best fits on <span className="font-editorial italic font-semibold text-uva-orange">Grounds</span>.
             </h1>
-            <p className="max-w-2xl text-[0.98rem] leading-7 text-foreground/72 dark:text-white/76 md:text-lg">
+            <p className="max-w-2xl text-[0.98rem] leading-7 text-foreground/80 dark:text-white/82 md:text-lg">
               HoosFinds is UVA&apos;s fashion-first resale marketplace for vintage layers, outerwear, sneakers, accessories,
-              and the campus finds worth grabbing before someone else does.
+              and the campus pieces worth grabbing before someone else does.
             </p>
           </div>
 
@@ -84,10 +84,10 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.08fr_0.92fr] xl:row-span-2 xl:row-start-1 xl:max-w-[35rem] xl:justify-self-end xl:self-start">
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.12fr_0.88fr] xl:max-w-[33rem] xl:justify-self-end xl:self-start">
           {heroLead ? (
             <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
-              <div className="relative aspect-[4/5] overflow-hidden xl:aspect-[4/4.7]">
+              <div className="relative aspect-[4/5] overflow-hidden xl:aspect-[4/4.45]">
                 <Image
                   src={heroLead.images[0] || FALLBACK_IMAGE}
                   alt={heroLead.title}
@@ -101,7 +101,7 @@ export default async function HomePage() {
                     <Badge variant="outline" className={cn("inline-flex", HERO_CARD_PILL_CLASS)}>
                       Fresh listing
                     </Badge>
-                    <div className="rounded-[1.35rem] bg-black/45 px-4 py-3 text-white backdrop-blur-sm">
+                    <div className="rounded-[1.35rem] bg-black/56 px-4 py-3 text-white backdrop-blur-sm">
                       <p className="max-w-xs font-display text-[2rem] font-extrabold leading-[0.95] tracking-tight [text-wrap:balance]">
                         {heroLead.title}
                       </p>
@@ -135,7 +135,7 @@ export default async function HomePage() {
                   href={`/listing/${listing.id}`}
                   className="group relative block overflow-hidden rounded-[1.9rem] border border-border/80 bg-card shadow-soft"
                 >
-                  <div className="relative aspect-[4/4.5] overflow-hidden xl:aspect-[4/4.05]">
+                  <div className="relative aspect-[4/4.45] overflow-hidden xl:aspect-[4/3.72]">
                     <Image
                       src={listing.images[0] || FALLBACK_IMAGE}
                       alt={listing.title}
@@ -176,10 +176,10 @@ export default async function HomePage() {
               </div>
             )}
 
-            <div className="soft-panel flex items-center justify-between gap-4 p-5">
+            <div className="soft-panel flex items-center justify-between gap-4 p-4">
               <div>
                 <p className="editorial-eyebrow">UVA-only access</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                <p className="mt-2 max-w-[15rem] text-sm leading-6 text-foreground/72 dark:text-white/78">
                   Every listing, save, and message stays inside the UVA student community.
                 </p>
               </div>
@@ -190,22 +190,21 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="xl:min-w-0 xl:max-w-[42rem] xl:pt-1">
-          <FollowingFeedSection
-            viewerSignedIn={Boolean(session?.user.id)}
-            feed={followingFeed}
-            suggested={suggestedSellers}
-            title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
-            subtitle={
-              session?.user.id
-                ? "Follow closets you trust and HoosFinds turns that into a cleaner feed of future listings."
-                : "The fastest way to understand HoosFinds is to start with the closets already putting up sharp campus finds."
-            }
-            emptyTitle="Follow a few closets and your feed starts here"
-            emptyDescription="When you follow sellers whose style you like, their newest listings land in one place instead of getting lost in the full marketplace."
-          />
-        </div>
       </section>
+
+      <FollowingFeedSection
+        viewerSignedIn={Boolean(session?.user.id)}
+        feed={followingFeed}
+        suggested={suggestedSellers}
+        title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
+        subtitle={
+          session?.user.id
+            ? "Fresh drops from the closets you trust."
+            : "Start with the closets already putting up strong campus finds."
+        }
+        emptyTitle="Follow a few closets and your feed starts here"
+        emptyDescription="Follow sellers whose style you like and their newest listings stay in one cleaner feed."
+      />
 
       <section className="space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
