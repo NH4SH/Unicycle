@@ -14,7 +14,7 @@ type ListingDetailPageProps = {
 
 export default async function ListingDetailPage({ params }: ListingDetailPageProps) {
   const session = await getAuthSession();
-  const detail = await getListingDetail(params.id, session?.user.id);
+  const detail = await getListingDetail(params.id, session?.user.id, session?.user.role);
 
   if (!detail) {
     notFound();
@@ -36,6 +36,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
       <ListingDetailView
         listing={detail.listing}
         isOwner={detail.isOwner}
+        viewerIsAdmin={session?.user.role === "ADMIN"}
         viewerSignedIn={Boolean(session?.user.id)}
         viewerCanBuy={session?.user.canBuy ?? false}
         similar={detail.similarItems}

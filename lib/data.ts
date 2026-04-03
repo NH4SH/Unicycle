@@ -8,7 +8,8 @@ import {
   OrderStatus,
   Prisma,
   TransactionIssueStatus,
-  TransactionStatus
+  TransactionStatus,
+  UserRole
 } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 
@@ -88,6 +89,9 @@ type ListingLike = {
   pickupLocations: Prisma.JsonValue;
   meetupNotes: string | null;
   status: ListingStatus;
+  moderationStatus: ListingModerationStatus;
+  moderationReason: string | null;
+  moderatedAt: Date | null;
   soldToUserId: string | null;
   createdAt: Date;
   seller: SellerMetricsRecord;
@@ -182,6 +186,9 @@ export type ListingCardData = {
   pickupLocations: string[];
   meetupNotes: string | null;
   status: ListingStatus;
+  moderationStatus: ListingModerationStatus;
+  moderationReason: string | null;
+  moderatedAt: string | null;
   soldToUserId: string | null;
   transactionStatus: TransactionStatus | null;
   createdAt: string;
@@ -501,6 +508,9 @@ function mapListing(listing: ListingLike, userId?: string): ListingCardData {
     pickupLocations: fromJsonArray(listing.pickupLocations),
     meetupNotes: listing.meetupNotes,
     status: listing.status,
+    moderationStatus: listing.moderationStatus,
+    moderationReason: listing.moderationReason,
+    moderatedAt: listing.moderatedAt?.toISOString() ?? null,
     soldToUserId: listing.soldToUserId,
     transactionStatus: listing.status === ListingStatus.ACTIVE ? null : listing.transactions[0]?.status ?? null,
     createdAt: listing.createdAt.toISOString(),
@@ -1095,7 +1105,7 @@ export async function getFollowingFeedListings(userId: string, page = 1, limit =
   };
 }
 
-export async function getListingDetail(listingId: string, userId?: string) {
+export async function getListingDetail(listingId: string, userId?: string, viewerRole?: UserRole) {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
     include: {
@@ -1179,7 +1189,7 @@ export async function getListingDetail(listingId: string, userId?: string) {
     return null;
   }
 
-  if (listing.moderationStatus !== ListingModerationStatus.VISIBLE) {
+  if (listing.moderationStatus !== ListingModerationStatus.VISIBLE && viewerRole !== UserRole.ADMIN) {
     return null;
   }
 

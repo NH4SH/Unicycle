@@ -18,6 +18,7 @@ import { UserAvatar } from "@/components/shared/user-avatar";
 import { VerifiedShopBadge } from "@/components/shared/verified-shop-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ListingSaleManager } from "@/components/transactions/listing-sale-manager";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
 import { getPickupLocationPublicLabel } from "@/lib/campus-pickup-locations";
@@ -27,6 +28,7 @@ import { formatCurrency, timeAgo } from "@/lib/utils";
 type ListingDetailViewProps = {
   listing: ListingCardData;
   isOwner: boolean;
+  viewerIsAdmin: boolean;
   viewerSignedIn: boolean;
   viewerCanBuy: boolean;
   similar: ListingCardData[];
@@ -105,6 +107,7 @@ type ListingDetailViewProps = {
 export function ListingDetailView({
   listing,
   isOwner,
+  viewerIsAdmin,
   viewerSignedIn,
   viewerCanBuy,
   similar,
@@ -115,9 +118,13 @@ export function ListingDetailView({
   const [zoomed, setZoomed] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [moderationStatus, setModerationStatus] = useState(listing.moderationStatus);
+  const [moderationReason, setModerationReason] = useState(listing.moderationReason ?? "");
+  const [adminReasonDraft, setAdminReasonDraft] = useState("");
+  const [adminAction, setAdminAction] = useState<"hide" | "remove" | "restore" | null>(null);
   const router = useRouter();
   const { data: sessionData, status } = useSession();
-  const listingIsLive = listing.status === "ACTIVE";
+  const listingIsLive = listing.status === "ACTIVE" && listing.moderationStatus === "VISIBLE";
   const sellerDisplayName = listing.seller.displayName;
   const publicUsername = listing.seller.publicUsername;
   const isVerifiedShop = listing.seller.sellerKind === "VERIFIED_SHOP" && Boolean(listing.seller.verifiedShopApprovedAt);
@@ -133,6 +140,7 @@ export function ListingDetailView({
       : "Buyer trust builds after the first confirmed pickup.";
   const canBuyerAct = !isOwner && listingIsLive && (!viewerSignedIn || viewerCanBuy);
   const showCheckoutCta = canBuyerAct && checkoutState.enabled;
+  const canAdminModerate = viewerIsAdmin || sessionData?.user.role === "ADMIN";
 
   function getCheckoutSupportCopy() {
     if (showCheckoutCta) {
@@ -265,6 +273,49 @@ export function ListingDetailView({
     router.push(`/checkout/review/${listing.id}`);
   }
 
+  async function moderateListing(action: "hide" | "remove" | "restore") {
+    if (!canAdminModerate) {
+      return;
+    }
+
+    if (action !== "restore" && !adminReasonDraft.trim()) {
+      toast.error("Add a moderation reason so the action stays clear.");
+      return;
+    }
+
+    setAdminAction(action);
+
+    const response = await fetch(`/api/admin/listings/${listing.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action,
+        reason: action === "restore" ? undefined : adminReasonDraft.trim()
+      })
+    });
+
+    setAdminAction(null);
+
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string; moderationStatus?: typeof moderationStatus }
+      | null;
+
+    if (!response.ok) {
+      toast.error(payload?.message || "Could not update listing moderation.");
+      return;
+    }
+
+    const nextReason = action === "restore" ? "" : adminReasonDraft.trim();
+    setModerationStatus(payload?.moderationStatus ?? (action === "restore" ? "VISIBLE" : action === "hide" ? "HIDDEN" : "REMOVED"));
+    setModerationReason(nextReason);
+    if (action !== "restore") {
+      setAdminReasonDraft("");
+    }
+
+    toast.success(action === "restore" ? "Listing restored." : action === "hide" ? "Listing hidden." : "Listing removed.");
+    router.refresh();
+  }
+
   return (
     <div className="space-y-12">
       <section className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
@@ -313,6 +364,11 @@ export function ListingDetailView({
               <Badge variant="outline">{listing.categoryLabel ?? CATEGORY_LABELS[listing.category]}</Badge>
               <Badge variant="orange">{CONDITION_LABELS[listing.condition]}</Badge>
               {listing.status !== "ACTIVE" ? <ListingStatusBadge status={listing.status} /> : null}
+              {canAdminModerate && moderationStatus !== "VISIBLE" ? (
+                <Badge variant={moderationStatus === "REMOVED" ? "orange" : "outline"}>
+                  {moderationStatus === "REMOVED" ? "Admin removed" : "Admin hidden"}
+                </Badge>
+              ) : null}
               <p className="text-xs text-muted-foreground sm:ml-auto">Posted {timeAgo(listing.createdAt)} ago</p>
             </div>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">{listing.title}</h1>
@@ -500,13 +556,83 @@ export function ListingDetailView({
 
           {!listingIsLive ? (
             <div className="surface-subtle rounded-[1.75rem] p-4 text-sm leading-7 text-muted-foreground">
-              {listing.status === "PENDING_CONFIRMATION"
+              {listing.moderationStatus === "HIDDEN"
+                ? "This listing is hidden from shoppers right now. Admin controls can bring it back once the issue is resolved."
+                : listing.moderationStatus === "REMOVED"
+                  ? "This listing was removed from the marketplace. Admin controls can restore it if it should go live again."
+                : listing.status === "PENDING_CONFIRMATION"
                 ? saleContext.currentTransaction?.status === "ISSUE_REPORTED"
                   ? "This piece has an open handoff issue, so HoosFinds paused normal completion until it is resolved."
                   : "This piece has already been handed off and is waiting on the selected buyer to confirm receipt."
                 : listing.status === "COMPLETED"
                   ? "This transaction has been fully completed and recorded on HoosFinds."
                   : "This listing is currently cancelled and off the feed until the seller relists it."}
+            </div>
+          ) : null}
+
+          {canAdminModerate ? (
+            <div className="surface-panel-strong space-y-4 rounded-[1.75rem] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="editorial-eyebrow">Admin tools</p>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Moderate this listing in place without leaving the item page.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={moderationStatus === "VISIBLE" ? "blue" : moderationStatus === "REMOVED" ? "orange" : "outline"}>
+                    {moderationStatus === "VISIBLE" ? "Live" : moderationStatus === "REMOVED" ? "Removed" : "Hidden"}
+                  </Badge>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/admin">Open admin dashboard</Link>
+                  </Button>
+                </div>
+              </div>
+
+              {moderationReason ? (
+                <div className="surface-subtle rounded-[1.2rem] px-4 py-3 text-sm leading-6 text-muted-foreground">
+                  <p className="font-medium text-foreground dark:text-white">Current moderation reason</p>
+                  <p className="mt-1">{moderationReason}</p>
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <label htmlFor="listing-admin-reason" className="text-sm font-medium text-foreground dark:text-white">
+                  Moderation reason
+                </label>
+                <Textarea
+                  id="listing-admin-reason"
+                  value={adminReasonDraft}
+                  onChange={(event) => setAdminReasonDraft(event.target.value)}
+                  placeholder="Visible to the moderation trail and seller alert when you hide or remove a listing."
+                  className="min-h-[96px]"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => void moderateListing("hide")}
+                  disabled={adminAction !== null || moderationStatus === "HIDDEN"}
+                >
+                  {adminAction === "hide" ? "Hiding..." : "Hide listing"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-destructive/35 text-destructive hover:border-destructive/45 hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => void moderateListing("remove")}
+                  disabled={adminAction !== null || moderationStatus === "REMOVED"}
+                >
+                  {adminAction === "remove" ? "Removing..." : "Remove listing"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => void moderateListing("restore")}
+                  disabled={adminAction !== null || moderationStatus === "VISIBLE"}
+                >
+                  {adminAction === "restore" ? "Restoring..." : "Restore listing"}
+                </Button>
+              </div>
             </div>
           ) : null}
 
