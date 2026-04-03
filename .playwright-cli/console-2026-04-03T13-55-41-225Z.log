@@ -283,3 +283,11 @@ Read more: https://nextjs.org/docs/api-reference/next/image#priority @ webpack-i
 [ 3116267ms] [ERROR] [notifications] load failed TypeError: Failed to fetch
     at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:61:36)
     at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:90:18) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:32
+[ 3161291ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3004/api/notifications?limit=12:0
+[ 3161294ms] [ERROR] [notifications] load failed TypeError: Failed to fetch
+    at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:61:36)
+    at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:90:18) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:32
+[ 3206268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3004/api/notifications?limit=12:0
+[ 3206269ms] [ERROR] [notifications] load failed TypeError: Failed to fetch
+    at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:61:36)
+    at eval (webpack-internal:///(app-pages-browser)/./components/shared/notification-bell.tsx:90:18) @ webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:32
