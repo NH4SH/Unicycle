@@ -398,7 +398,7 @@ export function MarketClient({
         ? "Loading more listings..."
         : hasActiveFilters
           ? `${activeControlCount} filters active`
-          : "Start with a style lane, then narrow by fit and price.";
+          : "";
   const showCuratedSections = !exploreFiltersActive;
 
   useEffect(() => {
@@ -544,19 +544,18 @@ export function MarketClient({
   }
 
   return (
-    <div className="space-y-7 pb-16 md:space-y-9">
+    <div className="space-y-6 pb-16 md:space-y-8">
       <section className="surface-floating overflow-hidden">
-        <div className="space-y-4 px-4 py-4 md:px-5 md:py-5">
-          <div className="space-y-3">
+        <div className="space-y-3.5 px-4 py-4 md:px-5 md:py-5">
+          <div className="space-y-2.5">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <p className="editorial-eyebrow">Fashion-first browse</p>
                 <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
-                  Shop the style lanes first.
+                  Browse the strongest finds first.
                 </h2>
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Women&apos;s, men&apos;s, vintage, streetwear, shoes, and game day fits stay up front. Dorm, tech,
-                  textbooks, and the rest sit behind a cleaner second layer.
+                <p className="max-w-2xl text-sm leading-6 text-foreground/70 dark:text-white/74">
+                  Women&apos;s, men&apos;s, vintage, streetwear, outerwear, shoes, and accessories stay up front. Everything else stays one tap away.
                 </p>
               </div>
               <div className="hidden rounded-full border border-border/70 bg-card/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-muted-foreground shadow-soft md:block">
@@ -613,15 +612,8 @@ export function MarketClient({
             >
               <div className="min-h-0 overflow-hidden">
                 <div className="surface-inset mt-1 rounded-[1.55rem] p-3.5 md:p-4">
-                  <div className="space-y-1">
-                    <p className="editorial-eyebrow">Still useful beyond clothes</p>
-                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Secondary categories stay intentional here, so the top of browse still feels like a fashion app instead
-                      of a campus classifieds board.
-                    </p>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <p className="mb-3 editorial-eyebrow">More categories</p>
+                  <div className="flex flex-wrap gap-2">
                     {SECONDARY_MARKET_BROWSE_PILLS.map((pill) => {
                       const active = filters.lane === pill.id;
 
@@ -647,7 +639,7 @@ export function MarketClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-[minmax(0,1.45fr)_minmax(13rem,0.55fr)_auto] lg:items-end">
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end lg:grid-cols-[minmax(0,1.45fr)_minmax(13rem,0.55fr)_auto]">
             <label className="relative block min-w-0">
               <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">Search</span>
               <Search className="pointer-events-none absolute left-4 top-[calc(50%+0.65rem)] h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -660,7 +652,7 @@ export function MarketClient({
               />
             </label>
 
-            <div className="min-w-0">
+            <div className="hidden min-w-0 lg:block">
               <span className="mb-1.5 block text-[0.78rem] font-medium text-muted-foreground">Sort</span>
               <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
                 <SelectTrigger aria-label="Sort listings">
@@ -681,7 +673,7 @@ export function MarketClient({
                 type="button"
                 variant="secondary"
                 className={cn(
-                  "h-11 w-full justify-center lg:w-auto",
+                  "h-11 w-full justify-center md:w-auto",
                   (advancedFiltersOpen || advancedFilterCount > 0) && "border-uva-orange/40 bg-card text-foreground"
                 )}
                 onClick={() => setAdvancedFiltersOpen((open) => !open)}
@@ -689,12 +681,12 @@ export function MarketClient({
                 aria-controls={advancedPanelId}
               >
                 <SlidersHorizontal className="mr-2 h-4 w-4 text-uva-orange" />
-                {advancedFiltersOpen ? "Hide more filters" : `More filters${advancedFilterCount ? ` (${advancedFilterCount})` : ""}`}
+                {advancedFiltersOpen ? "Hide filters" : `Filters${advancedFilterCount ? ` (${advancedFilterCount})` : ""}`}
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="hidden gap-2.5 md:grid md:grid-cols-2 xl:grid-cols-4">
             <div className="space-y-2">
               <p className="text-[0.78rem] font-medium text-muted-foreground">Size</p>
               <Select value={filters.size} onValueChange={(value) => setFilters((prev) => ({ ...prev, size: value }))}>
@@ -781,6 +773,92 @@ export function MarketClient({
           >
             <div className="min-h-0 overflow-hidden">
               <div className="space-y-3 border-t border-border/70 pt-4">
+                <div className="grid gap-2.5 sm:grid-cols-2 md:hidden">
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Sort</p>
+                    <Select value={filters.sort} onValueChange={(value) => setFilters((prev) => ({ ...prev, sort: value }))}>
+                      <SelectTrigger aria-label="Sort listings">
+                        <SelectValue placeholder="Sort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LISTING_SORT_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Condition</p>
+                    <Select value={filters.condition} onValueChange={(value) => setFilters((prev) => ({ ...prev, condition: value }))}>
+                      <SelectTrigger aria-label="Filter by condition">
+                        <SelectValue placeholder="Condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All conditions</SelectItem>
+                        {CONDITION_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Size</p>
+                    <Select value={filters.size} onValueChange={(value) => setFilters((prev) => ({ ...prev, size: value }))}>
+                      <SelectTrigger aria-label="Filter by size">
+                        <SelectValue placeholder="Size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All sizes</SelectItem>
+                        {sizeOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Brand</p>
+                    <Select value={filters.brand} onValueChange={(value) => setFilters((prev) => ({ ...prev, brand: value }))}>
+                      <SelectTrigger aria-label="Filter by brand">
+                        <SelectValue placeholder="Brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All brands</SelectItem>
+                        {brandOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <p className="text-[0.78rem] font-medium text-muted-foreground">Color</p>
+                    <Select value={filters.color} onValueChange={(value) => setFilters((prev) => ({ ...prev, color: value }))}>
+                      <SelectTrigger aria-label="Filter by color">
+                        <SelectValue placeholder="Color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All colors</SelectItem>
+                        {colorOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="space-y-2">
                     <p className="text-[0.78rem] font-medium text-muted-foreground">Category</p>
@@ -816,10 +894,6 @@ export function MarketClient({
                     </Select>
                   </div>
                 </div>
-
-                <p className="text-[0.78rem] text-muted-foreground">
-                  Category and pickup stay here as supporting filters so the top of browse can stay fashion-first.
-                </p>
               </div>
             </div>
           </div>
@@ -828,7 +902,7 @@ export function MarketClient({
             <div aria-live="polite" className="min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <p className="font-display text-[1.15rem] font-bold tracking-tight text-foreground md:text-[1.3rem]">{resultSummary}</p>
-                <p className="text-sm text-muted-foreground">{statusCopy}</p>
+                {statusCopy ? <p className="text-sm text-muted-foreground">{statusCopy}</p> : null}
               </div>
             </div>
 

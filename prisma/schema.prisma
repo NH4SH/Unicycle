@@ -128,6 +128,16 @@ enum AdminAuditActionType {
   LISTING_RESTORED
 }
 
+enum NotificationType {
+  LISTING_SOLD
+  MESSAGE_RECEIVED
+  FOLLOW_RECEIVED
+  VERIFIED_SELLER_APPROVED
+  VERIFIED_SELLER_REJECTED
+  PURCHASE_UPDATED
+  ACCOUNT_ALERT
+}
+
 model User {
   /// Public display name shown across the marketplace. Keep UVA email / local
   /// computing ID internal to auth and account recovery, not profile identity.
@@ -199,6 +209,7 @@ model User {
   moderatedListings                  Listing[]                   @relation("ListingModeratedBy")
   adminAuditLogs                     AdminAuditLog[]             @relation("AdminActionActor")
   adminTargetUserLogs                AdminAuditLog[]             @relation("AdminActionUserTarget")
+  notifications                      Notification[]
 
   @@index([username])
   @@index([createdAt])
@@ -345,6 +356,7 @@ model Order {
   checkoutExpiresAt       DateTime?
   paidAt                  DateTime?
   refundedAt              DateTime?
+  sellerSaleEmailSentAt   DateTime?
   refundReason            String?
   refundFailureReason     String?
   refundRequestedById     String?
@@ -699,6 +711,26 @@ model AdminAuditLog {
   @@index([action, createdAt])
   @@index([targetUserId, createdAt])
   @@index([targetListingId, createdAt])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  body        String?
+  href        String
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  externalKey String?          @unique
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead, createdAt])
 }
 
 model Account {

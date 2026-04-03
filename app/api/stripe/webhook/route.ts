@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
 import { refundOrderPayment } from "@/lib/order-refunds";
+import { notifyListingSold } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { getStripe, getStripeWebhookSecret, isStripeWebhookConfigured } from "@/lib/stripe";
 
@@ -405,6 +406,14 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session):
       session,
       "HoosFinds lost the matching order during webhook reconciliation, so the payment was refunded."
     );
+  } else if (reconciliation.action === "processed" && reconciliation.orderId) {
+    try {
+      await notifyListingSold(reconciliation.orderId);
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[stripe/webhook] sale notification failed", error);
+      }
+    }
   }
 
   return {

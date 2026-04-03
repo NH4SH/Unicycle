@@ -38,7 +38,7 @@
   --secondary: 223 16% 18%;
   --secondary-foreground: 36 20% 92%;
   --muted: 223 14% 17%;
-  --muted-foreground: 222 12% 72%;
+  --muted-foreground: 222 12% 76%;
   --accent: 216 30% 62%;
   --accent-foreground: 224 26% 10%;
   --destructive: 0 72% 60%;
@@ -118,6 +118,10 @@ main {
 
 .editorial-eyebrow {
   @apply text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-muted-foreground;
+}
+
+.dark .editorial-eyebrow {
+  color: hsl(var(--foreground) / 0.64);
 }
 
 .surface-panel {

@@ -10,7 +10,6 @@ export const FASHION_STYLE_TAGS = [
   "Vintage",
   "Streetwear",
   "Outerwear",
-  "Game Day",
   "Accessories",
   "Shoes"
 ] as const;
@@ -46,8 +45,9 @@ export function isFashionFocusedListing(listing: ListingStyleSource) {
       "jewelry",
       "hat",
       "cap",
-      "game day",
-      "gameday"
+      "shell",
+      "outerwear",
+      "windbreaker"
     ])
   );
 }
@@ -76,10 +76,6 @@ export function deriveStyleTagsFromListings(listings: ListingStyleSource[]) {
 
     if (hasKeyword(text, ["jacket", "coat", "outerwear", "puffer", "fleece", "shell", "barbour", "patagonia"])) {
       scores.set("Outerwear", (scores.get("Outerwear") ?? 0) + 3);
-    }
-
-    if (hasKeyword(text, ["game day", "gameday", "uva", "stadium", "tailgate", "orange-and-blue", "pregame"])) {
-      scores.set("Game Day", (scores.get("Game Day") ?? 0) + 3);
     }
 
     if (hasKeyword(text, ["sneaker", "sneakers", "shoe", "shoes", "boot", "boots", "loafer", "loafers"])) {

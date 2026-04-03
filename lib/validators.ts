@@ -41,19 +41,10 @@ function withApparelRequirements<T extends z.ZodTypeAny>(schema: T) {
   return schema.superRefine((value: z.infer<T>, ctx) => {
     const listingValue = value as {
       category?: Category;
-      brand?: string;
       size?: string;
     };
 
     if (listingValue.category && APPAREL_CATEGORIES.has(listingValue.category)) {
-      if (!listingValue.brand) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Add a brand for apparel listings.",
-          path: ["brand"]
-        });
-      }
-
       if (!listingValue.size) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

@@ -1,6 +1,7 @@
 import { Category, ListingStatus, Prisma, TransactionStatus } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { notifyUserFollowed } from "@/lib/notifications";
 import { publicUserProfileSelect, toPublicUserProfile } from "@/lib/public-user";
 import { deriveStyleTagsFromListings, getFashionFocusScore, isFashionFocusedListing } from "@/lib/style-network";
 
@@ -412,19 +413,31 @@ export async function followUser(followerId: string, followingId: string) {
     throw new Error("User not found.");
   }
 
-  await prisma.follow.upsert({
-    where: {
-      followerId_followingId: {
+  let createdFollow = false;
+
+  try {
+    await prisma.follow.create({
+      data: {
         followerId,
         followingId
       }
-    },
-    create: {
-      followerId,
-      followingId
-    },
-    update: {}
-  });
+    });
+    createdFollow = true;
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
+      throw error;
+    }
+  }
+
+  if (createdFollow) {
+    try {
+      await notifyUserFollowed(followerId, followingId);
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[follow] notification failed", error);
+      }
+    }
+  }
 
   return getUserSocialSnapshot(followingId, followerId);
 }

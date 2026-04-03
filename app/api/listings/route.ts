@@ -6,6 +6,7 @@ import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/const
 import { assertSellerCanPublishListing } from "@/lib/listing-guardrails";
 import { packListingDescription } from "@/lib/listing-draft";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
+import { normalizeMarketBrowseLane } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import { getSellerPayoutState } from "@/lib/seller-payouts";
 import { canUserSell } from "@/lib/user-access";
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   const session = await getAuthSession();
 
   const q = searchParams.get("q") ?? undefined;
-  const lane = searchParams.get("lane") ?? undefined;
+  const lane = normalizeMarketBrowseLane(searchParams.get("lane")) ?? undefined;
   const category = searchParams.get("category") ?? undefined;
   const condition = searchParams.get("condition") ?? undefined;
   const location = searchParams.get("location") ?? undefined;

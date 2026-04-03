@@ -16,7 +16,8 @@ import {
   getListingBrowseMeta,
   isFashionBrowseListing,
   matchesBrowseLane,
-  matchesFacetValue
+  matchesFacetValue,
+  normalizeMarketBrowseLane
 } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import {
@@ -295,7 +296,9 @@ function hasDerivedBrowseFilters(query: MarketQuery) {
 }
 
 function matchesDerivedBrowseFilters(listing: Pick<ListingLike, "title" | "description" | "category">, query: MarketQuery) {
-  if (query.lane && query.lane !== "all" && !matchesBrowseLane(listing, query.lane as MarketBrowseLaneId)) {
+  const normalizedLane = normalizeMarketBrowseLane(query.lane);
+
+  if (normalizedLane && normalizedLane !== "all" && !matchesBrowseLane(listing, normalizedLane as MarketBrowseLaneId)) {
     return false;
   }
 
@@ -779,7 +782,7 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
     {
       id: "fresh",
       title: "Fresh on Grounds",
-      description: "New style drops, game day layers, and campus fits posted lately.",
+      description: "New style drops, outerwear, and campus fits posted lately.",
       href: "/market?sort=newest",
       tone: "primary" as const,
       items: pickCuratedListings(fashionListings, 4, primaryUsedIds).map((listing) => mapListing(listing, userId))

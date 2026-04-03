@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | HoosFinds"
   },
   description:
-    "HoosFinds is UVA's fashion-first resale marketplace for student style, vintage layers, game day fits, and curated campus finds.",
+    "HoosFinds is UVA's fashion-first resale marketplace for student style, vintage layers, outerwear, and curated campus finds.",
   openGraph: {
     title: "HoosFinds | UVA's fashion-first resale marketplace",
     description:

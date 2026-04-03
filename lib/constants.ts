@@ -72,10 +72,10 @@ export const HOME_PRIMARY_LANES = [
     description: "Thrifted sweats, worn-in layers, and the campus pieces with real history."
   },
   {
-    label: "Game Day",
-    href: "/market?lane=game-day",
-    eyebrow: "Saturday lane",
-    description: "Orange-and-blue layers, last-minute pieces, and pregame-ready looks."
+    label: "Outerwear",
+    href: "/market?lane=outerwear",
+    eyebrow: "Layering lane",
+    description: "Jackets, fleeces, shells, and cold-weather layers that still feel sharp on Grounds."
   },
   {
     label: "Streetwear",
@@ -128,8 +128,8 @@ export const HOW_IT_WORKS_STEPS = [
   {
     number: "02",
     title: "Get discovered",
-    description: "Students browse by style lane, save what they want, and message without leaving HoosFinds.",
-    note: "Style-first browsing"
+    description: "Students browse the strongest finds first, save what they want, and message without leaving HoosFinds.",
+    note: "Clean discovery"
   },
   {
     number: "03",

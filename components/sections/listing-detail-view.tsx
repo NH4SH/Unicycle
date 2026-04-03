@@ -404,10 +404,10 @@ export function ListingDetailView({
             <div className="space-y-4 md:border-r md:border-border/70 md:pr-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="editorial-eyebrow">Pickup on Grounds</p>
-                <p className="text-xs text-muted-foreground">Fast local handoff</p>
+                <p className="text-xs text-foreground/62 dark:text-white/68">Fast local handoff</p>
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
-                Pick a spot that works for a class break, The Corner, or game day traffic.
+                Pick a spot that works for a class break, The Corner, or heavier campus traffic.
               </p>
               <div className="flex flex-wrap gap-2">
                 {listing.pickupLocations.map((loc) => (

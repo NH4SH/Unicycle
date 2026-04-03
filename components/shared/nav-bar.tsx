@@ -6,6 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { Heart, LogOut, MessageCircle, PackageCheck, Plus, Search, Store } from "lucide-react";
 
 import { Logo } from "@/components/shared/logo";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export function NavBar() {
           <ThemeToggle className="origin-right scale-[0.92] sm:scale-100" />
           {status === "authenticated" ? (
             <>
+              <NotificationBell />
               <Link
                 href={`/u/${session.user.username ?? "me"}`}
                 className="surface-pill inline-flex touch-target items-center justify-center rounded-full p-1 transition hover:-translate-y-0.5"

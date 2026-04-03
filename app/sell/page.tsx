@@ -34,7 +34,7 @@ export default async function SellPage() {
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
             Turn the piece you&apos;re done with into someone else&apos;s next fit.
           </h1>
-          <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+          <p className="max-w-2xl text-sm leading-7 text-foreground/74 dark:text-white/76 md:text-base">
             Create the listing here, keep pickup simple, and let HoosFinds handle payout routing underneath the sale.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default async function SellPage() {
             <div className="space-y-2">
               <p className="editorial-eyebrow">Sign in first</p>
               <h2 className="font-display text-3xl font-extrabold tracking-tight">Sign in before you post a listing.</h2>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="max-w-2xl text-sm leading-7 text-foreground/74 dark:text-white/76">
                 We need your UVA account so we can save your listing, connect payouts, and send earnings to the right seller.
               </p>
             </div>
@@ -73,7 +73,7 @@ export default async function SellPage() {
                 {!payoutState.readyToReceivePayments ? <CircleAlert className="mt-1 h-5 w-5 text-uva-orange" /> : null}
                 <div className="space-y-1">
                   <p className="font-semibold text-foreground">{payoutState.headline}</p>
-                  <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                  <p className="max-w-2xl text-sm leading-7 text-foreground/74 dark:text-white/76">
                     {payoutState.readyToReceivePayments
                       ? "You can publish normally now. HoosFinds will route checkout earnings to your connected payout account."
                       : payoutState.status === "requires_reconnect"
@@ -83,7 +83,7 @@ export default async function SellPage() {
                   {!payoutState.readyToReceivePayments &&
                   payoutState.ctaTarget === "stripe" &&
                   payoutState.requirementHighlights.length > 0 ? (
-                    <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                    <p className="max-w-2xl text-sm leading-7 text-foreground/74 dark:text-white/76">
                       Stripe still needs {payoutState.requirementHighlights.join(", ")} before this listing can go live.
                     </p>
                   ) : null}
@@ -116,7 +116,7 @@ export default async function SellPage() {
         <Card className="surface-panel-strong">
           <CardContent className="space-y-3 p-6">
             <p className="font-semibold text-foreground">Your account is temporarily blocked from new marketplace actions.</p>
-            <p className="text-sm leading-7 text-muted-foreground">
+            <p className="text-sm leading-7 text-foreground/74 dark:text-white/76">
               {activeBan.endsAt
                 ? `This restriction lasts until ${activeBan.endsAt.toLocaleString()}.`
                 : "This restriction stays in place until the HoosFinds team reviews it."}{" "}
@@ -138,7 +138,7 @@ export default async function SellPage() {
         <Card className="surface-panel-strong">
           <CardContent className="space-y-3 p-6">
             <p className="font-semibold text-foreground">Selling is limited to UVA students and approved Verified Shops.</p>
-            <p className="text-sm leading-7 text-muted-foreground">
+            <p className="text-sm leading-7 text-foreground/74 dark:text-white/76">
               If you run a local thrift or resale business, apply as a Verified Shop and HoosFinds will review you for the marketplace.
             </p>
             <Button asChild>

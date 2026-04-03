@@ -97,7 +97,7 @@ export function UvaOnlyGate({ prefilledEmail }: { prefilledEmail?: string }) {
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
                   aria-describedby="waitlist-reason-help"
-                  placeholder="Vintage jackets, better game day fits, dorm cleanout finds, local student resale..."
+                  placeholder="Vintage jackets, better campus fits, dorm cleanout finds, local student resale..."
                 />
                 <p id="waitlist-reason-help" className="text-xs leading-6 text-muted-foreground">
                   A short note helps us prioritize the next campuses and categories to open.

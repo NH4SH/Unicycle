@@ -7,7 +7,7 @@ export type MarketBrowseLaneId =
   | "mens"
   | "vintage"
   | "streetwear"
-  | "game-day"
+  | "outerwear"
   | "shoes"
   | "accessories"
   | "dorm"
@@ -45,9 +45,9 @@ export const PRIMARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
     description: "Graphic layers, hoodies, puffers, and statement pieces."
   },
   {
-    id: "game-day",
-    label: "Game Day",
-    description: "Orange-and-blue layers and football Saturday energy."
+    id: "outerwear",
+    label: "Outerwear",
+    description: "Jackets, fleeces, shells, puffers, and campus-ready layers."
   },
   {
     id: "shoes",
@@ -206,24 +206,28 @@ const STREETWEAR_KEYWORDS = [
   "graphic",
   "denim",
   "cargo",
+  "quarter-zip",
+  "quarter zip",
+  "graphic tee"
+] as const;
+const OUTERWEAR_KEYWORDS = [
   "jacket",
   "coat",
   "fleece",
   "puffer",
+  "outerwear",
+  "shell",
+  "windbreaker",
+  "anorak",
+  "parka",
+  "vest",
+  "barbour",
+  "patagonia",
+  "arc'teryx",
+  "arcteryx",
+  "north face",
   "quarter-zip",
-  "quarter zip",
-  "outerwear"
-] as const;
-const GAME_DAY_KEYWORDS = [
-  "game day",
-  "gameday",
-  "uva",
-  "tailgate",
-  "pregame",
-  "stadium",
-  "football saturday",
-  "orange-and-blue",
-  "orange and blue"
+  "quarter zip"
 ] as const;
 const WOMENS_KEYWORDS = [
   "women's",
@@ -275,7 +279,7 @@ const EXTRA_KEYWORDS = ["camera", "projector", "film", "skateboard", "board", "s
 const FASHION_KEYWORDS = [
   ...VINTAGE_KEYWORDS,
   ...STREETWEAR_KEYWORDS,
-  ...GAME_DAY_KEYWORDS,
+  ...OUTERWEAR_KEYWORDS,
   ...SHOE_KEYWORDS,
   ...ACCESSORY_KEYWORDS,
   "sweater",
@@ -381,8 +385,8 @@ export function isStreetwearListing(source: ListingBrowseSource) {
   return source.category === "STREETWEAR" || hasKeyword(meta.haystack, STREETWEAR_KEYWORDS);
 }
 
-export function isGameDayListing(source: ListingBrowseSource) {
-  return hasKeyword(getListingBrowseMeta(source).haystack, GAME_DAY_KEYWORDS);
+export function isOuterwearListing(source: ListingBrowseSource) {
+  return hasKeyword(getListingBrowseMeta(source).haystack, OUTERWEAR_KEYWORDS);
 }
 
 export function isFurnitureListing(source: ListingBrowseSource) {
@@ -424,8 +428,8 @@ export function matchesBrowseLane(source: ListingBrowseSource, lane: MarketBrows
       return isVintageListing(source);
     case "streetwear":
       return isStreetwearListing(source);
-    case "game-day":
-      return isGameDayListing(source);
+    case "outerwear":
+      return isOuterwearListing(source);
     case "shoes":
       return isShoeListing(source);
     case "accessories":
@@ -449,6 +453,18 @@ export function matchesBrowseLane(source: ListingBrowseSource, lane: MarketBrows
 
 export function getMarketBrowsePillLabel(id: MarketBrowseLaneId) {
   return [...PRIMARY_MARKET_BROWSE_PILLS, ...SECONDARY_MARKET_BROWSE_PILLS].find((pill) => pill.id === id)?.label ?? id;
+}
+
+export function normalizeMarketBrowseLane(lane?: string | null) {
+  if (!lane || lane === "all") {
+    return lane ?? undefined;
+  }
+
+  if (lane === "game-day") {
+    return "outerwear";
+  }
+
+  return lane;
 }
 
 export function normalizeFacetValue(value: string) {

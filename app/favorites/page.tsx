@@ -21,7 +21,7 @@ export default async function FavoritesPage() {
           <p className="editorial-eyebrow">Saved on HoosFinds</p>
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Your saved finds.</h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-            Keep the jackets, sneakers, game day pieces, and campus finds you don&apos;t want to lose track of.
+            Keep the jackets, sneakers, outerwear, and campus finds you don&apos;t want to lose track of.
           </p>
         </div>
         <div className="surface-pill px-4 py-2 text-xs uppercase tracking-[0.18em]">

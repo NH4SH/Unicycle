@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { assertUsersCanMessageEachOther } from "@/lib/message-safety";
 import { assertUserCanAccessMarketplace } from "@/lib/moderation";
+import { notifyMessageReceived } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { messageSchema } from "@/lib/validators";
 
@@ -58,6 +59,14 @@ export async function POST(request: Request) {
       body: parsed.data.body
     }
   });
+
+  try {
+    await notifyMessageReceived(message.id);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[messages] notification failed", error);
+    }
+  }
 
   return NextResponse.json({ id: message.id, createdAt: message.createdAt.toISOString() }, { status: 201 });
 }

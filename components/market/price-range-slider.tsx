@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { Input } from "@/components/ui/input";
-import { MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 
 type PriceRangeSliderProps = {
@@ -64,7 +63,7 @@ export function PriceRangeSlider({
   return (
     <div className="surface-subtle min-w-0 rounded-[1.45rem] px-4 py-3 md:px-4 md:py-3.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className="text-[0.78rem] font-medium text-muted-foreground">Price</p>
+        <p className="text-[0.78rem] font-medium text-foreground/66 dark:text-white/72">Price</p>
         <p className="text-sm font-medium text-foreground">
           {formatCurrency(minValue / 100)} - {maxDisplayLabel}
         </p>
@@ -97,7 +96,7 @@ export function PriceRangeSlider({
 
       <div className="mt-3 grid grid-cols-2 gap-2.5">
         <label className="space-y-1.5">
-          <span className="block text-[0.78rem] font-medium text-muted-foreground">Min</span>
+          <span className="block text-[0.78rem] font-medium text-foreground/66 dark:text-white/72">Min</span>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
             <Input
@@ -118,7 +117,7 @@ export function PriceRangeSlider({
         </label>
 
         <label className="space-y-1.5">
-          <span className="block text-[0.78rem] font-medium text-muted-foreground">Max</span>
+          <span className="block text-[0.78rem] font-medium text-foreground/66 dark:text-white/72">Max</span>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
             <Input
@@ -137,11 +136,6 @@ export function PriceRangeSlider({
             />
           </div>
         </label>
-      </div>
-
-      <div className="mt-2.5 space-y-1 text-[0.72rem] text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3 sm:gap-y-1 sm:space-y-0">
-        <span>Type a number or drag both handles.</span>
-        <span>{formatCurrency(MARKET_PRICE_OPEN_MAX_CENTS / 100)} and up shows as {formatCurrency(MARKET_PRICE_OPEN_MAX_CENTS / 100)}+.</span>
       </div>
     </div>
   );

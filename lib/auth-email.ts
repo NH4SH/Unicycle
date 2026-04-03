@@ -1,92 +1,9 @@
 import "server-only";
 
-import nodemailer from "nodemailer";
-
-import {
-  getAuthEmailConfigurationError,
-  getAuthEmailProviderLabel,
-  getAuthEmailTransportConfig,
-  getRequiredAppUrl,
-  getRequiredEmailFrom,
-  isAuthEmailConfigured
-} from "@/lib/auth-email-config.server";
-import { canPreviewAuthEmailsInDev } from "@/lib/auth-runtime.server";
-
-type SentAuthEmailResult = {
-  previewUrl: string | null;
-};
-
-let authEmailTransport: nodemailer.Transporter | null = null;
-
-function getTransport() {
-  if (!authEmailTransport) {
-    authEmailTransport = nodemailer.createTransport(getAuthEmailTransportConfig());
-  }
-
-  return authEmailTransport;
-}
-
-function buildAuthUrl(pathname: string, params: Record<string, string>) {
-  const url = new URL(pathname, getRequiredAppUrl());
-
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
-
-  return url.toString();
-}
-
-async function sendOrPreviewEmail({
-  to,
-  subject,
-  html,
-  text,
-  previewUrl
-}: {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-  previewUrl: string;
-}) {
-  if (!isAuthEmailConfigured()) {
-    if (canPreviewAuthEmailsInDev()) {
-      console.info(`[auth-email-preview] ${subject}: ${previewUrl}`);
-      return {
-        previewUrl
-      } satisfies SentAuthEmailResult;
-    }
-
-    throw new Error(getAuthEmailConfigurationError());
-  }
-
-  const transport = getTransport();
-
-  await transport.sendMail({
-    from: getRequiredEmailFrom(),
-    to,
-    subject,
-    text,
-    html
-  });
-
-  return {
-    previewUrl: null
-  } satisfies SentAuthEmailResult;
-}
+import { buildEmailUrl, sendPlatformEmail, verifyPlatformEmailTransport } from "@/lib/email-delivery";
 
 export async function verifyAuthEmailTransport() {
-  if (!isAuthEmailConfigured()) {
-    throw new Error(getAuthEmailConfigurationError());
-  }
-
-  await getTransport().verify();
-
-  return {
-    provider: getAuthEmailProviderLabel(),
-    from: getRequiredEmailFrom(),
-    appUrl: getRequiredAppUrl()
-  };
+  return verifyPlatformEmailTransport();
 }
 
 export async function sendVerificationEmail({
@@ -98,13 +15,13 @@ export async function sendVerificationEmail({
   name?: string | null;
   token: string;
 }) {
-  const verificationUrl = buildAuthUrl("/verify-email", {
+  const verificationUrl = buildEmailUrl("/verify-email", {
     email,
     token
   });
   const displayName = name?.trim() || "there";
 
-  return sendOrPreviewEmail({
+  return sendPlatformEmail({
     to: email,
     subject: "Verify your HoosFinds email",
     previewUrl: verificationUrl,
@@ -129,13 +46,13 @@ export async function sendPasswordResetEmail({
   name?: string | null;
   token: string;
 }) {
-  const resetUrl = buildAuthUrl("/reset-password", {
+  const resetUrl = buildEmailUrl("/reset-password", {
     email,
     token
   });
   const displayName = name?.trim() || "there";
 
-  return sendOrPreviewEmail({
+  return sendPlatformEmail({
     to: email,
     subject: "Reset your HoosFinds password",
     previewUrl: resetUrl,
@@ -160,12 +77,12 @@ export async function sendVerifiedShopApprovalEmail({
   businessName: string;
   token: string;
 }) {
-  const resetUrl = buildAuthUrl("/reset-password", {
+  const resetUrl = buildEmailUrl("/reset-password", {
     email,
     token
   });
 
-  return sendOrPreviewEmail({
+  return sendPlatformEmail({
     to: email,
     subject: "Your HoosFinds Verified Shop is approved",
     previewUrl: resetUrl,

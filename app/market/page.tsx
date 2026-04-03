@@ -2,6 +2,7 @@ import { getAuthSession } from "@/lib/auth";
 import { getMarketCuratedSections, getMarketListings } from "@/lib/data";
 import { MarketClient, type MarketFilters } from "@/components/market/market-client";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
+import { normalizeMarketBrowseLane } from "@/lib/market-browse";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +32,11 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const normalizedMax = Number.isFinite(parsedMax)
     ? Math.max(normalizedMin, Math.min(MARKET_PRICE_OPEN_MAX_CENTS, parsedMax))
     : MARKET_PRICE_OPEN_MAX_CENTS;
+  const normalizedLane = normalizeMarketBrowseLane(searchParams.lane ?? "all") ?? "all";
 
   const initialFilters: MarketFilters = {
     q: searchParams.q ?? "",
-    lane: searchParams.lane ?? "all",
+    lane: normalizedLane,
     category: searchParams.category ?? "all",
     condition: searchParams.condition ?? "all",
     location: searchParams.location ?? "all",
@@ -66,19 +68,16 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   ]);
 
   return (
-    <div className="container space-y-3.5 pt-2.5 pb-8 md:space-y-5 md:pt-4 md:pb-10">
-      <div className="grid gap-1.5 border-b border-border/80 pb-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-2">
+    <div className="container space-y-3 pt-2 pb-8 md:space-y-4 md:pt-3 md:pb-10">
+      <div className="grid gap-1.5 border-b border-border/80 pb-3">
         <div className="space-y-1">
           <p className="editorial-eyebrow">Browse HoosFinds</p>
           <h1 className="font-display text-[2rem] font-extrabold tracking-tight sm:text-[2.35rem] md:text-[2.8rem]">
-            Start with style on Grounds.
+            Browse the best finds on Grounds.
           </h1>
-          <p className="text-sm text-muted-foreground md:text-[0.98rem]">
-            Women&apos;s, men&apos;s, vintage, shoes, and game day fits lead the way. Everything else still lives here, just lower in the hierarchy.
+          <p className="text-sm text-foreground/72 dark:text-white/74 md:text-[0.98rem]">
+            Fashion leads the feed. Dorm, tech, textbooks, tickets, and extras stay close without crowding the front door.
           </p>
-        </div>
-        <div className="hidden text-sm text-muted-foreground sm:block md:text-right">
-          Fashion first. Dorm, tech, textbooks, tickets, and extras stay tucked behind More.
         </div>
       </div>
 

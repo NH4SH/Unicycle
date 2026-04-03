@@ -6,6 +6,7 @@ import { sendVerifiedShopApprovalEmail } from "@/lib/auth-email";
 import { createPasswordResetToken } from "@/lib/auth-tokens";
 import { findUserByNormalizedEmail, reserveUsername } from "@/lib/auth-users";
 import { normalizeEmail } from "@/lib/domain";
+import { notifyAccountAlert, notifyVerifiedSellerDecision } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 
 export type VerifiedSellerApplicationInput = {
@@ -126,7 +127,7 @@ export async function reviewVerifiedSellerApplication(params: {
   const internalNotes = params.internalNotes?.trim() || null;
 
   if (params.action === "reject") {
-    return prisma.$transaction(async (tx) => {
+    const updatedApplication = await prisma.$transaction(async (tx) => {
       const updatedApplication = await tx.verifiedSellerApplication.update({
         where: { id: application.id },
         data: {
@@ -150,10 +151,28 @@ export async function reviewVerifiedSellerApplication(params: {
 
       return updatedApplication;
     });
+
+    const existingUser = await findUserByNormalizedEmail(application.email);
+    if (existingUser) {
+      try {
+        await notifyVerifiedSellerDecision({
+          userId: existingUser.id,
+          applicationId: application.id,
+          businessName: application.businessName,
+          status: "REJECTED"
+        });
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[verified-sellers] reject notification failed", error);
+        }
+      }
+    }
+
+    return updatedApplication;
   }
 
   if (params.action === "revoke") {
-    return prisma.$transaction(async (tx) => {
+    const updatedApplication = await prisma.$transaction(async (tx) => {
       if (application.approvedUserId) {
         const approvedUser = await tx.user.findUnique({
           where: {
@@ -206,6 +225,24 @@ export async function reviewVerifiedSellerApplication(params: {
 
       return updatedApplication;
     });
+
+    if (application.approvedUserId) {
+      try {
+        await notifyAccountAlert({
+          userId: application.approvedUserId,
+          title: `${application.businessName} is no longer approved as a Verified Shop.`,
+          body: "Your verified seller access has been removed. Reach out to HoosFinds if you need help restoring access.",
+          href: "/verified-seller",
+          externalKey: `verified-seller:${application.id}:revoked`
+        });
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[verified-sellers] revoke notification failed", error);
+        }
+      }
+    }
+
+    return updatedApplication;
   }
 
   const existingUser = await findUserByNormalizedEmail(application.email);
@@ -294,6 +331,19 @@ export async function reviewVerifiedSellerApplication(params: {
     businessName: application.businessName,
     token: rawToken
   });
+
+  try {
+    await notifyVerifiedSellerDecision({
+      userId: user.id,
+      applicationId: application.id,
+      businessName: application.businessName,
+      status: "APPROVED"
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[verified-sellers] approval notification failed", error);
+    }
+  }
 
   return prisma.verifiedSellerApplication.findUniqueOrThrow({
     where: {

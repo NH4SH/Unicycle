@@ -7,7 +7,7 @@ import { FollowingFeedSection } from "@/components/social/following-feed-section
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAuthSession } from "@/lib/auth";
-import { HOME_PRIMARY_LANES, HOME_SECONDARY_LANES, HOW_IT_WORKS_STEPS, TRUST_MARKERS } from "@/lib/constants";
+import { HOW_IT_WORKS_STEPS, TRUST_MARKERS } from "@/lib/constants";
 import { getFollowingFeedListings, getLandingDrops } from "@/lib/data";
 import { isFashionBrowseListing } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
@@ -50,21 +50,19 @@ export default async function HomePage() {
     .filter((listing, index, array) => array.findIndex((entry) => entry.id === listing.id) === index)
     .filter((listing) => isFashionBrowseListing(listing) && listing.priceCents <= 3000)
     .slice(0, 8);
-  const [vintageLane, gameDayLane, streetwearLane, accessoriesLane, shoesLane, mensLane, womensLane] =
-    HOME_PRIMARY_LANES;
 
   return (
-    <div className="container space-y-16 py-6 md:space-y-24 md:py-12">
-      <section className="grid gap-6 sm:gap-8 xl:grid-cols-[1.02fr_0.98fr] xl:items-end xl:gap-10">
-        <div className="space-y-5 sm:space-y-7">
+    <div className="container space-y-12 py-5 md:space-y-16 md:py-8">
+      <section className="grid gap-5 sm:gap-6 xl:grid-cols-[1.02fr_0.98fr] xl:items-end xl:gap-8">
+        <div className="space-y-5 sm:space-y-6">
           <div className="space-y-3 sm:space-y-4">
             <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
             <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
               The best fits on <span className="font-editorial italic font-semibold text-uva-orange">Grounds</span>.
             </h1>
-            <p className="max-w-2xl text-[0.98rem] leading-7 text-muted-foreground md:text-lg">
-              HoosFinds is UVA&apos;s fashion-first resale marketplace for vintage layers, game day pieces, outerwear,
-              sneakers, accessories, and the campus finds worth grabbing before someone else does.
+            <p className="max-w-2xl text-[0.98rem] leading-7 text-foreground/72 dark:text-white/76 md:text-lg">
+              HoosFinds is UVA&apos;s fashion-first resale marketplace for vintage layers, outerwear, sneakers, accessories,
+              and the campus finds worth grabbing before someone else does.
             </p>
           </div>
 
@@ -147,11 +145,8 @@ export default async function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/16 to-transparent" />
                     <div className="absolute left-4 top-4">
-                      <Badge
-                        variant="outline"
-                        className={HERO_CARD_PILL_CLASS}
-                      >
-                        {index === 0 ? "Game day lane" : "Campus favorite"}
+                      <Badge variant="outline" className={HERO_CARD_PILL_CLASS}>
+                        {index === 0 ? "Just posted" : "Campus favorite"}
                       </Badge>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-4">
@@ -210,118 +205,7 @@ export default async function HomePage() {
         emptyDescription="When you follow sellers whose style you like, their newest listings land in one place instead of getting lost in the full marketplace."
       />
 
-      <section className="grid gap-8 lg:grid-cols-[0.62fr_1.38fr] lg:items-start">
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <p className="editorial-eyebrow">Shop by lane</p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">
-              Start with style, then branch into everything else.
-            </h2>
-            <p className="max-w-md text-sm leading-7 text-muted-foreground">
-              Fashion is the front door. Dorm finds, tickets, textbooks, and tech still belong here, but they sit behind a
-              much sharper first impression.
-            </p>
-          </div>
-          <div className="space-y-3 border-t border-border/80 pt-5">
-            <p className="editorial-eyebrow">Still useful beyond clothes</p>
-            <div className="flex flex-wrap gap-2">
-              {HOME_SECONDARY_LANES.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="surface-chip touch-chip text-sm font-medium text-foreground/86 hover:border-uva-orange/35 hover:text-uva-orange dark:text-white/88"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)]">
-          <Link
-            href={vintageLane.href}
-            className="lane-surface-warm group relative overflow-hidden rounded-[2.15rem] border border-border/80 p-6 shadow-card transition hover:-translate-y-1 md:p-7 xl:min-h-[25rem]"
-          >
-            <div className="flex h-full flex-col justify-between gap-8">
-              <div className="space-y-4">
-                <p className="editorial-eyebrow text-uva-orange">{vintageLane.eyebrow}</p>
-                <div className="space-y-3">
-                  <h3 className="max-w-md font-display text-3xl font-extrabold tracking-tight md:text-[2.35rem] md:leading-[0.98]">
-                    {vintageLane.label}
-                  </h3>
-                  <p className="max-w-lg text-sm leading-7 text-muted-foreground">{vintageLane.description}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">What moves here</p>
-                  <p className="max-w-sm text-sm leading-6 text-foreground/82">
-                    Hoodies, jackets, worn-in denim, vintage sweats, and the pieces people screenshot before class ends.
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground/88 dark:text-white/92">
-                  Browse lane <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            {[gameDayLane, streetwearLane].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={cn(
-                  "group rounded-[1.75rem] border border-border/80 p-5 transition hover:-translate-y-0.5",
-                  item.label.includes("Game")
-                    ? "lane-surface-orange"
-                    : "lane-surface-blue"
-                )}
-              >
-                <p className={cn("editorial-eyebrow", item.label.includes("Game") ? "text-uva-orange" : "text-uva-blue")}>
-                  {item.eyebrow}
-                </p>
-                <h3 className="mt-3 font-display text-2xl font-extrabold tracking-tight">{item.label}</h3>
-                <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">{item.description}</p>
-              </Link>
-            ))}
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:col-span-2 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,0.9fr)_minmax(0,1.2fr)]">
-            {[accessoriesLane, shoesLane].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="group rounded-[1.6rem] border border-border/80 bg-card/84 p-5 transition hover:-translate-y-0.5 hover:border-uva-orange/40"
-              >
-                <p className="editorial-eyebrow">{item.eyebrow}</p>
-                <h3 className="mt-3 font-display text-xl font-extrabold tracking-tight">{item.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-              </Link>
-            ))}
-
-            <div className="grid gap-3 sm:col-span-2 xl:col-span-1">
-              {[mensLane, womensLane].map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="group flex items-start justify-between gap-4 rounded-[1.55rem] border border-border/80 bg-card/80 px-5 py-4 transition hover:-translate-y-0.5 hover:border-uva-blue/35"
-                >
-                  <div className="space-y-2">
-                    <p className="editorial-eyebrow">{item.eyebrow}</p>
-                    <h3 className="font-display text-xl font-extrabold tracking-tight">{item.label}</h3>
-                    <p className="text-sm leading-6 text-muted-foreground">{item.description}</p>
-                  </div>
-                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-uva-blue" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-6">
+      <section className="space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="editorial-eyebrow">Fresh on Grounds</p>
@@ -352,7 +236,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="space-y-6">
+      <section className="space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="editorial-eyebrow">Trending Brands</p>
@@ -371,7 +255,7 @@ export default async function HomePage() {
       </section>
 
       {underThirtyFinds.length ? (
-        <section className="space-y-6">
+        <section className="space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="editorial-eyebrow">Under $30</p>
@@ -392,7 +276,7 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      <section className="grid gap-10 border-t border-border/80 pt-10 lg:grid-cols-[0.88fr_1.12fr]">
+      <section className="grid gap-8 border-t border-border/80 pt-8 lg:grid-cols-[0.88fr_1.12fr]">
         <div className="space-y-4">
           <p className="editorial-eyebrow">How it works</p>
           <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">
@@ -426,7 +310,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-[2.4rem] border border-border/80 bg-card/80 p-6 shadow-card md:grid-cols-[1.15fr_0.85fr_0.85fr] md:p-8">
+      <section className="grid gap-4 rounded-[2.4rem] border border-border/80 bg-card/80 p-6 shadow-card md:grid-cols-[1.15fr_0.85fr_0.85fr] md:p-7">
         <div className="md:pr-6">
           <p className="editorial-eyebrow">Building with students</p>
           <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight">A real campus product, not a placeholder brand.</h3>
@@ -450,7 +334,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="grid gap-6 border-t border-border/80 pb-4 pt-8 md:grid-cols-3">
+      <footer className="grid gap-5 border-t border-border/80 pb-4 pt-7 md:grid-cols-3">
         <div className="space-y-2">
           <p className="font-display text-2xl font-extrabold tracking-tight">HoosFinds</p>
           <p className="max-w-sm text-sm leading-6 text-muted-foreground">

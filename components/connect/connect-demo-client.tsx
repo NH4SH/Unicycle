@@ -98,7 +98,7 @@ export function ConnectDemoClient({
   const [checkoutProductId, setCheckoutProductId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState({
     name: "Vintage UVA quarter-zip",
-    description: "Clean campus layer with easy game day energy and a quick Newcomb pickup.",
+    description: "Clean campus layer with easy weekend energy and a quick Newcomb pickup.",
     price: "68",
     imageUrl: FALLBACK_PRODUCT_IMAGE
   });

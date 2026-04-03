@@ -121,7 +121,6 @@ export function SellWizard({
       if (draft.title.trim().length < 4) return "Title should be at least 4 characters.";
       if (!draft.price || Number(draft.price) < 1) return "Set a valid price.";
       if (draft.description.trim().length < 12) return "Description should be at least 12 characters.";
-      if (draft.category === "STREETWEAR" && draft.brand.trim().length === 0) return "Add a brand for apparel listings.";
       if (draft.category === "STREETWEAR" && draft.size.trim().length === 0) return "Add a size for apparel listings.";
     }
     if (step === 3 && draft.pickupLocations.length < 1) {
@@ -225,7 +224,7 @@ export function SellWizard({
 
         {error ? <div className="rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
         {locked ? (
-          <div className="rounded-[1.2rem] border border-border bg-background/80 px-4 py-3 text-sm text-muted-foreground">
+          <div className="rounded-[1.2rem] border border-border bg-background/80 px-4 py-3 text-sm text-foreground/72 dark:text-white/76">
             This listing is in a protected sale state, so the fields below are read-only until the handoff is resolved.
           </div>
         ) : null}
@@ -236,16 +235,16 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 1</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Lead with the photos.</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
                   Style sells faster when the first image feels clear and intentional. Use natural light, show the fit, and keep the background clean.
                 </p>
               </div>
               <div className="rounded-[1.5rem] border border-border bg-background/70 p-4">
                 <p className="editorial-eyebrow">Photo tips</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">Front-facing hero image</div>
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">Close-up on texture or wear</div>
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-muted-foreground">One angle that shows the full piece</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">Front-facing hero image</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">Close-up on texture or wear</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">One angle that shows the full piece</div>
                 </div>
               </div>
             </div>
@@ -266,7 +265,7 @@ export function SellWizard({
               appearance={{
                 container: "rounded-[1.85rem] border-dashed border-border bg-background/60",
                 button: "bg-[#E57200] text-white",
-                allowedContent: "text-xs text-muted-foreground"
+                allowedContent: "text-xs text-foreground/68 dark:text-white/74"
               }}
               content={{
                 allowedContent() {
@@ -310,11 +309,11 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 2</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Add the details buyers care about.</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  Clear titles, fair pricing, and size or brand context make the listing feel more trustworthy right away.
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
+                  Clear titles, fair pricing, and fit details make a listing easier to trust right away.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
                 Good examples: “Vintage UVA crewneck”, “Patagonia fleece jacket”, “Going-out top”, “Nike sneakers”.
               </div>
             </div>
@@ -388,7 +387,7 @@ export function SellWizard({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="size">Size (optional)</Label>
+                <Label htmlFor="size">Size</Label>
                 <Input
                   id="size"
                   value={draft.size}
@@ -429,11 +428,11 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 3</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Set the pickup plan.</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
                   Keep it easy for fellow Hoos. The best listings make it obvious where and when a handoff could happen.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
                 Great meetup notes mention timing and context, like “Can meet after 4pm near The Corner” or “Usually around Newcomb between classes.”
               </div>
             </div>
@@ -450,7 +449,7 @@ export function SellWizard({
                 id="meetupNotes"
                 value={draft.meetupNotes}
                 onChange={(event) => setDraft((prev) => ({ ...prev, meetupNotes: event.target.value }))}
-                placeholder="I can usually meet after 5 near Rice Hall, or earlier on game days by The Corner."
+                placeholder="I can usually meet after 5 near Rice Hall, or between classes by The Corner."
                 disabled={locked}
               />
             </div>
@@ -467,7 +466,7 @@ export function SellWizard({
                     <SelectItem value="CANCELLED">Pause listing</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-foreground/62 dark:text-white/68">
                   Use this to quietly pause a listing without deleting it. Listings in pending or completed sales stay locked.
                 </p>
               </div>
@@ -481,11 +480,11 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 4</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Review before it hits the feed.</h2>
-                <p className="text-sm leading-7 text-muted-foreground">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
                   This is the final listing preview buyers will see once you publish it on HoosFinds.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
                 Best-performing listings feel concise, photo-led, and easy to trust at a glance.
               </div>
             </div>
@@ -501,7 +500,7 @@ export function SellWizard({
                 {draft.color ? <Badge variant="outline">{draft.color}</Badge> : null}
               </div>
               <h3 className="font-display text-3xl font-extrabold tracking-tight">{draft.title || "Untitled find"}</h3>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+              <p className="mt-3 text-sm leading-7 text-foreground/76 dark:text-white/76">
                 <LinkedPlaceText text={buildDescription() || "No description yet."} />
               </p>
               <p className="mt-5 editorial-eyebrow">Meetup spots</p>
@@ -515,7 +514,7 @@ export function SellWizard({
                 ))}
               </div>
               {draft.meetupNotes ? (
-                <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                <p className="mt-4 text-sm leading-7 text-foreground/76 dark:text-white/76">
                   <LinkedPlaceText text={draft.meetupNotes} />
                 </p>
               ) : null}
@@ -530,7 +529,7 @@ export function SellWizard({
             </div>
 
             {!payoutsReady ? (
-              <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-4 text-sm leading-7 text-muted-foreground">
+              <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-4 text-sm leading-7 text-foreground/76 dark:text-white/76">
                 {needsPayoutSetupToSubmit
                   ? payoutSetupDetail
                   : "This listing can stay paused while you finish payout setup. Reconnect payouts before putting it live again."}

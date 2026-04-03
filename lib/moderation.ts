@@ -2,6 +2,7 @@ import "server-only";
 
 import { AdminAuditActionType, ListingModerationStatus, Prisma, UserRole } from "@prisma/client";
 
+import { notifyAccountAlert } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 
 const activeBanInclude = Prisma.validator<Prisma.UserBanInclude>()({
@@ -127,7 +128,7 @@ export async function moderateListing(params: {
         ? AdminAuditActionType.LISTING_REMOVED
         : AdminAuditActionType.LISTING_RESTORED;
 
-  return prisma.$transaction(async (tx) => {
+  const updatedListing = await prisma.$transaction(async (tx) => {
     const updatedListing = await tx.listing.update({
       where: {
         id: listing.id
@@ -163,6 +164,34 @@ export async function moderateListing(params: {
 
     return updatedListing;
   });
+
+  try {
+    await notifyAccountAlert({
+      userId: listing.sellerId,
+      title:
+        params.action === "restore"
+          ? `Your listing "${listing.title}" is live again.`
+          : params.action === "remove"
+            ? `Your listing "${listing.title}" was removed by HoosFinds.`
+            : `Your listing "${listing.title}" was hidden by HoosFinds.`,
+      body:
+        params.action === "restore"
+          ? "The listing is visible in the marketplace again."
+          : reason,
+      href: "/safety",
+      externalKey: `listing-moderation:${listing.id}:${params.action}:${moderatedAt.toISOString()}`,
+      metadata: {
+        listingId: listing.id,
+        action: params.action
+      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[moderation] listing alert failed", error);
+    }
+  }
+
+  return updatedListing;
 }
 
 export async function banUser(params: {
@@ -206,7 +235,7 @@ export async function banUser(params: {
     throw new Error("Choose a future end date for a temporary ban.");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const ban = await prisma.$transaction(async (tx) => {
     await tx.userBan.updateMany({
       where: activeBanWhere(user.id),
       data: {
@@ -243,6 +272,28 @@ export async function banUser(params: {
 
     return ban;
   });
+
+  try {
+    await notifyAccountAlert({
+      userId: user.id,
+      title: params.endsAt ? "Your HoosFinds account is temporarily restricted." : "Your HoosFinds account is restricted.",
+      body: formatUserBanMessage({
+        reason,
+        endsAt: ban.endsAt
+      }),
+      href: "/safety",
+      externalKey: `user-ban:${ban.id}`,
+      metadata: {
+        banId: ban.id
+      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[moderation] ban alert failed", error);
+    }
+  }
+
+  return ban;
 }
 
 export async function revokeUserBan(params: {
@@ -261,7 +312,7 @@ export async function revokeUserBan(params: {
     throw new Error("This user does not have an active ban.");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const updatedBan = await prisma.$transaction(async (tx) => {
     const updatedBan = await tx.userBan.update({
       where: {
         id: activeBan.id
@@ -286,5 +337,23 @@ export async function revokeUserBan(params: {
 
     return updatedBan;
   });
-}
 
+  try {
+    await notifyAccountAlert({
+      userId: activeBan.userId,
+      title: "Your HoosFinds account restriction was lifted.",
+      body: "Marketplace actions are available again.",
+      href: "/market",
+      externalKey: `user-unban:${activeBan.id}`,
+      metadata: {
+        banId: activeBan.id
+      }
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[moderation] unban alert failed", error);
+    }
+  }
+
+  return updatedBan;
+}
