@@ -23,6 +23,12 @@ import {
 } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
 import {
+  type CampusPickupCommunityId,
+  getCampusPickupCommunity,
+  getKnownCampusPickupLocations
+} from "@/lib/campus-pickup-locations";
+import { summarizeMapBrowseLocations, type MapBrowseTotals } from "@/lib/map-browse-summary";
+import {
   type PublicUserSummary,
   publicUserProfileSelect,
   publicUserSummarySelect,
@@ -277,6 +283,39 @@ export type MarketCuratedSection = {
 export type MarketCuratedSections = {
   primary: MarketCuratedSection[];
   secondary: MarketCuratedSection[];
+};
+
+export type MapBrowseLocationData = {
+  id: string;
+  name: string;
+  shortLabel: string;
+  area: string;
+  communityId: CampusPickupCommunityId;
+  communityName: string;
+  communityDescription: string;
+  latitude: number;
+  longitude: number;
+  totalCount: number;
+  fashionCount: number;
+  listings: ListingCardData[];
+  fashionListings: ListingCardData[];
+  secondaryListings: ListingCardData[];
+};
+
+export type MapBrowseCommunityData = {
+  id: CampusPickupCommunityId;
+  name: string;
+  shortLabel: string;
+  description: string;
+  totalCount: number;
+  fashionCount: number;
+  locationCount: number;
+};
+
+export type MapBrowseData = {
+  locations: MapBrowseLocationData[];
+  communities: MapBrowseCommunityData[];
+  summary: MapBrowseTotals;
 };
 
 function fromJsonArray(value: Prisma.JsonValue) {
@@ -651,6 +690,154 @@ export async function getMarketListings(query: MarketQuery): Promise<MarketListi
     total,
     hasMore: start + limit < total,
     page
+  };
+}
+
+export async function getMapBrowseData(userId?: string): Promise<MapBrowseData> {
+  noStore();
+
+  const listings = await prisma.listing.findMany({
+    where: {
+      status: ListingStatus.ACTIVE,
+      moderationStatus: ListingModerationStatus.VISIBLE
+    },
+    include: listingCardInclude,
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  const locationBuckets = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      shortLabel: string;
+      area: string;
+      communityId: CampusPickupCommunityId;
+      communityName: string;
+      communityDescription: string;
+      latitude: number;
+      longitude: number;
+      priority: number;
+      listings: ListingCardData[];
+      fashionListings: ListingCardData[];
+      secondaryListings: ListingCardData[];
+      seenListingIds: Set<string>;
+    }
+  >();
+
+  for (const listingRecord of listings) {
+    const listing = mapListing(listingRecord, userId);
+    const knownLocations = getKnownCampusPickupLocations(listing.pickupLocations);
+
+    if (!knownLocations.length) {
+      continue;
+    }
+
+    const isFashionListing = isFashionBrowseListing({
+      title: listing.title,
+      description: listing.description,
+      category: listing.category,
+      shoppingLane: listing.shoppingLane
+    });
+
+    for (const location of knownLocations) {
+      const community = getCampusPickupCommunity(location);
+      if (!community) {
+        continue;
+      }
+
+      const existing =
+        locationBuckets.get(location.id) ??
+        {
+          id: location.id,
+          name: location.name,
+          shortLabel: location.shortLabel,
+          area: location.area,
+          communityId: community.id,
+          communityName: community.name,
+          communityDescription: community.description,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          priority: location.priority,
+          listings: [],
+          fashionListings: [],
+          secondaryListings: [],
+          seenListingIds: new Set<string>()
+        };
+
+      if (existing.seenListingIds.has(listing.id)) {
+        locationBuckets.set(location.id, existing);
+        continue;
+      }
+
+      existing.seenListingIds.add(listing.id);
+      existing.listings.push(listing);
+
+      if (isFashionListing) {
+        existing.fashionListings.push(listing);
+      } else {
+        existing.secondaryListings.push(listing);
+      }
+
+      locationBuckets.set(location.id, existing);
+    }
+  }
+
+  const locations = [...locationBuckets.values()]
+    .map((location) => ({
+      id: location.id,
+      name: location.name,
+      shortLabel: location.shortLabel,
+      area: location.area,
+      communityId: location.communityId,
+      communityName: location.communityName,
+      communityDescription: location.communityDescription,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      totalCount: location.listings.length,
+      fashionCount: location.fashionListings.length,
+      listings: location.listings,
+      fashionListings: location.fashionListings,
+      secondaryListings: location.secondaryListings,
+      priority: location.priority
+    }))
+    .filter((location) => location.totalCount > 0)
+    .sort((a, b) => {
+      if (b.fashionCount === a.fashionCount) {
+        if (b.totalCount === a.totalCount) {
+          return b.priority - a.priority;
+        }
+
+        return b.totalCount - a.totalCount;
+      }
+
+      return b.fashionCount - a.fashionCount;
+    })
+    .map((location) => ({
+      id: location.id,
+      name: location.name,
+      shortLabel: location.shortLabel,
+      area: location.area,
+      communityId: location.communityId,
+      communityName: location.communityName,
+      communityDescription: location.communityDescription,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      totalCount: location.totalCount,
+      fashionCount: location.fashionCount,
+      listings: location.listings,
+      fashionListings: location.fashionListings,
+      secondaryListings: location.secondaryListings
+    }));
+
+  const { communities, summary } = summarizeMapBrowseLocations(locations);
+
+  return {
+    locations,
+    communities,
+    summary
   };
 }
 

@@ -1,5 +1,6 @@
 import { getAuthSession } from "@/lib/auth";
 import { getMarketCuratedSections, getMarketListings } from "@/lib/data";
+import { BrowseModeTabs } from "@/components/market/browse-mode-tabs";
 import { MarketClient, type MarketFilters } from "@/components/market/market-client";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
 import { normalizeMarketBrowseLane } from "@/lib/market-browse";
@@ -79,6 +80,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories lead the feed. Everything else stays close, just a little quieter.
           </p>
         </div>
+        <BrowseModeTabs active="feed" />
       </div>
 
       <MarketClient

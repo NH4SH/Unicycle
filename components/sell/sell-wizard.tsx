@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
+import { getPickupLocationPublicLabel } from "@/lib/campus-pickup-locations";
 import { packListingDescription } from "@/lib/listing-draft";
 import { getMarketBrowsePillLabel, getStoredCategoryForBrowseLane, PRIMARY_MARKET_BROWSE_PILLS, SECONDARY_MARKET_BROWSE_PILLS, type SellerBrowseLaneId } from "@/lib/market-browse";
 import type { SellerPayoutState } from "@/lib/seller-payouts";
@@ -239,7 +240,7 @@ export function SellWizard({
 
         {error ? <div className="rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div> : null}
         {locked ? (
-          <div className="rounded-[1.2rem] border border-border bg-background/80 px-4 py-3 text-sm text-foreground/72 dark:text-white/76">
+          <div className="surface-subtle rounded-[1.2rem] px-4 py-3 text-sm text-foreground/76 dark:text-white/82">
             This listing is in a protected sale state, so the fields below are read-only until the handoff is resolved.
           </div>
         ) : null}
@@ -250,16 +251,16 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 1</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Lead with the photos.</h2>
-                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/82">
                   Style sells faster when the first image feels clear and intentional. Use natural light, show the fit, and keep the background clean.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4">
+              <div className="surface-subtle rounded-[1.5rem] p-4">
                 <p className="editorial-eyebrow">Photo tips</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">Front-facing hero image</div>
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">Close-up on texture or wear</div>
-                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/72 dark:text-white/76">One angle that shows the full piece</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/76 dark:text-white/84">Front-facing hero image</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/76 dark:text-white/84">Close-up on texture or wear</div>
+                  <div className="surface-subtle rounded-[1.15rem] p-3 text-sm text-foreground/76 dark:text-white/84">One angle that shows the full piece</div>
                 </div>
               </div>
             </div>
@@ -278,9 +279,11 @@ export function SellWizard({
                 toast.error(uploadError.message);
               }}
               appearance={{
-                container: "rounded-[1.85rem] border-dashed border-border bg-background/60",
+                container: "rounded-[1.85rem] border-dashed border-border bg-background/70 dark:bg-white/[0.04]",
                 button: "bg-[#E57200] text-white",
-                allowedContent: "text-xs text-foreground/68 dark:text-white/74"
+                uploadIcon: "text-foreground/72 dark:text-white/82",
+                label: "text-sm font-medium text-foreground/82 dark:text-white/88",
+                allowedContent: "text-xs text-foreground/72 dark:text-white/80"
               }}
               content={{
                 allowedContent() {
@@ -324,11 +327,11 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 2</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Add the details buyers care about.</h2>
-                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/82">
                   Clear titles, fair pricing, and fit details make a listing easier to trust right away.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
+              <div className="surface-subtle rounded-[1.5rem] p-4 text-sm leading-6 text-foreground/76 dark:text-white/82">
                 Good examples: “Vintage UVA crewneck”, “Patagonia fleece jacket”, “Going-out top”, “Nike sneakers”.
               </div>
             </div>
@@ -400,7 +403,7 @@ export function SellWizard({
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <p className="text-xs leading-6 text-foreground/68 dark:text-white/72">
+                <p className="text-xs leading-6 text-foreground/72 dark:text-white/78">
                   Pick the shopper-facing section where this should show up first.
                 </p>
               </div>
@@ -426,7 +429,7 @@ export function SellWizard({
                   disabled={locked}
                 />
                 {["womens", "mens", "vintage", "streetwear", "shoes"].includes(draft.browseLane) ? (
-                  <p className="text-xs leading-6 text-foreground/68 dark:text-white/72">Required for clothing and shoe listings.</p>
+                  <p className="text-xs leading-6 text-foreground/72 dark:text-white/78">Required for clothing and shoe listings.</p>
                 ) : null}
               </div>
 
@@ -461,11 +464,11 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 3</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Set the pickup plan.</h2>
-                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/82">
                   Keep it easy for fellow Hoos. The best listings make it obvious where and when a handoff could happen.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
+              <div className="surface-subtle rounded-[1.5rem] p-4 text-sm leading-6 text-foreground/76 dark:text-white/82">
                 Great meetup notes mention timing and context, like “Can meet after 4pm near The Corner” or “Usually around Newcomb between classes.”
               </div>
             </div>
@@ -508,7 +511,7 @@ export function SellWizard({
                     <SelectItem value="CANCELLED">Pause listing</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-foreground/62 dark:text-white/68">
+                <p className="text-xs text-foreground/68 dark:text-white/76">
                   Use this to quietly pause a listing without deleting it. Listings in pending or completed sales stay locked.
                 </p>
               </div>
@@ -522,16 +525,16 @@ export function SellWizard({
               <div className="space-y-2">
                 <p className="editorial-eyebrow">Step 4</p>
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Review before it hits the feed.</h2>
-                <p className="text-sm leading-7 text-foreground/78 dark:text-white/78">
+                <p className="text-sm leading-7 text-foreground/78 dark:text-white/82">
                   This is the final listing preview buyers will see once you publish it on HoosFinds.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-border bg-background/70 p-4 text-sm leading-6 text-foreground/72 dark:text-white/76">
+              <div className="surface-subtle rounded-[1.5rem] p-4 text-sm leading-6 text-foreground/76 dark:text-white/82">
                 Best-performing listings feel concise, photo-led, and easy to trust at a glance.
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-border bg-background/70 p-5">
+            <div className="surface-subtle rounded-[2rem] p-5">
               <div className="mb-4 flex flex-wrap gap-2">
                 <Badge variant="outline">{getMarketBrowsePillLabel(draft.browseLane)}</Badge>
                 <Badge variant="orange">{CONDITION_LABELS[draft.condition as keyof typeof CONDITION_LABELS] || draft.condition}</Badge>
@@ -542,7 +545,7 @@ export function SellWizard({
                 {draft.color ? <Badge variant="outline">{draft.color}</Badge> : null}
               </div>
               <h3 className="font-display text-3xl font-extrabold tracking-tight">{draft.title || "Untitled find"}</h3>
-              <p className="mt-3 text-sm leading-7 text-foreground/76 dark:text-white/76">
+              <p className="mt-3 text-sm leading-7 text-foreground/76 dark:text-white/82">
                 <LinkedPlaceText text={buildDescription() || "No description yet."} />
               </p>
               <p className="mt-5 editorial-eyebrow">Meetup spots</p>
@@ -550,13 +553,13 @@ export function SellWizard({
                 {draft.pickupLocations.map((loc) => (
                   <Badge key={loc} variant="blue">
                     <PlaceMapLink place={loc} className="font-medium underline decoration-white/40 underline-offset-4 hover:text-white">
-                      {loc}
+                      {getPickupLocationPublicLabel(loc)}
                     </PlaceMapLink>
                   </Badge>
                 ))}
               </div>
               {draft.meetupNotes ? (
-                <p className="mt-4 text-sm leading-7 text-foreground/76 dark:text-white/76">
+                <p className="mt-4 text-sm leading-7 text-foreground/76 dark:text-white/82">
                   <LinkedPlaceText text={draft.meetupNotes} />
                 </p>
               ) : null}
@@ -571,7 +574,7 @@ export function SellWizard({
             </div>
 
             {!payoutsReady ? (
-              <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-4 text-sm leading-7 text-foreground/76 dark:text-white/76">
+              <div className="surface-subtle rounded-[1.5rem] px-4 py-4 text-sm leading-7 text-foreground/76 dark:text-white/82">
                 {needsPayoutSetupToSubmit
                   ? payoutSetupDetail
                   : "This listing can stay paused while you finish payout setup. Reconnect payouts before putting it live again."}

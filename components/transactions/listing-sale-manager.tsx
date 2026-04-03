@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ListingStatus, TransactionStatus } from "@prisma/client";
-import { CheckCircle2, Loader2, RefreshCcw, ShoppingBag, XCircle } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, Loader2, MessageCircle, RefreshCcw, ShoppingBag, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { LinkedPlaceText } from "@/components/shared/linked-place-text";
 import { ListingStatusBadge, TransactionStatusBadge } from "@/components/shared/sale-status-badge";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { MeetupPlannerDialog } from "@/components/transactions/meetup-planner-dialog";
+import { TransactionMeetupCard } from "@/components/transactions/transaction-meetup-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, timeAgo } from "@/lib/utils";
@@ -82,15 +84,28 @@ type CurrentTransaction = {
 
 export function ListingSaleManager({
   listingStatus,
+  listingPickupLocations,
+  listingMeetupNotes,
   currentTransaction,
   interestedBuyers
 }: {
   listingStatus: ListingStatus;
+  listingPickupLocations: string[];
+  listingMeetupNotes: string | null;
   currentTransaction: CurrentTransaction | null;
   interestedBuyers: InterestedBuyer[];
 }) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [meetupDraft, setMeetupDraft] = useState<{
+    transactionId: string;
+    listing: {
+      pickupLocations: string[];
+    };
+    meetupLocation: string | null;
+    meetupPlan: string | null;
+    meetupScheduledFor: string | null;
+  } | null>(null);
 
   async function requestSale(conversationId: string) {
     setLoadingKey(`mark-${conversationId}`);
@@ -149,6 +164,82 @@ export function ListingSaleManager({
 
     toast.success("Listing is live again.");
     router.refresh();
+  }
+
+  async function confirmHandoff() {
+    if (!currentTransaction) return;
+
+    setLoadingKey("handoff");
+    const response = await fetch(`/api/transactions/${currentTransaction.id}/handoff`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "confirm_handoff"
+      })
+    });
+    setLoadingKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not mark this meetup as complete.");
+      return;
+    }
+
+    toast.success("Meetup marked complete.");
+    router.refresh();
+  }
+
+  function scheduleMeetup() {
+    if (!currentTransaction) return;
+
+    setMeetupDraft({
+      transactionId: currentTransaction.id,
+      listing: {
+        pickupLocations: listingPickupLocations
+      },
+      meetupLocation: currentTransaction.meetupLocation,
+      meetupPlan: currentTransaction.meetupPlan,
+      meetupScheduledFor: currentTransaction.meetupScheduledFor
+    });
+  }
+
+  async function saveMeetupPlan(payload: { meetupLocation?: string; meetupPlan?: string; meetupScheduledFor?: string }) {
+    if (!meetupDraft) {
+      return false;
+    }
+
+    if (!payload.meetupLocation && !payload.meetupPlan) {
+      toast.error("Add a meetup spot or a handoff note before saving.");
+      return false;
+    }
+
+    setLoadingKey("meetup");
+    const response = await fetch(`/api/transactions/${meetupDraft.transactionId}/handoff`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "schedule_meetup",
+        meetupLocation: payload.meetupLocation,
+        meetupPlan: payload.meetupPlan,
+        meetupScheduledFor: payload.meetupScheduledFor
+      })
+    });
+    setLoadingKey(null);
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      toast.error(data?.message || "Could not save the meetup plan.");
+      return false;
+    }
+
+    toast.success("Meetup details saved.");
+    setMeetupDraft(null);
+    router.refresh();
+    return true;
   }
 
   return (
@@ -234,18 +325,57 @@ export function ListingSaleManager({
               </span>
               <span>Price {formatCurrency((currentTransaction.agreedPriceCents ?? 0) / 100)}</span>
             </div>
+            <TransactionMeetupCard
+              role="seller"
+              status={currentTransaction.status}
+              handoffStatus={currentTransaction.handoffStatus}
+              meetupLocation={currentTransaction.meetupLocation}
+              meetupPlan={currentTransaction.meetupPlan}
+              meetupScheduledFor={currentTransaction.meetupScheduledFor}
+              handoffConfirmedAt={currentTransaction.handoffConfirmedAt}
+              buyerConfirmedReceivedAt={currentTransaction.buyerConfirmedReceivedAt}
+              confirmedAt={currentTransaction.confirmedAt}
+              openIssue={currentTransaction.openIssue}
+              fallbackLocations={listingPickupLocations}
+              fallbackMeetupNotes={listingMeetupNotes}
+              compact
+              actions={
+                <>
+                  {currentTransaction.status === TransactionStatus.PENDING_CONFIRMATION && !currentTransaction.openIssue ? (
+                    <Button variant="secondary" onClick={scheduleMeetup} disabled={loadingKey === "meetup"}>
+                      {loadingKey === "meetup" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-1.5 h-4 w-4" />}
+                      {currentTransaction.handoffStatus === "MEETUP_SCHEDULED" || currentTransaction.meetupLocation || currentTransaction.meetupPlan || currentTransaction.meetupScheduledFor
+                        ? "Edit meetup"
+                        : "Plan meetup"}
+                    </Button>
+                  ) : null}
+                  {currentTransaction.conversationId ? (
+                    <Button variant="secondary" asChild>
+                      <Link href={`/messages?conversation=${currentTransaction.conversationId}`}>
+                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                        Open conversation
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {currentTransaction.status === TransactionStatus.PENDING_CONFIRMATION && currentTransaction.handoffStatus !== "HANDOFF_CONFIRMED" && !currentTransaction.openIssue ? (
+                    <Button variant="outline" onClick={() => void confirmHandoff()} disabled={loadingKey === "handoff"}>
+                      {loadingKey === "handoff" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                      Mark meetup complete
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
             {currentTransaction.openIssue ? (
               <div className="rounded-[1.1rem] border border-uva-orange/20 bg-uva-orange/6 px-4 py-3 text-sm text-foreground/88">
-                <p className="font-medium text-foreground">{currentTransaction.openIssue.issueType.replaceAll("_", " ")}</p>
+                <div className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <AlertCircle className="h-4 w-4 text-uva-orange" />
+                  {currentTransaction.openIssue.issueType.replaceAll("_", " ")}
+                </div>
                 {currentTransaction.openIssue.description ? <p className="mt-1 leading-6">{currentTransaction.openIssue.description}</p> : null}
               </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
-              {currentTransaction.conversationId ? (
-                <Button variant="secondary" asChild>
-                  <Link href={`/messages?conversation=${currentTransaction.conversationId}`}>Open conversation</Link>
-                </Button>
-              ) : null}
               <Button variant="outline" onClick={() => void cancelSale()} disabled={loadingKey === "cancel"}>
                 {loadingKey === "cancel" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <XCircle className="mr-1.5 h-4 w-4" />}
                 Cancel pending sale
@@ -263,6 +393,21 @@ export function ListingSaleManager({
               </div>
               <CheckCircle2 className="h-5 w-5 text-uva-orange" />
             </div>
+            <TransactionMeetupCard
+              role="seller"
+              status={currentTransaction.status}
+              handoffStatus={currentTransaction.handoffStatus}
+              meetupLocation={currentTransaction.meetupLocation}
+              meetupPlan={currentTransaction.meetupPlan}
+              meetupScheduledFor={currentTransaction.meetupScheduledFor}
+              handoffConfirmedAt={currentTransaction.handoffConfirmedAt}
+              buyerConfirmedReceivedAt={currentTransaction.buyerConfirmedReceivedAt}
+              confirmedAt={currentTransaction.confirmedAt}
+              openIssue={currentTransaction.openIssue}
+              fallbackLocations={listingPickupLocations}
+              fallbackMeetupNotes={listingMeetupNotes}
+              compact
+            />
             {currentTransaction.review ? (
               <div className="rounded-[1.2rem] border border-border bg-card/70 p-4 text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">{currentTransaction.review.stars} star review</p>
@@ -295,6 +440,20 @@ export function ListingSaleManager({
             </Button>
           </div>
         ) : null}
+
+        <MeetupPlannerDialog
+          open={Boolean(meetupDraft)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMeetupDraft(null);
+            }
+          }}
+          listing={meetupDraft?.listing ?? null}
+          currentLocation={meetupDraft?.meetupLocation ?? null}
+          currentPlan={meetupDraft?.meetupPlan ?? null}
+          currentScheduledFor={meetupDraft?.meetupScheduledFor ?? null}
+          onSubmit={saveMeetupPlan}
+        />
       </CardContent>
     </Card>
   );

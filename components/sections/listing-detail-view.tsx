@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ListingSaleManager } from "@/components/transactions/listing-sale-manager";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/lib/constants";
+import { getPickupLocationPublicLabel } from "@/lib/campus-pickup-locations";
 import { type ListingCardData } from "@/lib/data";
 import { formatCurrency, timeAgo } from "@/lib/utils";
 
@@ -418,7 +419,7 @@ export function ListingDetailView({
                     className="inline-flex items-center gap-2 rounded-full border border-uva-blue/15 bg-uva-blue/[0.08] px-3.5 py-2 text-[0.9rem] font-semibold tracking-[0.01em] text-foreground/90 transition-colors hover:border-uva-blue/24 hover:bg-uva-blue/[0.12] hover:text-foreground focus-visible:rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-uva-blue/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-uva-blue/28 dark:bg-uva-blue/[0.16] dark:text-white/96 dark:hover:border-uva-blue/38 dark:hover:bg-uva-blue/[0.22] dark:hover:text-white dark:focus-visible:ring-white/30"
                   >
                     <MapPin className="h-3.5 w-3.5 text-foreground/40 dark:text-white/45" />
-                    <span>{loc}</span>
+                    <span>{getPickupLocationPublicLabel(loc)}</span>
                   </PlaceMapLink>
                 ))}
               </div>
@@ -513,6 +514,8 @@ export function ListingDetailView({
             <div className="space-y-4">
               <ListingSaleManager
                 listingStatus={listing.status}
+                listingPickupLocations={listing.pickupLocations}
+                listingMeetupNotes={listing.meetupNotes}
                 currentTransaction={saleContext.currentTransaction}
                 interestedBuyers={saleContext.interestedBuyers}
               />

@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { PurchaseSummaryData } from "@/lib/data";
 
 type MeetupPlannerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  listing: PurchaseSummaryData["listing"] | null;
+  listing: {
+    pickupLocations: string[];
+  } | null;
   currentLocation?: string | null;
   currentPlan?: string | null;
   currentScheduledFor?: string | null;

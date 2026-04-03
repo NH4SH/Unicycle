@@ -56,7 +56,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             <h1 className="max-w-4xl font-display text-4xl font-extrabold tracking-[-0.04em] md:text-6xl md:leading-[0.95]">
               Connect payouts once, then sell through HoosFinds.
             </h1>
-            <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+            <p className="max-w-2xl text-sm leading-7 text-foreground/76 dark:text-white/82 md:text-base">
               Your HoosFinds listings stay the only inventory buyers see. Stripe runs underneath this page so we can send
               your earnings after a sale without making selling feel like a separate dashboard.
             </p>
@@ -83,7 +83,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             {!dashboard.payoutState.readyToReceivePayments &&
             dashboard.payoutState.ctaTarget === "stripe" &&
             session?.user.id ? (
-              <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
+              <p className="max-w-2xl text-xs leading-6 text-foreground/72 dark:text-white/78">
                 If Stripe asks for a website, use{" "}
                 {profileUrl ? (
                   <Link href={`/u/${session.user.username}`} className="font-medium text-foreground transition hover:text-uva-orange">
@@ -113,7 +113,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <div className="space-y-1">
                 <p className="editorial-eyebrow">Status</p>
                 <h2 className="font-display text-2xl font-extrabold tracking-tight">{dashboard.payoutState.headline}</h2>
-                <p className="text-sm leading-7 text-muted-foreground">{dashboard.payoutState.detail}</p>
+                <p className="text-sm leading-7 text-foreground/76 dark:text-white/82">{dashboard.payoutState.detail}</p>
                 {!dashboard.payoutState.readyToReceivePayments ? (
                   <p className="text-sm font-medium text-foreground/88">
                     {dashboard.payoutState.status === "under_review"
@@ -132,9 +132,9 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                   </p>
                 ) : null}
                 {dashboard.payoutState.requirementHighlights.length > 0 && dashboard.payoutState.ctaTarget === "stripe" ? (
-                  <div className="rounded-[1.2rem] border border-border bg-background/70 px-4 py-3">
+                  <div className="surface-subtle rounded-[1.2rem] px-4 py-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Stripe still needs</p>
-                    <ul className="mt-2 space-y-1 text-sm text-foreground/88">
+                    <ul className="mt-2 space-y-1 text-sm text-foreground/88 dark:text-white/88">
                       {dashboard.payoutState.requirementHighlights.map((item) => (
                         <li key={item}>• {item}</li>
                       ))}
@@ -145,7 +145,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             </div>
 
             {(returnedFromStripe || refreshRequested) && session?.user.id ? (
-              <div className="rounded-[1.5rem] border border-border bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+              <div className="surface-subtle rounded-[1.5rem] px-4 py-3 text-sm text-foreground/76 dark:text-white/82">
                 {dashboard.payoutState.readyToReceivePayments
                   ? "Welcome back. HoosFinds refreshed your payout status from Stripe and your account is ready to sell."
                   : dashboard.payoutState.status === "under_review"
@@ -168,17 +168,17 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <div className="rounded-[1.4rem] border border-border bg-background/70 px-4 py-4">
                 <p className="editorial-eyebrow">1</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">Connect payouts</p>
-                <p className="mt-1 text-sm text-muted-foreground">Tell HoosFinds where your earnings should go.</p>
+                <p className="mt-1 text-sm text-foreground/76 dark:text-white/82">Tell HoosFinds where your earnings should go.</p>
               </div>
-              <div className="rounded-[1.4rem] border border-border bg-background/70 px-4 py-4">
+              <div className="surface-subtle rounded-[1.4rem] px-4 py-4">
                 <p className="editorial-eyebrow">2</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">Post your listing</p>
-                <p className="mt-1 text-sm text-muted-foreground">Your normal listing is the item buyers see everywhere.</p>
+                <p className="mt-1 text-sm text-foreground/76 dark:text-white/82">Your normal listing is the item buyers see everywhere.</p>
               </div>
-              <div className="rounded-[1.4rem] border border-border bg-background/70 px-4 py-4">
+              <div className="surface-subtle rounded-[1.4rem] px-4 py-4">
                 <p className="editorial-eyebrow">3</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">Get paid</p>
-                <p className="mt-1 text-sm text-muted-foreground">HoosFinds routes the sale to your payout account after checkout, while buyer confirmation stays a handoff record inside the app.</p>
+                <p className="mt-1 text-sm text-foreground/76 dark:text-white/82">HoosFinds routes the sale to your payout account after checkout, while buyer confirmation stays a handoff record inside the app.</p>
               </div>
             </div>
           </CardContent>
@@ -224,7 +224,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
             <div className="space-y-2">
               <p className="editorial-eyebrow">Recent sales</p>
               <h2 className="font-display text-3xl font-extrabold tracking-tight">Listing payments, not a separate catalog.</h2>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+              <p className="max-w-2xl text-sm leading-7 text-foreground/76 dark:text-white/82">
                 Every payout on HoosFinds now maps back to a normal marketplace listing, buyer, and seller. There is no second storefront to manage.
               </p>
             </div>
@@ -237,10 +237,10 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                       <Link href={`/listing/${sale.listingId}`} className="font-semibold text-foreground transition hover:text-uva-orange">
                         {sale.listingTitle}
                       </Link>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-foreground/76 dark:text-white/82">
                         Buyer {sale.buyer.displayName} paid {formatCurrency(sale.buyerTotalCents / 100)} · {timeAgo(sale.createdAt)} ago
                       </p>
-                      <div className="grid gap-1 pt-2 text-xs text-muted-foreground sm:grid-cols-2">
+                      <div className="grid gap-1 pt-2 text-xs text-foreground/72 dark:text-white/78 sm:grid-cols-2">
                         <div className="flex items-center justify-between gap-3">
                           <span>Sale price</span>
                           <span>{formatCurrency(sale.listingPriceCents / 100)}</span>
@@ -270,7 +270,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
                 ))}
               </div>
             ) : (
-              <div className="rounded-[1.6rem] border border-border bg-background/70 px-5 py-6 text-sm leading-7 text-muted-foreground">
+              <div className="surface-subtle rounded-[1.6rem] px-5 py-6 text-sm leading-7 text-foreground/76 dark:text-white/82">
                 {session?.user.id
                   ? "No sales have come through your listings yet. Once a buyer checks out, the payment will show up here and stay tied to the listing that sold."
                   : "Sign in to view payout readiness, listing sales, and seller setup in one place."}
@@ -285,7 +285,7 @@ export default async function PaymentsPage({ searchParams }: PaymentsPageProps) 
               <p className="editorial-eyebrow">What sellers need to know</p>
               <h2 className="font-display text-3xl font-extrabold tracking-tight">Keep it simple.</h2>
             </div>
-            <div className="space-y-4 text-sm leading-7 text-muted-foreground">
+            <div className="space-y-4 text-sm leading-7 text-foreground/76 dark:text-white/82">
               <p>Use the normal HoosFinds sell flow for every item. If a listing is live here, it is the same listing buyers see in Browse, Following, profiles, and checkout.</p>
               <p>Sellers can draft locally first, but payouts must be connected before a listing can go live or receive routed checkout funds.</p>
               <p>Buyers still check out through Stripe. HoosFinds handles the payout routing underneath that listing so sellers do not need to learn Stripe product or account details.</p>

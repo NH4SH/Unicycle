@@ -34,7 +34,7 @@ export default function SafetyPage() {
         <div className="space-y-2">
           <p className="editorial-eyebrow">Safety on HoosFinds</p>
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Campus resale should feel local and safe.</h1>
-          <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+          <p className="max-w-2xl text-sm leading-7 text-foreground/76 dark:text-white/82 md:text-base">
             HoosFinds is designed for real student meetups on Grounds. These guidelines keep that experience trustworthy without making it feel corporate or overbuilt.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function SafetyPage() {
             <CardContent className="space-y-3 p-6">
               <rule.icon className="h-5 w-5 text-uva-orange" />
               <h2 className="font-display text-2xl font-bold tracking-tight">{rule.title}</h2>
-              <p className="text-sm leading-7 text-muted-foreground">{rule.body}</p>
+              <p className="text-sm leading-7 text-foreground/76 dark:text-white/82">{rule.body}</p>
             </CardContent>
           </Card>
         ))}
@@ -63,13 +63,13 @@ export default function SafetyPage() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {doList.map((item) => (
-              <p key={item} className="inline-flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+              <p key={item} className="inline-flex items-start gap-2 text-sm leading-6 text-foreground/76 dark:text-white/82">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-uva-orange" />
                 {item}
               </p>
             ))}
           </div>
-          <p className="text-sm leading-7 text-muted-foreground">
+          <p className="text-sm leading-7 text-foreground/76 dark:text-white/82">
             For urgent safety concerns, contact University Police immediately and then submit a report inside HoosFinds when you can.
           </p>
         </CardContent>

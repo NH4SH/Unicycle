@@ -18,7 +18,7 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           <div className="space-y-3 text-center">
             <p className="editorial-eyebrow">HoosFinds</p>
             <h1 className="font-display text-4xl font-extrabold tracking-tight">{title}</h1>
-            <p className="mx-auto max-w-md text-sm leading-7 text-muted-foreground">{description}</p>
+            <p className="mx-auto max-w-md text-sm leading-7 text-foreground/76 dark:text-white/82">{description}</p>
           </div>
 
           {children}
@@ -26,7 +26,7 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           {footer ? (
             footer
           ) : (
-            <div className="space-y-2 text-center text-xs leading-6 text-muted-foreground">
+            <div className="space-y-2 text-center text-xs leading-6 text-foreground/70 dark:text-white/76">
               <p>
                 Student accounts use <span className="font-semibold text-foreground">@virginia.edu</span> and
                 <span className="font-semibold text-foreground"> @mail.virginia.edu</span>. Local shops join through the

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { LinkedPlaceText } from "@/components/shared/linked-place-text";
 import { StarRatingInput } from "@/components/transactions/star-rating-input";
+import { TransactionMeetupCard } from "@/components/transactions/transaction-meetup-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -99,6 +100,31 @@ export function ConfirmReceiptForm({ transaction }: { transaction: PurchaseSumma
             </div>
           </div>
 
+          <TransactionMeetupCard
+            role="buyer"
+            status={transaction.status}
+            handoffStatus={transaction.handoffStatus}
+            meetupLocation={transaction.meetupLocation}
+            meetupPlan={transaction.meetupPlan}
+            meetupScheduledFor={transaction.meetupScheduledFor}
+            handoffConfirmedAt={transaction.handoffConfirmedAt}
+            buyerConfirmedReceivedAt={transaction.buyerConfirmedReceivedAt}
+            confirmedAt={transaction.confirmedAt}
+            openIssue={transaction.openIssue}
+            fallbackLocations={transaction.listing.pickupLocations}
+            fallbackMeetupNotes={transaction.listing.meetupNotes}
+            actions={
+              transaction.conversationId ? (
+                <Button variant="secondary" asChild>
+                  <Link href={`/messages?conversation=${transaction.conversationId}`}>
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Open messages
+                  </Link>
+                </Button>
+              ) : undefined
+            }
+          />
+
           <StarRatingInput value={stars} onChange={setStars} />
 
           <div className="space-y-2">
@@ -118,14 +144,6 @@ export function ConfirmReceiptForm({ transaction }: { transaction: PurchaseSumma
               {submitting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
               {stars ? "Confirm + submit rating" : "Confirm receipt"}
             </Button>
-            {transaction.conversationId ? (
-              <Button variant="secondary" asChild>
-                <Link href={`/messages?conversation=${transaction.conversationId}`}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" />
-                  Back to messages
-                </Link>
-              </Button>
-            ) : null}
           </div>
         </CardContent>
       </Card>

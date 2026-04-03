@@ -11,9 +11,9 @@ import { toast } from "sonner";
 import { TransactionStatusBadge } from "@/components/shared/sale-status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LinkedPlaceText } from "@/components/shared/linked-place-text";
-import { PickupMapPreview } from "@/components/shared/pickup-map-preview";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { MeetupPlannerDialog } from "@/components/transactions/meetup-planner-dialog";
+import { TransactionMeetupCard } from "@/components/transactions/transaction-meetup-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,12 @@ type PurchasesViewProps = {
 };
 
 function getHandoffCopy(item: PurchaseSummaryData, role: "buyer" | "seller") {
+  if (item.status === TransactionStatus.CANCELLED || item.handoffStatus === "CANCELLED") {
+    return role === "buyer"
+      ? "This sale was cancelled before the handoff happened."
+      : "This sale was cancelled before the handoff wrapped up.";
+  }
+
   if (item.status === TransactionStatus.ISSUE_REPORTED) {
     return item.openIssue
       ? `Issue reported: ${item.openIssue.issueType.replaceAll("_", " ").toLowerCase()}.`
@@ -52,6 +58,12 @@ function getHandoffCopy(item: PurchaseSummaryData, role: "buyer" | "seller") {
   return role === "buyer"
     ? "This sale is pending your real-world handoff."
     : "The sale is live inside HoosFinds and still waiting on the handoff.";
+}
+
+function getMeetupActionLabel(item: Pick<PurchaseSummaryData, "handoffStatus" | "meetupLocation" | "meetupPlan" | "meetupScheduledFor">) {
+  return item.handoffStatus === "MEETUP_SCHEDULED" || item.meetupLocation || item.meetupPlan || item.meetupScheduledFor
+    ? "Edit meetup"
+    : "Plan meetup";
 }
 
 function TransactionCard({
@@ -117,22 +129,59 @@ function TransactionCard({
             <p>{item.confirmedAt ? `Completed ${timeAgo(item.confirmedAt)} ago` : getHandoffCopy(item, role)}</p>
           </div>
 
-          {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor || item.listing.pickupLocations.length ? (
-            <div className="space-y-3 rounded-[1.1rem] border border-border bg-card/76 px-4 py-3 text-sm text-muted-foreground dark:border-white/12 dark:bg-white/[0.07]">
-              <div className="inline-flex items-center gap-1 font-medium text-foreground">
-                <CalendarDays className="h-4 w-4 text-uva-orange" />
-                Meetup flow
-              </div>
-              {item.meetupLocation ? <p className="mt-2">Spot: {item.meetupLocation}</p> : null}
-              {item.meetupScheduledFor ? <p>When: {new Date(item.meetupScheduledFor).toLocaleString()}</p> : null}
-              {item.meetupPlan ? <p className="mt-1 leading-6">{item.meetupPlan}</p> : null}
-              <PickupMapPreview
-                locations={item.meetupLocation ? [item.meetupLocation] : item.listing.pickupLocations}
-                compact
-                title="Meetup map"
-                detail="This handoff uses a custom meetup spot, so HoosFinds links it out to maps instead of pinning it on the campus map."
-              />
-            </div>
+          {item.meetupLocation || item.meetupPlan || item.meetupScheduledFor || item.listing.pickupLocations.length || item.listing.meetupNotes ? (
+            <TransactionMeetupCard
+              role={role}
+              status={item.status}
+              handoffStatus={item.handoffStatus}
+              meetupLocation={item.meetupLocation}
+              meetupPlan={item.meetupPlan}
+              meetupScheduledFor={item.meetupScheduledFor}
+              handoffConfirmedAt={item.handoffConfirmedAt}
+              buyerConfirmedReceivedAt={item.buyerConfirmedReceivedAt}
+              confirmedAt={item.confirmedAt}
+              openIssue={item.openIssue}
+              fallbackLocations={item.listing.pickupLocations}
+              fallbackMeetupNotes={item.listing.meetupNotes}
+              compact
+              actions={
+                <>
+                  {item.status === TransactionStatus.PENDING_CONFIRMATION && !item.openIssue ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => onScheduleMeetup(item.id, item.listing)}
+                      disabled={loadingKey === `meetup-${item.id}`}
+                    >
+                      {loadingKey === `meetup-${item.id}` ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CalendarDays className="mr-1.5 h-4 w-4" />
+                      )}
+                      {getMeetupActionLabel(item)}
+                    </Button>
+                  ) : null}
+                  {item.conversationId ? (
+                    <Button variant="secondary" asChild>
+                      <Link href={`/messages?conversation=${item.conversationId}`}>
+                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                        Open messages
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {item.status === TransactionStatus.PENDING_CONFIRMATION && item.handoffStatus !== "HANDOFF_CONFIRMED" && !item.openIssue ? (
+                    <Button variant="outline" onClick={() => onConfirmHandoff(item.id)} disabled={loadingKey === `handoff-${item.id}`}>
+                      {loadingKey === `handoff-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
+                      Mark meetup complete
+                    </Button>
+                  ) : null}
+                  {role === "buyer" && item.status === TransactionStatus.PENDING_CONFIRMATION && !item.openIssue ? (
+                    <Button asChild>
+                      <Link href={`/purchases/${item.id}/confirm`}>Confirm receipt</Link>
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
           ) : null}
 
           {item.openIssue ? (
@@ -163,27 +212,10 @@ function TransactionCard({
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            {item.status === TransactionStatus.PENDING_CONFIRMATION && item.handoffStatus !== "MEETUP_SCHEDULED" ? (
-              <Button variant="secondary" onClick={() => onScheduleMeetup(item.id, item.listing)} disabled={loadingKey === `meetup-${item.id}`}>
-                {loadingKey === `meetup-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-1.5 h-4 w-4" />}
-                Schedule meetup
-              </Button>
-            ) : null}
-            {item.status === TransactionStatus.PENDING_CONFIRMATION && item.handoffStatus !== "HANDOFF_CONFIRMED" ? (
-              <Button variant="outline" onClick={() => onConfirmHandoff(item.id)} disabled={loadingKey === `handoff-${item.id}`}>
-                {loadingKey === `handoff-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
-                Mark handoff done
-              </Button>
-            ) : null}
             {(item.status === TransactionStatus.PENDING_CONFIRMATION || item.status === TransactionStatus.ISSUE_REPORTED) ? (
               <Button variant="outline" onClick={() => onReportIssue(item.id, role)} disabled={loadingKey === `issue-${item.id}`}>
                 {loadingKey === `issue-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <AlertCircle className="mr-1.5 h-4 w-4" />}
                 Report issue
-              </Button>
-            ) : null}
-            {role === "buyer" && item.status === TransactionStatus.PENDING_CONFIRMATION && !item.openIssue ? (
-              <Button asChild>
-                <Link href={`/purchases/${item.id}/confirm`}>Confirm receipt</Link>
               </Button>
             ) : null}
             {role === "seller" && (item.status === TransactionStatus.PENDING_CONFIRMATION || item.status === TransactionStatus.ISSUE_REPORTED) ? (
@@ -196,14 +228,6 @@ function TransactionCard({
               <Button onClick={() => onRelist(item.id)} disabled={loadingKey === `relist-${item.id}`}>
                 {loadingKey === `relist-${item.id}` ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-1.5 h-4 w-4" />}
                 Relist item
-              </Button>
-            ) : null}
-            {item.conversationId ? (
-              <Button variant="secondary" asChild>
-                <Link href={`/messages?conversation=${item.conversationId}`}>
-                  <MessageCircle className="mr-1.5 h-4 w-4" />
-                  Open messages
-                </Link>
               </Button>
             ) : null}
             <Button variant="ghost" asChild>

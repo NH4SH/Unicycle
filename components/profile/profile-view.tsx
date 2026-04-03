@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { getPickupLocationPublicLabel } from "@/lib/campus-pickup-locations";
 import { type ListingCardData, type SellerReviewData } from "@/lib/data";
 import { getEditableDisplayName, needsPublicIdentitySetup } from "@/lib/user-identity";
 import { timeAgo } from "@/lib/utils";
@@ -156,13 +157,15 @@ export function ProfileView({
                 {user.gradYear ? <Badge variant="outline">Class of {user.gradYear}</Badge> : null}
                 {user.favoritePickup ? (
                   <Badge variant="blue">
-                    Usually meets at{" "}
-                    <PlaceMapLink
-                      place={user.favoritePickup}
-                      className="font-medium text-current underline decoration-current/40 underline-offset-4 hover:text-foreground dark:hover:text-white"
-                    >
-                      {user.favoritePickup}
-                    </PlaceMapLink>
+                    <span className="inline-flex items-center gap-1">
+                      <span>Usually meets at</span>
+                      <PlaceMapLink
+                        place={user.favoritePickup}
+                        className="font-medium text-current underline decoration-current/40 underline-offset-4 hover:text-foreground dark:hover:text-white"
+                      >
+                        {getPickupLocationPublicLabel(user.favoritePickup)}
+                      </PlaceMapLink>
+                    </span>
                   </Badge>
                 ) : null}
                 {isVerifiedShop && user.verifiedShopNeighborhood ? <Badge variant="outline">{user.verifiedShopNeighborhood}</Badge> : null}

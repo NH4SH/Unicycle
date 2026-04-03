@@ -118,7 +118,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                   <h1 className="font-display text-[2.35rem] font-extrabold tracking-tight leading-[0.98] md:text-5xl">
                     Make sure the total looks right before Stripe.
                   </h1>
-                  <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+                  <p className="max-w-2xl text-sm leading-7 text-foreground/76 dark:text-white/82 md:text-base">
                     HoosFinds keeps pickup local and payment secure. There’s no shipping here, just the item, the platform fee, applicable tax, and your final total. Payment is captured at checkout, while buyer confirmation later is only the handoff record inside HoosFinds.
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                     </div>
                   </div>
 
-                  <p className="line-clamp-4 text-sm leading-7 text-muted-foreground sm:line-clamp-none">
+                  <p className="line-clamp-4 text-sm leading-7 text-foreground/76 dark:text-white/82 sm:line-clamp-none">
                     {listing.description}
                   </p>
                 </div>
@@ -167,17 +167,17 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
               ) : null}
 
               {issueCopy ? (
-                <div className="rounded-[1.5rem] border border-border bg-background/70 px-5 py-5">
+                <div className="surface-subtle rounded-[1.5rem] px-5 py-5">
                   <div className="space-y-2">
                     <Badge variant="outline">{issueCopy.badge}</Badge>
                     <h2 className="font-display text-2xl font-extrabold tracking-tight">{issueCopy.title}</h2>
-                    <p className="text-sm leading-7 text-muted-foreground">{issueCopy.description}</p>
+                    <p className="text-sm leading-7 text-foreground/76 dark:text-white/82">{issueCopy.description}</p>
                   </div>
                 </div>
               ) : null}
 
-              <div className="rounded-[1.5rem] border border-border bg-background/70 px-5 py-4">
-                <div className="flex items-start gap-3 text-sm leading-6 text-muted-foreground">
+              <div className="surface-subtle rounded-[1.5rem] px-5 py-4">
+                <div className="flex items-start gap-3 text-sm leading-6 text-foreground/76 dark:text-white/82">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-uva-orange" />
                   <p>By continuing, you’ll be redirected to Stripe for secure payment. The card charge happens there right away if checkout succeeds.</p>
                 </div>
@@ -192,7 +192,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                 <h2 className="font-display text-3xl font-extrabold tracking-tight">Your total</h2>
               </div>
 
-              <div className="space-y-4 rounded-[1.6rem] border border-border bg-background/70 px-5 py-5">
+              <div className="surface-subtle space-y-4 rounded-[1.6rem] px-5 py-5">
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <span className="text-muted-foreground">Item price</span>
                   <span className="font-semibold text-foreground">
@@ -229,7 +229,7 @@ export default async function CheckoutReviewPage({ params }: CheckoutReviewPageP
                 <ContinueCheckoutButton listingId={listing.id} />
               )}
 
-              <p className="text-xs leading-6 text-muted-foreground">
+              <p className="text-xs leading-6 text-foreground/70 dark:text-white/76">
                 Sales tax is shown separately so HoosFinds can keep tax logic configurable. The current review flow uses a {(
                   DEFAULT_SALES_TAX_BPS / 100
                 ).toFixed(1)}

@@ -180,7 +180,7 @@ export function SignInForm({ callbackUrl, enableDevBypass, mode = "student" }: S
         ) : null}
       </form>
 
-      <div className="space-y-2 text-center text-xs leading-6 text-muted-foreground">
+      <div className="space-y-2 text-center text-xs leading-6 text-foreground/70 dark:text-white/76">
         <p>
           New to HoosFinds?{" "}
           <Link href="/sign-up" className="font-semibold text-foreground transition hover:text-uva-orange">
