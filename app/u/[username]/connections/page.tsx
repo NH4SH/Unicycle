@@ -43,7 +43,7 @@ export default async function ConnectionsPage({ params, searchParams }: Connecti
           <ChevronLeft className="h-4 w-4" />
           Back to {user.displayName}
         </Link>
-        <p className="editorial-eyebrow">Campus style network</p>
+        <p className="editorial-eyebrow">Grounds style network</p>
         <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">
           {session?.user.id === user.id ? "Your closet network" : `${user.displayName}'s network`}
         </h1>

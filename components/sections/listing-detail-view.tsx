@@ -465,7 +465,7 @@ export function ListingDetailView({
                 <p className="text-xs text-foreground/62 dark:text-white/68">Fast local handoff</p>
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
-                Pick a spot that works for a class break, The Corner, or heavier campus traffic.
+                Pick a spot that works for a class break, The Corner, or heavier Grounds traffic.
               </p>
               <div className="flex flex-wrap gap-2">
                 {listing.pickupLocations.map((loc) => (
@@ -482,7 +482,7 @@ export function ListingDetailView({
               <PickupMapPreview
                 locations={listing.pickupLocations}
                 title="Pickup preview"
-                detail="This listing uses a custom meetup spot, so HoosFinds links it out to maps instead of rendering a campus pin preview."
+                detail="This listing uses a custom meetup spot, so HoosFinds links it out to maps instead of rendering a Grounds pin preview."
               />
               {listing.meetupNotes ? (
                 <p className="text-xs leading-6 text-muted-foreground">
@@ -675,7 +675,7 @@ export function ListingDetailView({
             <p className="editorial-eyebrow">Keep browsing</p>
             <h2 className="font-display text-2xl font-extrabold tracking-tight md:text-3xl">More like this</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Similar price point, same campus style energy.</p>
+          <p className="text-sm text-muted-foreground">Similar price point, same Grounds style energy.</p>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {similar.map((item) => (

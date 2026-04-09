@@ -215,7 +215,7 @@ export default async function HomePage() {
         <div className="space-y-2">
           <p className="font-display text-2xl font-extrabold tracking-tight">HoosFinds</p>
           <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-            UVA&apos;s clothing-first resale marketplace for local pickup, better campus finds, and the closets worth browsing between classes.
+            UVA&apos;s clothing-first resale marketplace for local pickup, better Grounds finds, and the closets worth browsing between classes.
           </p>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">

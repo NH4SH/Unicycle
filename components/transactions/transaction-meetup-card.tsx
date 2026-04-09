@@ -151,7 +151,7 @@ function getMeetupPresentation({
   return {
     label: "Meetup not locked in",
     variant: "outline" as BadgeProps["variant"],
-    summary: "The campus pickup spot still needs a final plan before the handoff feels settled.",
+    summary: "The Grounds pickup spot still needs a final plan before the handoff feels settled.",
     nextStep:
       role === "buyer"
         ? "Pick one of the approved meetup spots, save any landmark notes, and use messages to nail down the timing."
@@ -206,7 +206,7 @@ export function TransactionMeetupCard({
     ? area ?? "Saved on the meetup plan."
     : fallbackLocations.length > 1
       ? `${fallbackLocations.length} seller-approved meetup options.`
-      : area ?? "Seller-approved campus meetup spot.";
+      : area ?? "Seller-approved Grounds meetup spot.";
   const headerTitle = meetupLocation
     ? `Pickup ${getPickupLocationShortLabel(primaryLocation ?? meetupLocation)}`
     : fallbackLocations.length > 1
@@ -281,7 +281,7 @@ export function TransactionMeetupCard({
           compact={compact}
           className="mt-4"
           title="Meetup map"
-          detail="This meetup uses a custom text spot, so HoosFinds links it out to maps instead of dropping a campus pin preview."
+          detail="This meetup uses a custom text spot, so HoosFinds links it out to maps instead of dropping a Grounds pin preview."
         />
       ) : null}
 

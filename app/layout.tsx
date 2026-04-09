@@ -31,11 +31,11 @@ export const metadata: Metadata = {
     template: "%s | HoosFinds"
   },
   description:
-    "HoosFinds is UVA's fashion-first resale marketplace for student style, vintage layers, outerwear, and curated campus finds.",
+    "HoosFinds is UVA's fashion-first resale marketplace for student style, vintage layers, outerwear, and curated Grounds finds.",
   openGraph: {
     title: "HoosFinds | UVA's fashion-first resale marketplace",
     description:
-      "Buy and sell the best fits on Grounds. HoosFinds brings together vintage, streetwear, outerwear, sneakers, accessories, and campus finds for fellow Hoos.",
+      "Buy and sell the best fits on Grounds. HoosFinds brings together vintage, streetwear, outerwear, sneakers, accessories, and Grounds finds for fellow Hoos.",
     url: "https://hoosfinds.com",
     siteName: "HoosFinds",
     locale: "en_US",

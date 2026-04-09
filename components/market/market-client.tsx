@@ -912,7 +912,7 @@ export function MarketClient({
                         <ListingCard
                           key={`${section.id}-${listing.id}`}
                           listing={listing}
-                          sticker={index2 === 0 ? "Campus find" : undefined}
+                          sticker={index2 === 0 ? "Grounds find" : undefined}
                         />
                       ))}
                     </div>

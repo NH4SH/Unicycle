@@ -1,7 +1,7 @@
 import { SITE_URL } from "@/lib/constants";
 
 export const STRIPE_SELLER_PRODUCT_DESCRIPTION =
-  "Selling secondhand clothing and campus goods through HoosFinds, a UVA student marketplace.";
+  "Selling secondhand clothing and Grounds goods through HoosFinds, a UVA student marketplace.";
 
 export function getPublicAppUrl() {
   // Stripe should always see the canonical public HoosFinds URL instead of a

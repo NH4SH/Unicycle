@@ -998,7 +998,7 @@ export async function getMarketCuratedSections(userId?: string): Promise<MarketC
     {
       id: "fresh",
       title: "Fresh on Grounds",
-      description: "New style drops, outerwear, and campus fits posted lately.",
+      description: "New style drops, outerwear, and Grounds fits posted lately.",
       href: "/market?sort=newest",
       tone: "primary" as const,
       items: pickCuratedListings(fashionListings, 4, primaryUsedIds).map((listing) => mapListing(listing, userId))

@@ -100,7 +100,7 @@ export function ConnectDemoClient({
   const [checkoutProductId, setCheckoutProductId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState({
     name: "Vintage UVA quarter-zip",
-    description: "Clean campus layer with easy weekend energy and a quick Newcomb pickup.",
+    description: "Clean Grounds layer with easy weekend energy and a quick Newcomb pickup.",
     price: "68",
     imageUrl: FALLBACK_PRODUCT_IMAGE
   });
@@ -425,7 +425,7 @@ export function ConnectDemoClient({
               <Textarea
                 value={productForm.description}
                 onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
-                placeholder="Vintage-feel campus layer with a clean fit and easy pickup near Newcomb."
+                placeholder="Vintage-feel Grounds layer with a clean fit and easy pickup near Newcomb."
                 disabled={!viewer || !sellerState.connectedAccount || creatingProduct}
               />
             </label>

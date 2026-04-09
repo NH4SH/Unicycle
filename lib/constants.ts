@@ -67,13 +67,13 @@ export const HOME_PRIMARY_LANES = [
     label: "Men's",
     href: "/market?lane=mens",
     eyebrow: "Men's",
-    description: "Vintage sweats, everyday campus fits, and closet cleanout standouts."
+    description: "Vintage sweats, everyday Grounds fits, and closet cleanout standouts."
   },
   {
     label: "Vintage",
     href: "/market?lane=vintage",
     eyebrow: "Lead lane",
-    description: "Thrifted sweats, worn-in layers, and the campus pieces with real history."
+    description: "Thrifted sweats, worn-in layers, and the Grounds pieces with real history."
   },
   {
     label: "Streetwear",

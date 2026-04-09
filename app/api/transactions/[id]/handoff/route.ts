@@ -78,7 +78,7 @@ export async function POST(request: Request, { params }: Params) {
   const pickupLocations = fromJsonArray(transaction.listing.pickupLocations);
   if (parsed.data.action === "schedule_meetup" && parsed.data.meetupLocation && !pickupLocations.includes(parsed.data.meetupLocation)) {
     return NextResponse.json(
-      { message: "Choose one of the listing’s approved campus meetup spots or keep extra details in meetup notes." },
+      { message: "Choose one of the listing’s approved Grounds meetup spots or keep extra details in meetup notes." },
       { status: 400 }
     );
   }

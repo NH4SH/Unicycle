@@ -22,7 +22,7 @@ export default async function PurchasesPage() {
           <p className="editorial-eyebrow">Purchases & sales</p>
           <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-5xl">Track every handoff.</h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-            See what still needs confirmation, keep campus pickups accountable, and leave a buyer-verified rating only after the item actually lands in hand.
+            See what still needs confirmation, keep Grounds pickups accountable, and leave a buyer-verified rating only after the item actually lands in hand.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -85,7 +85,7 @@ export function MapBrowseClient({ data }: MapBrowseClientProps) {
     return (
       <EmptyState
         title="No mapped pickups yet"
-        description="Once live listings use known campus pickup spots, they’ll appear here so shoppers can browse by neighborhood."
+        description="Once live listings use known Grounds pickup spots, they’ll appear here so shoppers can browse by neighborhood."
         ctaHref="/sell"
         ctaLabel="List something"
       />

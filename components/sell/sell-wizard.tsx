@@ -484,7 +484,7 @@ export function SellWizard({
                 locations={draft.pickupLocations}
                 compact
                 title="Pickup preview"
-                detail="Custom meetup text can still be stored on the listing, but known UVA spots unlock the campus map preview."
+                detail="Custom meetup text can still be stored on the listing, but known UVA spots unlock the Grounds map preview."
               />
             ) : null}
 

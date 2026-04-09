@@ -283,7 +283,7 @@ export function ConnectionsDashboard({
         <div className="surface-panel-strong rounded-[1.85rem] p-6">
           <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Sparkles className="h-4 w-4 text-uva-orange" />
-            More seller suggestions will show up here as the campus network grows.
+            More seller suggestions will show up here as the Grounds network grows.
           </div>
         </div>
       )}

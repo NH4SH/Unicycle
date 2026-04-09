@@ -34,7 +34,7 @@ export const PRIMARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
   {
     id: "mens",
     label: "Men's",
-    description: "Crewnecks, layers, jackets, and everyday campus fits."
+    description: "Crewnecks, layers, jackets, and everyday Grounds fits."
   },
   {
     id: "vintage",
@@ -82,7 +82,7 @@ export const SECONDARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
   {
     id: "tickets",
     label: "Tickets",
-    description: "Last-minute game and event passes still close to campus."
+    description: "Last-minute game and event passes still close to Grounds."
   },
   {
     id: "extras",
@@ -95,7 +95,7 @@ const LEGACY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
   {
     id: "outerwear",
     label: "Outerwear",
-    description: "Jackets, fleeces, shells, puffers, and campus-ready layers."
+    description: "Jackets, fleeces, shells, puffers, and Grounds-ready layers."
   }
 ] as const;
 

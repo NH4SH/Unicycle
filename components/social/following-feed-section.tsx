@@ -262,7 +262,7 @@ export function FollowingFeedSection({
     return (
       <SuggestedSellersSection
         title="Popular on Grounds"
-        subtitle="Start with active closets putting up strong drops across vintage, streetwear, outerwear, and campus-ready fits."
+        subtitle="Start with active closets putting up strong drops across vintage, streetwear, outerwear, and Grounds-ready fits."
         items={suggested}
         viewerSignedIn={false}
       />
