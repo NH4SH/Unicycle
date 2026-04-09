@@ -949,7 +949,7 @@ export function MarketClient({
                 </h2>
               </div>
               <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                The edit above keeps the first impression sharp. Everything live still lands below in one feed.
+                Every active listing stays here in one scrollable feed, so you can keep shopping without jumping between sections.
               </p>
             </div>
           ) : null}

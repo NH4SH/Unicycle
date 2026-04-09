@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
+import Script from "next/script";
 
 import "@/app/globals.css";
 import { NavBar } from "@/components/shared/nav-bar";
@@ -53,10 +54,28 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const shouldLoadAnalytics = process.env.NODE_ENV === "production";
+
   return (
     <html lang="en" suppressHydrationWarning className="bg-background">
       <head>
         <ThemeScript />
+        {shouldLoadAnalytics ? (
+          <>
+            <Script
+              src="https://www.googletagmanager.com/gtag/js?id=G-YPMTH8D2RJ"
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-YPMTH8D2RJ');
+              `}
+            </Script>
+          </>
+        ) : null}
       </head>
       <body className={`${manrope.variable} ${cormorant.variable}`}>
         <AppProviders>

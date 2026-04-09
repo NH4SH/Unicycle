@@ -1,357 +1,233 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, MapPin, Search, ShieldCheck, Store } from "lucide-react";
 
 import { ListingCard } from "@/components/cards/listing-card";
-import { FollowingFeedSection } from "@/components/social/following-feed-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getAuthSession } from "@/lib/auth";
-import { HOW_IT_WORKS_STEPS, TRUST_MARKERS } from "@/lib/constants";
-import { getFollowingFeedListings, getLandingDrops } from "@/lib/data";
-import { isFashionBrowseListing } from "@/lib/market-browse";
-import { prisma } from "@/lib/prisma";
-import { getSuggestedSellers } from "@/lib/user-social";
-import { cn, formatCurrency } from "@/lib/utils";
+import { HOME_PRIMARY_LANES } from "@/lib/constants";
+import { getMarketCuratedSections, getMarketListings, type MarketCuratedSection } from "@/lib/data";
+
 
 export const dynamic = "force-dynamic";
 
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?auto=format&fit=crop&w=900&q=80";
+const TRUST_MARKERS = [
+  { icon: ShieldCheck, label: "UVA-only buyers" },
+  { icon: Store, label: "Trusted local sellers" },
+  { icon: MapPin, label: "Pickup near Grounds" }
+] as const;
 
-const HERO_CARD_PILL_CLASS =
-  "border-white/18 bg-black/58 font-medium text-white shadow-[0_10px_26px_rgba(0,0,0,0.3)] backdrop-blur-md dark:border-white/22 dark:bg-slate-950/72 dark:text-white";
+const SEARCH_SHORTCUTS = [
+  { label: "Ralph Lauren", href: "/market?q=Ralph+Lauren" },
+  { label: "Vintage jacket", href: "/market?q=vintage+jacket" },
+  { label: "Women's denim", href: "/market?q=women%27s+denim" },
+  { label: "Sneakers", href: "/market?q=sneakers" },
+  { label: "Hoodie", href: "/market?q=hoodie" }
+] as const;
+
+type HomeShelfProps = {
+  section: MarketCuratedSection;
+  sticker: string;
+  eyebrow: string;
+};
+
+function HomeSectionHeader({
+  eyebrow,
+  title,
+  description,
+  href,
+  ctaLabel
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  href: string;
+  ctaLabel: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2.5 md:flex-row md:items-end md:justify-between">
+      <div className="space-y-1.5">
+        <p className="editorial-eyebrow">{eyebrow}</p>
+        <h2 className="font-display text-[1.7rem] font-extrabold tracking-tight md:text-[2.2rem]">{title}</h2>
+        <p className="max-w-2xl text-sm leading-6 text-foreground/74 dark:text-white/78">{description}</p>
+      </div>
+      <Link
+        href={href}
+        className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:gap-2 hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
+      >
+        {ctaLabel} <ArrowRight className="h-4 w-4" />
+      </Link>
+    </div>
+  );
+}
+
+function HomeShelf({ section, sticker, eyebrow }: HomeShelfProps) {
+  if (!section.items.length) {
+    return null;
+  }
+
+  const [featured, ...rest] = section.items;
+
+  return (
+    <section className="space-y-4">
+      <HomeSectionHeader
+        eyebrow={eyebrow}
+        title={section.title}
+        description={section.description}
+        href={section.href}
+        ctaLabel="Browse more"
+      />
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <ListingCard listing={featured} layout="featured" sticker={sticker} />
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+          {rest.slice(0, 6).map((listing, index) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              sticker={index === 0 && section.id === "brands" ? "Trending" : undefined}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default async function HomePage() {
   const session = await getAuthSession();
-  const [landing, waitlistCount, interviewsCount, partnersCount, followingFeed, suggestedSellers] = await Promise.all([
-    getLandingDrops(session?.user.id),
-    prisma.waitlistEntry.count(),
-    prisma.conversation.count(),
-    prisma.user.count({
-      where: {
-        sellerKind: "VERIFIED_SHOP",
-        verifiedShopApprovedAt: {
-          not: null
-        }
-      }
-    }),
-    session?.user.id ? getFollowingFeedListings(session.user.id, 1, 4) : Promise.resolve(null),
-    getSuggestedSellers(session?.user.id, 6)
+  const [curatedSections, marketListings] = await Promise.all([
+    getMarketCuratedSections(session?.user.id),
+    getMarketListings({
+      page: 1,
+      limit: 32,
+      sort: "newest",
+      userId: session?.user.id
+    })
   ]);
-  const { todaysDrops, hotOnGrounds } = landing;
 
-  const heroLead = todaysDrops[0] ?? hotOnGrounds[0] ?? null;
-  const heroSide = [...todaysDrops.slice(1, 3), ...hotOnGrounds.slice(0, 2)].slice(0, 1);
-  const freshFinds = todaysDrops.filter((listing) => isFashionBrowseListing(listing)).slice(0, 8);
-  const trendingBrandFinds = hotOnGrounds.filter((listing) => isFashionBrowseListing(listing) && Boolean(listing.brand)).slice(0, 8);
-  const hotFinds = (trendingBrandFinds.length ? trendingBrandFinds : hotOnGrounds.filter((listing) => isFashionBrowseListing(listing))).slice(0, 8);
-  const underThirtyFinds = [...todaysDrops, ...hotOnGrounds]
-    .filter((listing, index, array) => array.findIndex((entry) => entry.id === listing.id) === index)
-    .filter((listing) => isFashionBrowseListing(listing) && listing.priceCents <= 3000)
-    .slice(0, 8);
+  const freshShelf = curatedSections.primary.find((section) => section.id === "fresh") ?? null;
+  const trendingShelf = curatedSections.primary.find((section) => section.id === "brands") ?? null;
+  const liveInventory = marketListings.items;
 
   return (
-    <div className="container space-y-10 py-5 md:space-y-14 md:py-8">
-      <section className="space-y-8 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(19rem,33rem)] xl:items-start xl:gap-x-8 xl:space-y-0">
-        <div className="space-y-5 sm:space-y-6 xl:max-w-[37rem] xl:pt-2">
-          <div className="space-y-2.5 sm:space-y-3.5">
-            <p className="editorial-eyebrow">UVA-only resale for fellow Hoos</p>
-            <h1 className="max-w-4xl font-display text-[3.4rem] font-extrabold tracking-[-0.04em] leading-[0.94] sm:text-5xl md:text-7xl md:leading-[0.92]">
-              The best fits on <span className="font-editorial italic font-semibold text-uva-orange">Grounds</span>.
-            </h1>
-            <p className="max-w-2xl text-[0.98rem] leading-7 text-foreground/80 dark:text-white/82 md:text-lg">
-              HoosFinds is UVA&apos;s fashion-first resale marketplace for vintage layers, outerwear, sneakers, accessories,
-              and the campus pieces worth grabbing before someone else does.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 pt-0.5">
-            <Button asChild size="lg">
-              <Link href="/market">Browse Finds</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/sell">Sell a Find</Link>
-            </Button>
-          </div>
-
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-            {TRUST_MARKERS.map((item) => (
-              <span key={item} className="surface-pill shrink-0 px-4 py-2 text-sm">
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1.12fr_0.88fr] xl:max-w-[33rem] xl:justify-self-end xl:self-start">
-          {heroLead ? (
-            <Link href={`/listing/${heroLead.id}`} className="group relative block overflow-hidden rounded-[2.2rem] border border-border/80 bg-card shadow-card">
-              <div className="relative aspect-[4/5] overflow-hidden xl:aspect-[4/4.45]">
-                <Image
-                  src={heroLead.images[0] || FALLBACK_IMAGE}
-                  alt={heroLead.title}
-                  fill
-                  className="object-cover transition duration-700 group-hover:scale-[1.035]"
-                  sizes="(max-width: 640px) 100vw, 42vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/24 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5">
-                  <div className="space-y-3">
-                    <Badge variant="outline" className={cn("inline-flex", HERO_CARD_PILL_CLASS)}>
-                      Fresh listing
-                    </Badge>
-                    <div className="rounded-[1.35rem] bg-black/56 px-4 py-3 text-white backdrop-blur-sm">
-                      <p className="max-w-xs font-display text-[2rem] font-extrabold leading-[0.95] tracking-tight [text-wrap:balance]">
-                        {heroLead.title}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-full border border-border/70 bg-card/90 px-4 py-2 text-sm font-semibold text-foreground shadow-soft dark:border-white/14 dark:bg-slate-950/82 dark:text-white/96">
-                    {formatCurrency(heroLead.priceCents / 100)}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <div className="soft-panel flex aspect-[4/5] flex-col justify-between p-8">
-              <div>
-                <p className="editorial-eyebrow">HoosFinds mood</p>
-                <h2 className="mt-4 max-w-sm font-display text-4xl font-extrabold tracking-tight">
-                  Good finds. Better fits. Right here at UVA.
-                </h2>
-              </div>
-              <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-                Once listings are live, this spotlight becomes the first thing fellow Hoos see when they open the app.
+    <div className="container space-y-8 py-4 md:space-y-10 md:py-6">
+      <section className="rounded-[2rem] border border-border/80 bg-card/72 p-5 shadow-card backdrop-blur-sm md:p-6">
+        <div className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="orange">HoosFinds</Badge>
+              <Badge variant="outline">UVA fashion resale</Badge>
+            </div>
+            <div className="space-y-2">
+              <h1 className="max-w-3xl font-display text-[2.4rem] font-extrabold tracking-[-0.04em] leading-[0.95] sm:text-[3.2rem] md:text-[4rem]">
+                Your next favorite fit is already on Grounds.
+              </h1>
+              <p className="max-w-2xl text-[0.98rem] leading-6 text-foreground/78 dark:text-white/80">
+                Shop clothes, shoes, and accessories from UVA students and trusted local sellers. Search fast, check out securely,
+                and pick up near the places you already know.
               </p>
             </div>
-          )}
+          </div>
 
-          <div className="hidden gap-4 sm:grid">
-            {heroSide.length ? (
-              heroSide.map((listing, index) => (
+          <form action="/market" method="get" className="space-y-3">
+            <div className="surface-panel-strong flex items-center gap-2 rounded-[1.4rem] p-2">
+              <Search className="ml-2 h-5 w-5 shrink-0 text-foreground/58 dark:text-white/62" />
+              <Input
+                name="q"
+                type="search"
+                placeholder="Search brands, pieces, styles, or categories"
+                className="h-12 border-0 bg-transparent px-1 text-base shadow-none ring-0 focus-visible:ring-0"
+              />
+              <Button type="submit" size="lg" className="h-12 rounded-[1.05rem] px-5">
+                Search
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SEARCH_SHORTCUTS.map((shortcut) => (
                 <Link
-                  key={listing.id}
-                  href={`/listing/${listing.id}`}
-                  className="group relative block overflow-hidden rounded-[1.9rem] border border-border/80 bg-card shadow-soft"
+                  key={shortcut.label}
+                  href={shortcut.href}
+                  className="surface-pill px-3.5 py-2 text-sm font-medium text-foreground/82 transition hover:text-uva-orange dark:text-white/82"
                 >
-                  <div className="relative aspect-[4/4.45] overflow-hidden xl:aspect-[4/3.72]">
-                    <Image
-                      src={listing.images[0] || FALLBACK_IMAGE}
-                      alt={listing.title}
-                      fill
-                      className="object-cover transition duration-700 group-hover:scale-[1.035]"
-                      sizes="(max-width: 640px) 100vw, 24vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/62 via-black/16 to-transparent" />
-                    <div className="absolute left-4 top-4">
-                      <Badge variant="outline" className={HERO_CARD_PILL_CLASS}>
-                        {index === 0 ? "Just posted" : "Campus favorite"}
-                      </Badge>
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 p-4">
-                      <div className="rounded-[1.15rem] border border-white/10 bg-black/68 px-3 py-3 text-white shadow-[0_14px_36px_rgba(0,0,0,0.34)]">
-                        <p className="font-display text-xl font-extrabold leading-tight tracking-tight text-white [text-wrap:balance]">
-                          {listing.title}
-                        </p>
-                        <p className="mt-2 text-sm font-medium text-white/88">{formatCurrency(listing.priceCents / 100)}</p>
-                      </div>
-                    </div>
-                  </div>
+                  {shortcut.label}
                 </Link>
-              ))
-            ) : (
-              <div className="soft-panel flex h-full flex-col justify-between p-6">
-                <div>
-                  <p className="editorial-eyebrow">Built for style</p>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    HoosFinds puts clothing first, but still leaves room for the dorm, tech, textbook, and ticket finds
-                    students actually need.
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground/88 dark:text-white/92">
-                  <Sparkles className="h-4 w-4 text-uva-orange" />
-                  Editorial, local, and easy to trust
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
+          </form>
 
-            <div className="soft-panel flex items-center justify-between gap-4 p-4">
-              <div>
-                <p className="editorial-eyebrow">UVA-only access</p>
-                <p className="mt-2 max-w-[15rem] text-sm leading-6 text-foreground/72 dark:text-white/78">
-                  Every listing, save, and message stays inside the UVA student community.
-                </p>
-              </div>
-              <div className="surface-pill flex h-12 w-12 items-center justify-center text-uva-orange dark:text-orange-50">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
+          <div className="space-y-3">
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+              {HOME_PRIMARY_LANES.map((lane) => (
+                <Link
+                  key={lane.label}
+                  href={lane.href}
+                  className="surface-pill inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-uva-orange/35 hover:text-uva-orange dark:text-white"
+                >
+                  {lane.label}
+                </Link>
+              ))}
+              <Link
+                href="/market"
+                className="surface-pill inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-semibold text-foreground/82 transition hover:border-uva-orange/35 hover:text-uva-orange dark:text-white/84"
+              >
+                More
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              {TRUST_MARKERS.map((marker) => (
+                <span
+                  key={marker.label}
+                  className="surface-subtle inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm text-foreground/78 dark:text-white/80"
+                >
+                  <marker.icon className="h-4 w-4 text-uva-orange" />
+                  {marker.label}
+                </span>
+              ))}
             </div>
           </div>
         </div>
-
       </section>
 
-      <FollowingFeedSection
-        viewerSignedIn={Boolean(session?.user.id)}
-        feed={followingFeed}
-        suggested={suggestedSellers}
-        title={session?.user.id ? "New drops from sellers you follow" : "Popular on Grounds"}
-        subtitle={
-          session?.user.id
-            ? "Fresh drops from the closets you trust."
-            : "Start with the closets already putting up strong campus finds."
-        }
-        emptyTitle="Follow a few closets and your feed starts here"
-        emptyDescription="Follow sellers whose style you like and their newest listings stay in one cleaner feed."
-      />
+      {freshShelf ? <HomeShelf section={freshShelf} eyebrow="Start here" sticker="Fresh" /> : null}
 
-      <section className="space-y-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="editorial-eyebrow">Fresh on Grounds</p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">New finds from across Grounds.</h2>
-          </div>
-          <Link
-            href="/market"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
-          >
-            Browse everything <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+      {trendingShelf ? <HomeShelf section={trendingShelf} eyebrow="Trending brands" sticker="Trending" /> : null}
 
-        {freshFinds.length ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {freshFinds.map((listing, index) => (
-              <ListingCard key={listing.id} listing={listing} sticker={index === 0 ? "New Find" : undefined} />
-            ))}
-          </div>
-        ) : (
-          <div className="surface-panel-dashed p-8 text-center">
-            <p className="font-display text-2xl font-bold">No finds live yet</p>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
-              HoosFinds is ready for the first wave of campus listings. Once students start posting, this section becomes
-              the live front page for student style on Grounds.
-            </p>
-          </div>
-        )}
-      </section>
+      <section className="space-y-4">
+        <HomeSectionHeader
+          eyebrow="Everything live"
+          title="Browse the full inventory."
+          description="Every active listing on HoosFinds, in one clean grid. Start with the latest drops and keep scrolling."
+          href="/market"
+          ctaLabel="Open full browse"
+        />
 
-      <section className="space-y-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="editorial-eyebrow">Trending Brands</p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">The labels fellow Hoos are saving fastest.</h2>
-          </div>
-          <div className="surface-pill inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.18em]">
-            <MapPin className="h-3.5 w-3.5 text-uva-orange" />
-            Last 72 hours
-          </div>
-        </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {hotFinds.map((listing, index) => (
-            <ListingCard key={listing.id} listing={listing} sticker={index < 2 ? "Trending brand" : undefined} />
+          {liveInventory.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
       </section>
 
-      {underThirtyFinds.length ? (
-        <section className="space-y-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="editorial-eyebrow">Under $30</p>
-              <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">Good style still shows up on a student budget.</h2>
-            </div>
-            <Link
-              href="/market?max=3000"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-foreground/88 transition hover:text-uva-orange dark:text-white/92 dark:hover:text-uva-orange"
-            >
-              Shop the edit <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {underThirtyFinds.map((listing, index) => (
-              <ListingCard key={listing.id} listing={listing} sticker={index === 0 ? "Budget pick" : undefined} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-8 border-t border-border/80 pt-8 lg:grid-cols-[0.88fr_1.12fr]">
-        <div className="space-y-4">
-          <p className="editorial-eyebrow">How it works</p>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">
-            Curated campus resale without the friction.
-          </h2>
-          <p className="max-w-lg text-sm leading-7 text-muted-foreground">
-            HoosFinds keeps the flow simple: better photos, tighter search, local pickup, and a feed that feels more like
-            campus style than classifieds.
-          </p>
-        </div>
-
-        <div className="surface-panel-strong overflow-hidden">
-          {HOW_IT_WORKS_STEPS.map((step, index) => (
-            <div
-              key={step.number}
-              className={cn(
-                "grid gap-3 px-5 py-5 sm:grid-cols-[70px_minmax(0,1fr)] sm:px-6 sm:py-6 lg:grid-cols-[70px_minmax(0,1fr)_170px] lg:gap-6",
-                index !== HOW_IT_WORKS_STEPS.length - 1 && "border-b border-border/80"
-              )}
-            >
-              <p className="font-editorial text-4xl italic leading-none text-uva-orange">{step.number}</p>
-              <div className="space-y-2">
-                <h3 className="font-display text-xl font-bold">{step.title}</h3>
-                <p className="max-w-xl text-sm leading-6 text-muted-foreground">{step.description}</p>
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground lg:pt-2">
-                {step.note}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-4 rounded-[2.4rem] border border-border/80 bg-card/80 p-6 shadow-card md:grid-cols-[1.15fr_0.85fr_0.85fr] md:p-7">
-        <div className="md:pr-6">
-          <p className="editorial-eyebrow">Building with students</p>
-          <h3 className="mt-3 font-display text-3xl font-extrabold tracking-tight">A real campus product, not a placeholder brand.</h3>
-        </div>
-        <div className="surface-subtle rounded-[1.5rem] p-5">
-          <p className="editorial-eyebrow">Waitlist</p>
-          <p className="mt-3 font-display text-4xl font-extrabold">{waitlistCount}</p>
-          <p className="mt-2 text-sm text-muted-foreground">Students raising their hand for better local resale.</p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-          <div className="surface-subtle rounded-[1.5rem] p-5">
-            <p className="editorial-eyebrow">Conversations</p>
-            <p className="mt-3 font-display text-3xl font-extrabold">{interviewsCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground">Campus demand signals flowing through the marketplace.</p>
-          </div>
-          <div className="surface-subtle rounded-[1.5rem] p-5">
-            <p className="editorial-eyebrow">Verified shops</p>
-            <p className="mt-3 font-display text-3xl font-extrabold">{partnersCount}</p>
-            <p className="mt-2 text-sm text-muted-foreground">Reviewed local thrift and vintage partners inside the marketplace.</p>
-          </div>
-        </div>
-      </section>
-
-      <footer className="grid gap-5 border-t border-border/80 pb-4 pt-7 md:grid-cols-3">
+      <footer className="grid gap-4 border-t border-border/80 pb-4 pt-6 md:grid-cols-3">
         <div className="space-y-2">
           <p className="font-display text-2xl font-extrabold tracking-tight">HoosFinds</p>
           <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-            UVA&apos;s fashion-first resale marketplace for student style, local pickup, and the kinds of finds worth sharing with fellow Hoos.
+            UVA&apos;s clothing-first resale marketplace for local pickup, better campus finds, and the closets worth browsing between classes.
           </p>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
           <Link href="/safety" className="block font-medium text-foreground hover:text-uva-blue">
             Safety & meetup guidance
           </Link>
-          <p>UVA-only access keeps the marketplace local, trusted, and grounded in student life.</p>
+          <p>UVA-only buyers keep the marketplace local, trusted, and grounded in student life.</p>
         </div>
         <div className="space-y-2 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">Questions or launch interest</p>
-          <p>hello@hoosfinds.com</p>
-          <p>Built for style finds, move-out gems, and better campus resale on Grounds.</p>
+          <p>hoosfinders@gmail.com</p>
+          <p>Built for better resale on Grounds.</p>
         </div>
       </footer>
     </div>
