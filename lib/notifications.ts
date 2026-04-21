@@ -256,8 +256,15 @@ export async function notifyMessageReceived(messageId: string) {
     select: {
       id: true,
       body: true,
+      kind: true,
       conversationId: true,
       senderId: true,
+      offer: {
+        select: {
+          id: true,
+          amountCents: true
+        }
+      },
       sender: {
         select: {
           name: true,
@@ -288,16 +295,29 @@ export async function notifyMessageReceived(messageId: string) {
   const recipientId = message.senderId === message.conversation.buyerId ? message.conversation.sellerId : message.conversation.buyerId;
   const senderName = getPublicDisplayName(message.sender);
   const preview = message.body.trim().replace(/\s+/g, " ").slice(0, 80);
+  const listingTitle = message.conversation.listing?.title;
+  const isOfferMessage = message.kind === "OFFER" && message.offer;
+  const offerAmountLabel = message.offer
+    ? formatCurrencyFromCents(message.offer.amountCents, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    : null;
 
   await createNotification({
     userId: recipientId,
     type: NotificationType.MESSAGE_RECEIVED,
-    title: `${senderName} sent you a message.`,
-    body: message.conversation.listing?.title ? `On ${message.conversation.listing.title}: "${preview}"` : `"${preview}"`,
+    title: isOfferMessage ? `${senderName} made an offer.` : `${senderName} sent you a message.`,
+    body: isOfferMessage
+      ? `${listingTitle ? `On ${listingTitle}: ` : ""}${offerAmountLabel ?? "New offer"}`
+      : listingTitle
+        ? `On ${listingTitle}: "${preview}"`
+        : `"${preview}"`,
     href: `/messages?conversation=${message.conversationId}`,
     externalKey: `message:${message.id}`,
     metadata: {
       messageId: message.id,
+      offerId: message.offer?.id,
       conversationId: message.conversationId
     }
   });

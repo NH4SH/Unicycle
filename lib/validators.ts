@@ -144,7 +144,26 @@ export const profileSchema = z.object({
 
 export const messageSchema = z.object({
   conversationId: z.string(),
-  body: z.string().min(1).max(1000)
+  body: z
+    .string()
+    .trim()
+    .min(1, "Write a message before sending.")
+    .max(1000, "Keep messages under 1,000 characters.")
+});
+
+export const createOfferSchema = z.object({
+  conversationId: z.string().min(1),
+  amountCents: z.number().int().min(100, "Offers must be at least $1.00.").max(250000, "Keep offers under $2,500."),
+  note: z
+    .string()
+    .trim()
+    .max(280, "Keep offer notes under 280 characters.")
+    .optional()
+    .transform((value) => value || undefined)
+});
+
+export const updateOfferSchema = z.object({
+  action: z.enum(["accept", "decline", "cancel"])
 });
 
 export const checkoutSessionSchema = z.object({

@@ -10,12 +10,12 @@ export async function GET(request: Request) {
   const session = await getAuthSession();
   if (!session?.user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  const data = await getConversationsForUser(session.user.id);
-
   const conversationId = new URL(request.url).searchParams.get("conversationId");
   if (conversationId) {
     await markConversationAsRead(conversationId, session.user.id);
   }
+
+  const data = await getConversationsForUser(session.user.id);
 
   return NextResponse.json(data);
 }

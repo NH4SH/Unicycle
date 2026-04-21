@@ -52,10 +52,35 @@ export async function POST(request: Request) {
     );
   }
 
+  const duplicateWindowStart = new Date(Date.now() - 5000);
+  const recentDuplicate = await prisma.message.findFirst({
+    where: {
+      conversationId: parsed.data.conversationId,
+      senderId: session.user.id,
+      body: parsed.data.body,
+      kind: "TEXT",
+      createdAt: {
+        gte: duplicateWindowStart
+      }
+    },
+    select: {
+      id: true,
+      createdAt: true
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+  if (recentDuplicate) {
+    return NextResponse.json({ id: recentDuplicate.id, createdAt: recentDuplicate.createdAt.toISOString(), duplicate: true });
+  }
+
   const message = await prisma.message.create({
     data: {
       conversationId: parsed.data.conversationId,
       senderId: session.user.id,
+      kind: "TEXT",
       body: parsed.data.body
     }
   });

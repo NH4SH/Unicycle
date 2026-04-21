@@ -90,14 +90,19 @@ export function NotificationBell() {
     const onFocus = () => {
       void loadNotifications();
     };
+    const onForcedRefresh = () => {
+      void loadNotifications();
+    };
 
     window.addEventListener("focus", onFocus);
+    window.addEventListener("hoosfinds:notifications-refresh", onForcedRefresh);
     const interval = window.setInterval(() => {
       void loadNotifications();
-    }, 45000);
+    }, 10000);
 
     return () => {
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("hoosfinds:notifications-refresh", onForcedRefresh);
       window.clearInterval(interval);
     };
   }, [loadNotifications]);

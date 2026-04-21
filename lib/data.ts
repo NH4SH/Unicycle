@@ -1462,7 +1462,23 @@ export async function getConversationsForUser(userId: string) {
         select: publicUserSummarySelect
       },
       messages: {
-        orderBy: { createdAt: "asc" }
+        orderBy: { createdAt: "asc" },
+        include: {
+          offer: {
+            select: {
+              id: true,
+              amountCents: true,
+              status: true,
+              note: true,
+              buyerId: true,
+              sellerId: true,
+              acceptedTransactionId: true,
+              createdAt: true,
+              updatedAt: true,
+              respondedAt: true
+            }
+          }
+        }
       },
       transactions: {
         orderBy: {
@@ -1502,13 +1518,23 @@ export async function getConversationsForUser(userId: string) {
     }
   });
 
-  return conversations.map((conversation) => {
+  const sortedConversations = [...conversations].sort((a, b) => {
+    const latestA = a.messages.at(-1)?.createdAt ?? a.transactions[0]?.updatedAt ?? a.createdAt;
+    const latestB = b.messages.at(-1)?.createdAt ?? b.transactions[0]?.updatedAt ?? b.createdAt;
+    return latestB.getTime() - latestA.getTime();
+  });
+
+  return sortedConversations.map((conversation) => {
     const otherUser = conversation.buyerId === userId ? conversation.seller : conversation.buyer;
     const transaction = conversation.transactions[0] ?? null;
+    const lastActivityAt = conversation.messages.at(-1)?.createdAt ?? transaction?.updatedAt ?? conversation.createdAt;
+    const unreadCount = conversation.messages.filter((message) => message.senderId !== userId && !message.readAt).length;
 
     return {
       id: conversation.id,
       role: conversation.sellerId === userId ? "seller" : "buyer",
+      unreadCount,
+      lastActivityAt: lastActivityAt.toISOString(),
       listing: mapListing(conversation.listing, userId),
       otherUser: {
         ...toPublicUserSummary(otherUser)
@@ -1517,6 +1543,21 @@ export async function getConversationsForUser(userId: string) {
         id: message.id,
         senderId: message.senderId,
         body: message.body,
+        kind: message.kind,
+        offer: message.offer
+          ? {
+              id: message.offer.id,
+              amountCents: message.offer.amountCents,
+              status: message.offer.status,
+              note: message.offer.note,
+              buyerId: message.offer.buyerId,
+              sellerId: message.offer.sellerId,
+              acceptedTransactionId: message.offer.acceptedTransactionId,
+              createdAt: message.offer.createdAt.toISOString(),
+              updatedAt: message.offer.updatedAt.toISOString(),
+              respondedAt: message.offer.respondedAt?.toISOString() ?? null
+            }
+          : null,
         createdAt: message.createdAt.toISOString(),
         readAt: message.readAt?.toISOString() ?? null
       })),
@@ -1582,16 +1623,34 @@ export async function markConversationAsRead(conversationId: string, userId: str
     return;
   }
 
-  await prisma.message.updateMany({
-    where: {
-      conversationId,
-      senderId: { not: userId },
-      readAt: null
-    },
-    data: {
-      readAt: new Date()
-    }
-  });
+  const now = new Date();
+
+  await prisma.$transaction([
+    prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        readAt: null
+      },
+      data: {
+        readAt: now
+      }
+    }),
+    prisma.notification.updateMany({
+      where: {
+        userId,
+        isRead: false,
+        metadata: {
+          path: ["conversationId"],
+          equals: conversationId
+        }
+      },
+      data: {
+        isRead: true,
+        readAt: now
+      }
+    })
+  ]);
 }
 
 export async function getPurchasesOverview(userId: string) {

@@ -153,6 +153,20 @@ enum NotificationType {
   ACCOUNT_ALERT
 }
 
+enum MessageKind {
+  TEXT
+  OFFER
+  SYSTEM
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   /// Public display name shown across the marketplace. Keep UVA email / local
   /// computing ID internal to auth and account recovery, not profile identity.
@@ -192,6 +206,8 @@ model User {
   sellerConvos Conversation[] @relation("SellerConversations")
 
   messages                           Message[]
+  sentConversationOffers             ConversationOffer[]         @relation("ConversationOfferBuyer")
+  receivedConversationOffers         ConversationOffer[]         @relation("ConversationOfferSeller")
   reports                            Report[]                    @relation("ReporterReports")
   waitlistEntries                    WaitlistEntry[]
   buyerOrders                        Order[]                     @relation("BuyerOrders")
@@ -259,6 +275,7 @@ model Listing {
 
   favorites           Favorite[]
   conversations       Conversation[]
+  conversationOffers  ConversationOffer[]
   reports             Report[]
   orders              Order[]
   checkoutReservation CheckoutReservation?
@@ -311,6 +328,7 @@ model Conversation {
   seller       User                 @relation("SellerConversations", fields: [sellerId], references: [id], onDelete: Cascade)
   listing      Listing              @relation(fields: [listingId], references: [id], onDelete: Cascade)
   messages     Message[]
+  offers       ConversationOffer[]
   transactions Transaction[]
   reports      ConversationReport[]
 
@@ -320,18 +338,50 @@ model Conversation {
 }
 
 model Message {
-  id             String    @id @default(cuid())
+  id             String      @id @default(cuid())
   conversationId String
   senderId       String
   body           String
-  createdAt      DateTime  @default(now())
+  kind           MessageKind @default(TEXT)
+  offerId        String?     @unique
+  createdAt      DateTime    @default(now())
   readAt         DateTime?
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  offer        ConversationOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([createdAt])
+  @@index([kind])
+}
+
+model ConversationOffer {
+  id                    String      @id @default(cuid())
+  conversationId        String
+  listingId             String
+  buyerId               String
+  sellerId              String
+  amountCents           Int
+  status                OfferStatus @default(PENDING)
+  note                  String?
+  acceptedTransactionId String?     @unique
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  respondedAt           DateTime?
+
+  conversation        Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  listing             Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer               User         @relation("ConversationOfferBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller              User         @relation("ConversationOfferSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  acceptedTransaction Transaction? @relation("OfferAcceptedTransaction", fields: [acceptedTransactionId], references: [id], onDelete: SetNull)
+  messages            Message[]
+
+  @@index([conversationId, createdAt])
+  @@index([listingId, status])
+  @@index([buyerId, createdAt])
+  @@index([sellerId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Report {
@@ -416,14 +466,15 @@ model Transaction {
   handoffConfirmedAt       DateTime?
   buyerConfirmedReceivedAt DateTime?
 
-  listing      Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  seller       User               @relation("SellerTransactions", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer        User               @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
-  conversation Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  order        Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  review       SellerReview?
-  issues       TransactionIssue[]
-  trustEvents  UserTrustEvent[]
+  listing                   Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  seller                    User               @relation("SellerTransactions", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer                     User               @relation("BuyerTransactions", fields: [buyerId], references: [id], onDelete: Cascade)
+  conversation              Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  order                     Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  review                    SellerReview?
+  issues                    TransactionIssue[]
+  trustEvents               UserTrustEvent[]
+  acceptedConversationOffer ConversationOffer? @relation("OfferAcceptedTransaction")
 
   @@index([listingId])
   @@index([sellerId])
