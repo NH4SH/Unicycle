@@ -59,39 +59,15 @@ export const LISTING_SORT_OPTIONS = [
 export const HOME_PRIMARY_LANES = [
   {
     label: "Women's",
-    href: "/market?lane=womens",
+    href: "/market?audience=womens",
     eyebrow: "Women's",
     description: "Going-out pieces, denim, layered staples, and quick pickup finds."
   },
   {
     label: "Men's",
-    href: "/market?lane=mens",
+    href: "/market?audience=mens",
     eyebrow: "Men's",
     description: "Vintage sweats, everyday Grounds fits, and closet cleanout standouts."
-  },
-  {
-    label: "Vintage",
-    href: "/market?lane=vintage",
-    eyebrow: "Lead lane",
-    description: "Thrifted sweats, worn-in layers, and the Grounds pieces with real history."
-  },
-  {
-    label: "Streetwear",
-    href: "/market?lane=streetwear",
-    eyebrow: "Daily rotation",
-    description: "Graphic crews, hoodies, jackets, and the fits people notice between classes."
-  },
-  {
-    label: "Accessories",
-    href: "/market?lane=accessories",
-    eyebrow: "Finish the look",
-    description: "Bags, jewelry, hats, and the smaller pieces that carry the outfit."
-  },
-  {
-    label: "Shoes",
-    href: "/market?lane=shoes",
-    eyebrow: "Underfoot",
-    description: "Sneakers, boots, and daily pairs worth crossing Grounds for."
   }
 ] as const;
 

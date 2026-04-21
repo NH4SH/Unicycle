@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import {
+  ArrowDown,
   BadgeDollarSign,
   CheckCircle2,
   ExternalLink,
@@ -107,6 +108,7 @@ type ConversationPayload = {
 };
 
 const MESSAGE_REFRESH_CHANNEL = "hoosfinds-messages";
+const MESSAGE_BOTTOM_THRESHOLD_PX = 160;
 
 function broadcastMessageRefresh(conversationId?: string) {
   if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
@@ -187,6 +189,41 @@ export function MessagesClient({ userId }: { userId: string }) {
   const [offerAmount, setOfferAmount] = useState("");
   const [offerNote, setOfferNote] = useState("");
   const [offerSubmitting, setOfferSubmitting] = useState(false);
+  const [hasNewMessagesBelow, setHasNewMessagesBelow] = useState(false);
+  const messageViewportRef = useRef<HTMLDivElement | null>(null);
+  const messageBottomRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const lastRenderedThreadRef = useRef<{ conversationId: string | null; messageId: string | null }>({
+    conversationId: null,
+    messageId: null
+  });
+
+  const isMessageViewportNearBottom = useCallback(() => {
+    const viewport = messageViewportRef.current;
+    if (!viewport) return true;
+
+    return viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <= MESSAGE_BOTTOM_THRESHOLD_PX;
+  }, []);
+
+  const scrollMessagesToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    window.requestAnimationFrame(() => {
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      messageBottomRef.current?.scrollIntoView({
+        block: "end",
+        behavior: prefersReducedMotion ? "auto" : behavior
+      });
+      shouldAutoScrollRef.current = true;
+      setHasNewMessagesBelow(false);
+    });
+  }, []);
+
+  const handleMessageViewportScroll = useCallback(() => {
+    const nearBottom = isMessageViewportNearBottom();
+    shouldAutoScrollRef.current = nearBottom;
+    if (nearBottom) {
+      setHasNewMessagesBelow(false);
+    }
+  }, [isMessageViewportNearBottom]);
 
   const loadConversations = useCallback(
     async (markReadId?: string, options: { silent?: boolean } = {}) => {
@@ -236,6 +273,8 @@ export function MessagesClient({ userId }: { userId: string }) {
     setOfferOpen(false);
     setOfferAmount("");
     setOfferNote("");
+    setHasNewMessagesBelow(false);
+    shouldAutoScrollRef.current = true;
   }, [activeId]);
 
   useEffect(() => {
@@ -271,6 +310,34 @@ export function MessagesClient({ userId }: { userId: string }) {
     () => conversations.find((conversation) => conversation.id === activeId) ?? null,
     [conversations, activeId]
   );
+  const activeLastMessage = activeConversation?.messages.at(-1) ?? null;
+
+  useLayoutEffect(() => {
+    if (!activeConversation) return;
+
+    const previous = lastRenderedThreadRef.current;
+    const conversationChanged = previous.conversationId !== activeConversation.id;
+    const messageChanged = previous.messageId !== activeLastMessage?.id;
+
+    if (!conversationChanged && !messageChanged) return;
+
+    const latestIsOwnMessage = activeLastMessage?.senderId === userId;
+    const shouldScroll = conversationChanged || latestIsOwnMessage || shouldAutoScrollRef.current;
+
+    lastRenderedThreadRef.current = {
+      conversationId: activeConversation.id,
+      messageId: activeLastMessage?.id ?? null
+    };
+
+    if (shouldScroll) {
+      scrollMessagesToBottom(conversationChanged ? "auto" : "smooth");
+      return;
+    }
+
+    if (messageChanged) {
+      setHasNewMessagesBelow(true);
+    }
+  }, [activeConversation, activeLastMessage?.id, activeLastMessage?.senderId, scrollMessagesToBottom, userId]);
 
   const pendingOffer = useMemo(() => {
     if (!activeConversation) return null;
@@ -302,6 +369,8 @@ export function MessagesClient({ userId }: { userId: string }) {
     }
 
     const payload = (await response.json()) as { id: string; createdAt: string };
+    shouldAutoScrollRef.current = true;
+    setHasNewMessagesBelow(false);
     setConversations((prev) =>
       prev.map((conversation) =>
         conversation.id === activeConversation.id
@@ -362,6 +431,8 @@ export function MessagesClient({ userId }: { userId: string }) {
     }
 
     toast.success("Offer sent to the seller.");
+    shouldAutoScrollRef.current = true;
+    setHasNewMessagesBelow(false);
     setOfferOpen(false);
     setOfferAmount("");
     setOfferNote("");
@@ -387,6 +458,8 @@ export function MessagesClient({ userId }: { userId: string }) {
 
     const copy = action === "accept" ? "Offer accepted. The sale is now waiting on handoff confirmation." : action === "decline" ? "Offer declined." : "Offer cancelled.";
     toast.success(copy);
+    shouldAutoScrollRef.current = true;
+    setHasNewMessagesBelow(false);
     broadcastMessageRefresh(conversationId);
     await loadConversations(conversationId, { silent: true });
     if (action === "accept") {
@@ -1018,11 +1091,29 @@ export function MessagesClient({ userId }: { userId: string }) {
 
             <div className="border-y border-border/70 px-4 py-3">{renderSalePanel(activeConversation)}</div>
 
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-3">
-                {activeConversation.messages.map((message) => renderMessage(message, activeConversation))}
-              </div>
-            </ScrollArea>
+            <div className="relative min-h-0 flex-1">
+              <ScrollArea
+                className="h-full p-4"
+                viewportRef={messageViewportRef}
+                onViewportScroll={handleMessageViewportScroll}
+              >
+                <div className="space-y-3">
+                  {activeConversation.messages.map((message) => renderMessage(message, activeConversation))}
+                  <div ref={messageBottomRef} aria-hidden="true" className="h-1" />
+                </div>
+              </ScrollArea>
+              {hasNewMessagesBelow ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 shadow-2xl"
+                  onClick={() => scrollMessagesToBottom("smooth")}
+                >
+                  New messages
+                  <ArrowDown className="ml-1.5 h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
 
             <div className="border-t border-border/80 p-3">
               <form

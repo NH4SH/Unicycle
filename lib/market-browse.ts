@@ -18,6 +18,7 @@ export type MarketBrowseLaneId =
   | "extras";
 
 export type SellerBrowseLaneId = Exclude<MarketBrowseLaneId, "outerwear">;
+export type MarketAudienceId = Extract<MarketBrowseLaneId, "womens" | "mens">;
 
 export type MarketBrowsePill = {
   id: MarketBrowseLaneId;
@@ -25,7 +26,7 @@ export type MarketBrowsePill = {
   description: string;
 };
 
-export const PRIMARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
+export const MARKET_AUDIENCE_TABS: readonly MarketBrowsePill[] = [
   {
     id: "womens",
     label: "Women's",
@@ -35,7 +36,10 @@ export const PRIMARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
     id: "mens",
     label: "Men's",
     description: "Crewnecks, layers, jackets, and everyday Grounds fits."
-  },
+  }
+] as const;
+
+export const STYLE_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
   {
     id: "vintage",
     label: "Vintage",
@@ -57,6 +61,9 @@ export const PRIMARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
     description: "Bags, jewelry, caps, and the pieces that finish the look."
   }
 ] as const;
+
+export const PRIMARY_MARKET_BROWSE_PILLS = MARKET_AUDIENCE_TABS;
+export const FASHION_MARKET_BROWSE_PILLS = [...MARKET_AUDIENCE_TABS, ...STYLE_MARKET_BROWSE_PILLS] as const;
 
 export const SECONDARY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
   {
@@ -100,14 +107,19 @@ const LEGACY_MARKET_BROWSE_PILLS: readonly MarketBrowsePill[] = [
 ] as const;
 
 export const SELLER_BROWSE_LANE_OPTIONS = [
-  ...PRIMARY_MARKET_BROWSE_PILLS,
+  ...MARKET_AUDIENCE_TABS,
+  ...STYLE_MARKET_BROWSE_PILLS,
   ...SECONDARY_MARKET_BROWSE_PILLS
 ] as const satisfies readonly MarketBrowsePill[];
 
 export const SELLER_BROWSE_LANE_GROUPS = [
   {
-    label: "Fashion first",
-    options: PRIMARY_MARKET_BROWSE_PILLS
+    label: "Women's / Men's",
+    options: MARKET_AUDIENCE_TABS
+  },
+  {
+    label: "Style categories",
+    options: STYLE_MARKET_BROWSE_PILLS
   },
   {
     label: "More categories",
@@ -599,32 +611,50 @@ export function isExtraListing(source: ListingBrowseSource) {
 export function isFashionBrowseListing(source: ListingBrowseSource) {
   const meta = getListingBrowseMeta(source);
   if (meta.shoppingLane) {
-    return PRIMARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === meta.shoppingLane);
+    return FASHION_MARKET_BROWSE_PILLS.some((pill) => pill.id === meta.shoppingLane);
   }
 
   return source.category === "STREETWEAR" || source.category === "MISC" || hasKeyword(meta.haystack, FASHION_KEYWORDS);
 }
 
+export function matchesBrowseAudience(source: ListingBrowseSource, audience: MarketAudienceId) {
+  const meta = getListingBrowseMeta(source);
+
+  if (meta.shoppingLane === "womens" || meta.shoppingLane === "mens") {
+    return meta.shoppingLane === audience;
+  }
+
+  if (meta.shoppingLane && !FASHION_MARKET_BROWSE_PILLS.some((pill) => pill.id === meta.shoppingLane)) {
+    return false;
+  }
+
+  if (audience === "womens") {
+    return (
+      hasKeyword(meta.haystack, WOMENS_KEYWORDS) ||
+      (["XXS", "XS", "S"].includes(meta.size) && isFashionBrowseListing(source)) ||
+      (isAccessoryListing(source) && !hasKeyword(meta.haystack, MENS_KEYWORDS))
+    );
+  }
+
+  return (
+    hasKeyword(meta.haystack, MENS_KEYWORDS) ||
+    (["L", "XL", "XXL", "XXXL"].includes(meta.size) && isFashionBrowseListing(source)) ||
+    (isStreetwearListing(source) && !hasKeyword(meta.haystack, WOMENS_KEYWORDS) && !isAccessoryListing(source))
+  );
+}
+
 export function matchesBrowseLane(source: ListingBrowseSource, lane: MarketBrowseLaneId) {
   const meta = getListingBrowseMeta(source);
 
-  if (meta.shoppingLane) {
+  if (meta.shoppingLane && lane !== "womens" && lane !== "mens") {
     return lane === meta.shoppingLane;
   }
 
   switch (lane) {
     case "womens":
-      return (
-        hasKeyword(meta.haystack, WOMENS_KEYWORDS) ||
-        (["XXS", "XS", "S"].includes(meta.size) && isFashionBrowseListing(source)) ||
-        (isAccessoryListing(source) && !hasKeyword(meta.haystack, MENS_KEYWORDS))
-      );
+      return matchesBrowseAudience(source, "womens");
     case "mens":
-      return (
-        hasKeyword(meta.haystack, MENS_KEYWORDS) ||
-        (["L", "XL", "XXL", "XXXL"].includes(meta.size) && isFashionBrowseListing(source)) ||
-        (isStreetwearListing(source) && !hasKeyword(meta.haystack, WOMENS_KEYWORDS) && !isAccessoryListing(source))
-      );
+      return matchesBrowseAudience(source, "mens");
     case "vintage":
       return isVintageListing(source);
     case "streetwear":
@@ -653,7 +683,7 @@ export function matchesBrowseLane(source: ListingBrowseSource, lane: MarketBrows
 }
 
 export function getMarketBrowsePillLabel(id: MarketBrowseLaneId) {
-  return [...PRIMARY_MARKET_BROWSE_PILLS, ...SECONDARY_MARKET_BROWSE_PILLS, ...LEGACY_MARKET_BROWSE_PILLS].find((pill) => pill.id === id)?.label ?? id;
+  return [...FASHION_MARKET_BROWSE_PILLS, ...SECONDARY_MARKET_BROWSE_PILLS, ...LEGACY_MARKET_BROWSE_PILLS].find((pill) => pill.id === id)?.label ?? id;
 }
 
 export function getListingBrowseSectionLabel(source: ListingBrowseSource) {
@@ -676,6 +706,14 @@ export function normalizeMarketBrowseLane(lane?: string | null) {
   }
 
   return lane;
+}
+
+export function normalizeMarketAudience(audience?: string | null): MarketAudienceId | undefined {
+  if (audience === "womens" || audience === "mens") {
+    return audience;
+  }
+
+  return undefined;
 }
 
 export function normalizeFacetValue(value: string) {

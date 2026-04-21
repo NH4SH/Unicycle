@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadDropzone } from "@uploadthing/react";
 import { ArrowLeft, ArrowRight, GripHorizontal, Loader2, Trash2 } from "lucide-react";
@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CONDITION_LABELS, CONDITION_OPTIONS, PICKUP_LOCATIONS } from "@/lib/constants";
 import { getPickupLocationPublicLabel } from "@/lib/campus-pickup-locations";
 import { packListingDescription } from "@/lib/listing-draft";
-import { getMarketBrowsePillLabel, getStoredCategoryForBrowseLane, PRIMARY_MARKET_BROWSE_PILLS, SECONDARY_MARKET_BROWSE_PILLS, type SellerBrowseLaneId } from "@/lib/market-browse";
+import { SELLER_BROWSE_LANE_GROUPS, getMarketBrowsePillLabel, getStoredCategoryForBrowseLane, type SellerBrowseLaneId } from "@/lib/market-browse";
 import type { SellerPayoutState } from "@/lib/seller-payouts";
 import { getUploadedFileUrl } from "@/lib/uploadthing";
 import { listingSubmissionSchema } from "@/lib/validators";
@@ -384,23 +384,19 @@ export function SellWizard({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Fashion first</SelectLabel>
-                      {PRIMARY_MARKET_BROWSE_PILLS.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    <SelectSeparator />
-                    <SelectGroup>
-                      <SelectLabel>More categories</SelectLabel>
-                      {SECONDARY_MARKET_BROWSE_PILLS.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
+                    {SELLER_BROWSE_LANE_GROUPS.map((group, index) => (
+                      <Fragment key={group.label}>
+                        {index > 0 ? <SelectSeparator /> : null}
+                        <SelectGroup>
+                          <SelectLabel>{group.label}</SelectLabel>
+                          {group.options.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </Fragment>
+                    ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs leading-6 text-foreground/72 dark:text-white/78">

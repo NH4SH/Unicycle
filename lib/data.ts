@@ -15,11 +15,14 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import {
   getListingBrowseSectionLabel,
+  type MarketAudienceId,
   type MarketBrowseLaneId,
   getListingBrowseMeta,
   isFashionBrowseListing,
+  matchesBrowseAudience,
   matchesBrowseLane,
   matchesFacetValue,
+  normalizeMarketAudience,
   normalizeMarketBrowseLane
 } from "@/lib/market-browse";
 import { prisma } from "@/lib/prisma";
@@ -41,6 +44,7 @@ import { MARKET_PRICE_MIN_CENTS } from "@/lib/constants";
 
 type MarketQuery = {
   q?: string;
+  audience?: string;
   lane?: string;
   category?: string;
   condition?: string;
@@ -343,11 +347,22 @@ function calcResponse(seed: string) {
 }
 
 function hasDerivedBrowseFilters(query: MarketQuery) {
-  return Boolean(query.lane && query.lane !== "all") || Boolean(query.brand && query.brand !== "all") || Boolean(query.size && query.size !== "all") || Boolean(query.color && query.color !== "all");
+  return (
+    Boolean(query.audience && query.audience !== "all") ||
+    Boolean(query.lane && query.lane !== "all") ||
+    Boolean(query.brand && query.brand !== "all") ||
+    Boolean(query.size && query.size !== "all") ||
+    Boolean(query.color && query.color !== "all")
+  );
 }
 
 function matchesDerivedBrowseFilters(listing: Pick<ListingLike, "title" | "description" | "category" | "shoppingLane">, query: MarketQuery) {
+  const normalizedAudience = normalizeMarketAudience(query.audience);
   const normalizedLane = normalizeMarketBrowseLane(query.lane);
+
+  if (normalizedAudience && !matchesBrowseAudience(listing, normalizedAudience as MarketAudienceId)) {
+    return false;
+  }
 
   if (normalizedLane && normalizedLane !== "all" && !matchesBrowseLane(listing, normalizedLane as MarketBrowseLaneId)) {
     return false;

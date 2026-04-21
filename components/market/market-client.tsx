@@ -21,15 +21,18 @@ import {
 } from "@/lib/constants";
 import type { ListingCardData, MarketCuratedSections } from "@/lib/data";
 import {
-  PRIMARY_MARKET_BROWSE_PILLS,
+  MARKET_AUDIENCE_TABS,
   SECONDARY_MARKET_BROWSE_PILLS,
+  STYLE_MARKET_BROWSE_PILLS,
   getMarketBrowsePillLabel,
+  type MarketAudienceId,
   type MarketBrowseLaneId
 } from "@/lib/market-browse";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export type MarketFilters = {
   q: string;
+  audience: string;
   lane: string;
   category: string;
   condition: string;
@@ -64,6 +67,7 @@ type MarketCardLayout = {
 
 const DEFAULT_MARKET_FILTERS: MarketFilters = {
   q: "",
+  audience: "all",
   lane: "all",
   category: "all",
   condition: "all",
@@ -79,6 +83,7 @@ const DEFAULT_MARKET_FILTERS: MarketFilters = {
 function buildMarketQueryString(filters: MarketFilters) {
   const params = new URLSearchParams();
   if (filters.q) params.set("q", filters.q);
+  if (filters.audience !== "all") params.set("audience", filters.audience);
   if (filters.lane !== "all") params.set("lane", filters.lane);
   if (filters.category !== "all") params.set("category", filters.category);
   if (filters.condition !== "all") params.set("condition", filters.condition);
@@ -280,6 +285,14 @@ export function MarketClient({
       });
     }
 
+    if (filters.audience !== DEFAULT_MARKET_FILTERS.audience) {
+      chips.push({
+        key: "audience",
+        label: filters.audience === "womens" ? "Women's" : "Men's",
+        onRemove: () => removeFilter("audience")
+      });
+    }
+
     if (filters.lane !== DEFAULT_MARKET_FILTERS.lane) {
       chips.push({
         key: "lane",
@@ -371,6 +384,7 @@ export function MarketClient({
 
   const exploreFiltersActive =
     Boolean(filters.q.trim()) ||
+    filters.audience !== DEFAULT_MARKET_FILTERS.audience ||
     filters.lane !== DEFAULT_MARKET_FILTERS.lane ||
     filters.category !== DEFAULT_MARKET_FILTERS.category ||
     filters.condition !== DEFAULT_MARKET_FILTERS.condition ||
@@ -542,10 +556,41 @@ export function MarketClient({
     setAdvancedFiltersOpen(false);
   }
 
+  function setAudience(nextAudience: MarketAudienceId) {
+    setFilters((prev) => ({
+      ...prev,
+      audience: prev.audience === nextAudience ? "all" : nextAudience,
+      lane: SECONDARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === prev.lane) ? "all" : prev.lane
+    }));
+  }
+
   function toggleLane(nextLane: string) {
     setFilters((prev) => ({
       ...prev,
-      lane: prev.lane === nextLane ? "all" : nextLane
+      lane: prev.lane === nextLane ? "all" : nextLane,
+      audience: SECONDARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === nextLane) ? "all" : prev.audience
+    }));
+  }
+
+  function applyFreshMode() {
+    setFilters((prev) => ({
+      ...prev,
+      lane: "all",
+      sort: "newest"
+    }));
+  }
+
+  function toggleUnder30() {
+    setFilters((prev) => ({
+      ...prev,
+      max: prev.max === 3000 ? DEFAULT_MARKET_FILTERS.max : 3000
+    }));
+  }
+
+  function toggleTrending() {
+    setFilters((prev) => ({
+      ...prev,
+      sort: prev.sort === "trending" ? "newest" : "trending"
     }));
   }
 
@@ -553,54 +598,139 @@ export function MarketClient({
     <div className="space-y-6 pb-16 md:space-y-8">
       <section className="surface-floating overflow-hidden">
         <div className="space-y-3 px-4 py-4 md:px-5 md:py-5">
-          <div className="space-y-2.5">
-            <div className="space-y-1">
-              <p className="editorial-eyebrow">Shop clothing first</p>
-              <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
-                Browse the strongest finds first.
-              </h2>
-              <p className="max-w-2xl text-[0.95rem] leading-6 text-foreground/76 dark:text-white/80">
-                Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories come first. Everything else lives under More.
-              </p>
-            </div>
+          <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+              <div className="space-y-1">
+                <p className="editorial-eyebrow">Shop by closet first</p>
+                <h2 className="font-display text-[1.55rem] font-extrabold tracking-tight md:text-[1.95rem]">
+                  Start with Women&apos;s or Men&apos;s.
+                </h2>
+                <p className="max-w-2xl text-[0.95rem] leading-6 text-foreground/76 dark:text-white/80">
+                  Then narrow by style, brand, size, price, or pickup spot. Non-clothing finds stay under More.
+                </p>
+              </div>
 
-            <div className="-mx-1 overflow-x-auto px-1 md:mx-0 md:overflow-visible md:px-0">
-              <div className="flex w-max gap-2 md:w-auto md:flex-wrap">
-                {PRIMARY_MARKET_BROWSE_PILLS.map((pill) => {
-                  const active = filters.lane === pill.id;
+              <div className="grid grid-cols-2 gap-2">
+                {MARKET_AUDIENCE_TABS.map((pill) => {
+                  const active = filters.audience === pill.id;
 
                   return (
                     <button
                       key={pill.id}
                       type="button"
-                      onClick={() => toggleLane(pill.id)}
+                      onClick={() => setAudience(pill.id as MarketAudienceId)}
                       className={cn(
-                        "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                        "group min-h-[5.5rem] rounded-[1.45rem] border px-4 py-3 text-left transition hover:-translate-y-0.5",
                         active
-                          ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
-                          : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
+                          ? "border-uva-orange/45 bg-uva-orange/[0.11] shadow-soft dark:border-uva-orange/36 dark:bg-uva-orange/[0.18]"
+                          : "border-border bg-card/66 hover:border-uva-orange/30 hover:bg-card/88 dark:border-white/12 dark:bg-white/[0.045] dark:hover:border-uva-orange/28"
                       )}
                     >
-                      {pill.label}
+                      <span className="block font-display text-[1.35rem] font-extrabold tracking-tight text-foreground dark:text-white">
+                        {pill.label}
+                      </span>
+                      <span className={cn("mt-1 block text-xs leading-5", active ? "text-foreground/78 dark:text-orange-50/88" : "text-muted-foreground")}>
+                        {pill.description}
+                      </span>
                     </button>
                   );
                 })}
+              </div>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => setMoreOpen((open) => !open)}
-                  aria-expanded={moreOpen}
-                  aria-controls={morePanelId}
-                  className={cn(
-                    "touch-chip inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition",
-                    moreOpen || SECONDARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === filters.lane)
-                      ? "border-uva-blue/30 bg-uva-blue/[0.08] text-foreground shadow-soft dark:border-uva-blue/34 dark:bg-uva-blue/[0.18] dark:text-blue-50"
-                      : "surface-chip text-foreground/82 hover:border-uva-blue/28 hover:text-uva-blue"
-                  )}
-                >
-                  More
-                  <ChevronDown className={cn("h-4 w-4 transition", moreOpen && "rotate-180")} />
-                </button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-foreground/62 dark:text-white/68">
+                  Shop modes
+                </p>
+                {filters.audience !== "all" ? (
+                  <button
+                    type="button"
+                    onClick={() => removeFilter("audience")}
+                    className="text-xs font-semibold text-foreground/70 transition hover:text-uva-orange dark:text-white/74"
+                  >
+                    Show all clothing
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="-mx-1 overflow-x-auto px-1 md:mx-0 md:overflow-visible md:px-0">
+                <div className="flex w-max gap-2 md:w-auto md:flex-wrap">
+                  <button
+                    type="button"
+                    onClick={applyFreshMode}
+                    className={cn(
+                      "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                      filters.lane === "all" && filters.sort === "newest"
+                        ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                        : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
+                    )}
+                  >
+                    New Arrivals
+                  </button>
+
+                  {STYLE_MARKET_BROWSE_PILLS.map((pill) => {
+                    const active = filters.lane === pill.id;
+
+                    return (
+                      <button
+                        key={pill.id}
+                        type="button"
+                        onClick={() => toggleLane(pill.id)}
+                        className={cn(
+                          "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                          active
+                            ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                            : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
+                        )}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={toggleUnder30}
+                    className={cn(
+                      "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                      filters.max === 3000
+                        ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                        : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
+                    )}
+                  >
+                    Under $30
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleTrending}
+                    className={cn(
+                      "touch-chip rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                      filters.sort === "trending"
+                        ? "border-uva-orange/45 bg-uva-orange/[0.10] text-foreground shadow-soft dark:border-uva-orange/34 dark:bg-uva-orange/[0.18] dark:text-orange-50"
+                        : "surface-chip text-foreground/82 hover:border-uva-orange/35 hover:text-uva-orange"
+                    )}
+                  >
+                    Trending Brands
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen((open) => !open)}
+                    aria-expanded={moreOpen}
+                    aria-controls={morePanelId}
+                    className={cn(
+                      "touch-chip inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition",
+                      moreOpen || SECONDARY_MARKET_BROWSE_PILLS.some((pill) => pill.id === filters.lane)
+                        ? "border-uva-blue/30 bg-uva-blue/[0.08] text-foreground shadow-soft dark:border-uva-blue/34 dark:bg-uva-blue/[0.18] dark:text-blue-50"
+                        : "surface-chip text-foreground/82 hover:border-uva-blue/28 hover:text-uva-blue"
+                    )}
+                  >
+                    More
+                    <ChevronDown className={cn("h-4 w-4 transition", moreOpen && "rotate-180")} />
+                  </button>
+                </div>
               </div>
             </div>
 

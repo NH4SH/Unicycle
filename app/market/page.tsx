@@ -3,13 +3,14 @@ import { getMarketCuratedSections, getMarketListings } from "@/lib/data";
 import { BrowseModeTabs } from "@/components/market/browse-mode-tabs";
 import { MarketClient, type MarketFilters } from "@/components/market/market-client";
 import { MARKET_PRICE_MIN_CENTS, MARKET_PRICE_OPEN_MAX_CENTS } from "@/lib/constants";
-import { normalizeMarketBrowseLane } from "@/lib/market-browse";
+import { normalizeMarketAudience, normalizeMarketBrowseLane } from "@/lib/market-browse";
 
 export const dynamic = "force-dynamic";
 
 type MarketPageProps = {
   searchParams: {
     q?: string;
+    audience?: string;
     lane?: string;
     category?: string;
     condition?: string;
@@ -33,10 +34,14 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const normalizedMax = Number.isFinite(parsedMax)
     ? Math.max(normalizedMin, Math.min(MARKET_PRICE_OPEN_MAX_CENTS, parsedMax))
     : MARKET_PRICE_OPEN_MAX_CENTS;
-  const normalizedLane = normalizeMarketBrowseLane(searchParams.lane ?? "all") ?? "all";
+  const requestedLane = normalizeMarketBrowseLane(searchParams.lane ?? "all") ?? "all";
+  const normalizedAudience =
+    normalizeMarketAudience(searchParams.audience) ?? (requestedLane === "womens" || requestedLane === "mens" ? requestedLane : undefined);
+  const normalizedLane = requestedLane === "womens" || requestedLane === "mens" ? "all" : requestedLane;
 
   const initialFilters: MarketFilters = {
     q: searchParams.q ?? "",
+    audience: normalizedAudience ?? "all",
     lane: normalizedLane,
     category: searchParams.category ?? "all",
     condition: searchParams.condition ?? "all",
@@ -52,6 +57,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const [initial, curatedSections] = await Promise.all([
     getMarketListings({
       q: initialFilters.q,
+      audience: initialFilters.audience,
       lane: initialFilters.lane,
       category: initialFilters.category,
       condition: initialFilters.condition,
@@ -77,7 +83,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             Browse the best finds on Grounds.
           </h1>
           <p className="text-sm text-foreground/72 dark:text-white/74 md:text-[0.98rem]">
-            Women&apos;s, men&apos;s, vintage, streetwear, shoes, and accessories lead the feed. Everything else stays close, just a little quieter.
+            Start with Women&apos;s or Men&apos;s, then narrow by style, price, brand, or pickup spot. Everything outside clothing stays tucked under More.
           </p>
         </div>
         <BrowseModeTabs active="feed" />
